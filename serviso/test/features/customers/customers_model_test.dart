@@ -91,7 +91,7 @@ void main() {
     });
 
     test('VehicleInput.toMap normalisasi plat & skip customer_id bila diminta', () {
-      final input = VehicleInput(
+      const input = VehicleInput(
         id: 'v1',
         customerId: 'c1',
         plateNo: 'b 9999 z',

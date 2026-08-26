@@ -76,7 +76,7 @@ void main() {
   });
 
   group('CustomerDetailScreen admin-delete gate', () {
-    Widget _pumpDetail({required bool isAdmin}) {
+    Widget buildDetail({required bool isAdmin}) {
       final customers = FakeCustomerRepository(
         initial: [
           Customer(
@@ -115,7 +115,7 @@ void main() {
 
     testWidgets('isAdmin false menyembunyikan tombol hapus pelanggan',
         (tester) async {
-      await tester.pumpWidget(_pumpDetail(isAdmin: false));
+      await tester.pumpWidget(buildDetail(isAdmin: false));
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('Hapus pelanggan'), findsNothing);
@@ -125,7 +125,7 @@ void main() {
 
     testWidgets('isAdmin true menampilkan tombol hapus pelanggan',
         (tester) async {
-      await tester.pumpWidget(_pumpDetail(isAdmin: true));
+      await tester.pumpWidget(buildDetail(isAdmin: true));
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('Hapus pelanggan'), findsOneWidget);

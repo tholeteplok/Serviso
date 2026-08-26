@@ -8,7 +8,7 @@ import 'package:serviso/features/customers/models/vehicle.dart';
 void main() {
   group('mapRepositoryError', () {
     test('PostgrestException duplikat plate_no -> pesan plat terdaftar', () {
-      final e = PostgrestException(
+      const e = PostgrestException(
         message:
             'duplicate key value violates unique constraint "vehicles_plate_no_key"',
         code: '23505',
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('message mengandung plate_no tanpa code -> pesan plat terdaftar', () {
-      final e = PostgrestException(
+      const e = PostgrestException(
         message: 'Key (plate_no)=(B 1234 ABC) already exists.',
         code: 'XXXXX',
       );
@@ -25,7 +25,7 @@ void main() {
     });
 
     test('FK restrict hapus pelanggan ber-kendaraan -> pesan dengan kendaraan', () {
-      final e = PostgrestException(
+      const e = PostgrestException(
         message:
             'update or delete on table "customers" violates foreign key constraint "vehicles_customer_id_fkey"',
         code: '23503',
@@ -51,7 +51,7 @@ void main() {
       final fake = FakeVehicleRepository(throwDuplicatePlate: true);
       expect(
         () => fake.create(
-          VehicleInput(customerId: 'c1', plateNo: 'B 1'),
+          const VehicleInput(customerId: 'c1', plateNo: 'B 1'),
         ),
         throwsA(
           isA<RepositoryException>().having(

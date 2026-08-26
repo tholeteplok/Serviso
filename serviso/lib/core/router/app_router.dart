@@ -18,6 +18,7 @@ import '../../features/auth/screens/profile_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/beranda/screens/beranda_screen.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
+import '../../features/inventori/screens/part_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
 
 abstract final class AppRoutes {
@@ -148,10 +149,16 @@ final GoRouter appRouter = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: AppRoutes.inventori,
-              builder: (context, state) => const InventoriScreen(),
-            ),
+    GoRoute(
+      path: AppRoutes.inventori,
+      builder: (context, state) => const InventoriScreen(),
+    ),
+    GoRoute(
+      path: '${AppRoutes.inventori}/:id',
+      builder: (context, state) => PartDetailScreen(
+        partId: state.pathParameters['id'] ?? '',
+      ),
+    ),
           ],
         ),
         StatefulShellBranch(
