@@ -111,5 +111,21 @@ void main() {
       expect(fake.logoutCalled, isTrue);
       expect(container.read(sessionProvider).valueOrNull, isNull);
     });
+
+    test('logout tetap sukses walau _recordEvent melempar (swallow)', () async {
+      final fake = FakeAuthRepository()
+        ..profileToReturn = _profile(UserRole.kasir)
+        ..recordEventThrows = true;
+      final container = ProviderContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(fake)],
+      );
+      await container
+          .read(sessionProvider.notifier)
+          .login(username: 'user', password: 'pass');
+
+      final future = container.read(sessionProvider.notifier).logout();
+      await expectLater(future, completes);
+      expect(container.read(sessionProvider).valueOrNull, isNull);
+    });
   });
 }

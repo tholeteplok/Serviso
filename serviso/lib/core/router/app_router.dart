@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/config/app_config.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
 import '../../features/auth/controllers/session_controller.dart';
@@ -50,8 +55,28 @@ String? authGuardRedirect({
   return null;
 }
 
+class SessionRefreshListenable extends ChangeNotifier implements Listenable {
+  SessionRefreshListenable() {
+    _subscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (_) => notifyListeners(),
+    );
+    // Cover the initial session restore (e.g. persisted session).
+    notifyListeners();
+  }
+
+  late final StreamSubscription<AuthState> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
+  refreshListenable:
+      AppConfig.isConfigured ? SessionRefreshListenable() : null,
   redirect: (context, state) {
     final session = ProviderScope.containerOf(context).read(sessionProvider);
     final isAdmin = ProviderScope.containerOf(context).read(isAdminProvider);

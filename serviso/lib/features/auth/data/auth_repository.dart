@@ -197,8 +197,10 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
-    if (recordEventThrows) {
-      // record_auth_event gagal: best-effort, tidak boleh menggagalkan logout
+    try {
+      await _recordEvent('logout');
+    } catch (_) {
+      // best-effort audit: kegagalan record_auth_event tidak menggagalkan logout
     }
     logoutCalled = true;
     _current = null;
@@ -207,6 +209,12 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Stream<Profile?> watchSession() => _sessionController.stream;
+
+  Future<void> _recordEvent(String event) async {
+    if (recordEventThrows) {
+      throw Exception('record_auth_event gagal: $event');
+    }
+  }
 
   @override
   Future<Profile?> currentProfile() async => _current;
