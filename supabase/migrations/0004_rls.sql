@@ -86,18 +86,12 @@ for update to authenticated using (true) with check (true);
 create policy "parts_delete_admin" on public.parts
 for delete to authenticated using (public.is_admin());
 
--- ===== Policy: part_movements (kartu stok append-only; koreksi/update hanya admin) =====
+-- ===== Policy: part_movements (kartu stok append-only; koreksi via baris baru, ref koreksi/adjust) =====
 create policy "part_movements_select_authenticated" on public.part_movements
 for select to authenticated using (true);
 
 create policy "part_movements_insert_authenticated" on public.part_movements
 for insert to authenticated with check (true);
-
-create policy "part_movements_update_admin" on public.part_movements
-for update to authenticated using (public.is_admin()) with check (public.is_admin());
-
-create policy "part_movements_delete_admin" on public.part_movements
-for delete to authenticated using (public.is_admin());
 
 -- ===== Policy: work_orders =====
 create policy "work_orders_select_authenticated" on public.work_orders
@@ -186,10 +180,10 @@ grant select, insert, delete on table public.parts to authenticated;
 grant update (code, name, unit, min_stock, cost_price, sell_price) on table public.parts to authenticated;
 grant all privileges on table public.parts to service_role;
 
--- Ledger kartu stok: tanpa UPDATE untuk client (append-only).
+-- Ledger kartu stok: append-only; hanya SELECT + INSERT bagi authenticated (tanpa UPDATE/DELETE).
 revoke all privileges on table public.part_movements from anon;
 revoke all privileges on table public.part_movements from authenticated;
-grant select, insert, delete on table public.part_movements to authenticated;
+grant select, insert on table public.part_movements to authenticated;
 grant all privileges on table public.part_movements to service_role;
 
 revoke all privileges on table public.work_orders from anon;

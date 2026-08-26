@@ -159,6 +159,8 @@ create index idx_part_movements_part_created_desc on public.part_movements (part
 create index idx_audit_logs_actor on public.audit_logs (actor_id);
 create index idx_audit_logs_created_desc on public.audit_logs (created_at desc);
 create index idx_audit_logs_table on public.audit_logs (table_name);
+create index if not exists idx_work_orders_status_created on public.work_orders (status, created_at desc);
+create index if not exists idx_audit_logs_actor_created on public.audit_logs (actor_id, created_at desc);
 
 -- ===== Trigger pembuatan profil saat user auth dibuat =====
 create or replace function public.handle_new_user()
@@ -203,6 +205,8 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
+revoke execute on function public.handle_new_user() from public, anon;
+
 -- ===== Trigger updated_at otomatis =====
 create or replace function public.set_updated_at()
 returns trigger
@@ -226,3 +230,5 @@ for each row execute function public.set_updated_at();
 create trigger trg_work_orders_updated_at
 before update on public.work_orders
 for each row execute function public.set_updated_at();
+
+revoke execute on function public.set_updated_at() from public, anon;
