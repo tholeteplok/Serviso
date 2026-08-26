@@ -43,23 +43,38 @@ opsional jika ingin nama bengkel benar lebih awal.)
 
 ## 4. Invite user admin pertama
 
+Login memakai **username**, bukan email. Email akun auth dibuat **sintetis
+deterministik**: `{username}@users.serviso.app` — username di-trim dan dijadikan
+lowercase, lalu alamatnya dihitung client-side sebelum `signInWithPassword`.
+Tidak ada RPC pra-login (fungsi lookup email lama sudah dihapus).
+
 1. **Authentication → Users → Invite user**.
-2. Isi email pemilik bengkel, lalu isi **User Metadata (JSON)**:
+2. Kolom email isi **alamat sintetis**, contoh untuk username `admin`:
+   `admin@users.serviso.app` (bukan email asli pemilik).
+3. Isi **User Metadata (JSON)** dengan identitas asli — termasuk **email
+   pemulihan yang benar-benar bisa menerima email**:
 
 ```json
 {
   "username": "admin",
   "full_name": "Nama Pemilik",
-  "role": "admin"
+  "role": "admin",
+  "email": "pemilik@bengkel.com"
 }
 ```
 
-3. Pemilik membuka email undangan → set password → login di aplikasi memakai
-   **username** (`admin`), bukan email.
+Trigger `on_auth_user_created` memetakan metadata itu ke `profiles`: username,
+full_name, role, dan email asli ke kolom `profiles.email` (artinya kini:
+email pemulihan, bukan email login). `role` hanya mengenal `admin` / `kasir`;
+nilai lain jatuh ke `kasir`. Undangan user berikutnya (kasir) sama, tanpa
+`role` atau dengan `"role":"kasir"`.
 
-Trigger `on_auth_user_created` otomatis membuat baris `profiles` dari metadata itu.
-`role` hanya mengenal `admin` / `kasir`; nilai lain jatuh ke `kasir`.
-Undangan user berikutnya (kasir) sama, tanpa `role` atau dengan `"role":"kasir"`.
+**Kenapa email login harus sintetis:** Supabase mengirim email reset password ke
+`auth.users.email`. Alamat sintetis tidak dapat menerima email siapa pun, sehingga
+reset password mandiri lewat email tak berlaku; reset kelak hanya dilakukan admin
+lewat Edge Function (Task 8) yang membaca email pemulihan asli dari
+`profiles.email` — satu pintu, ter-audit, dan tanpa membocorkan email asli
+sebelum autentikasi.
 
 ## 5. SMTP custom untuk produksi
 
@@ -73,14 +88,19 @@ Password" akan sering gagal kirim di pemakaian nyata.
 **SQL Editor** → paste seluruh `supabase/tests/smoke.sql` → **Run**.
 
 Ekspektasi: deretan notice `OK: ...` tanpa error, diakhiri `SMOKE SELESAI: semua
-assert hijau.` Cakupan: trigger profil, nomor WO otomatis, alur
-mulai→selesai→batal beserta gerakan stok & audit, penolakan stok kurang,
+assert hijau.` Cakupan: trigger profil (username/role/email pemulihan dari
+metadata), email auth sintetis konvensi, nomor WO otomatis, alur
+mulai→selesai→batal beserta gerakan stok & audit, guard transisi (update tanpa
+ubah status sah, regresi ke menunggu sah, lompatan ditolak, `dibatalkan`
+terminal), penolakan stok kurang,
 penolakan double-complete/double-cancel, serta RLS untuk kasir (tidak bisa hapus
 part, tidak melihat audit log, tidak bisa ubah settings/item WO selesai).
 
-Data uji (user `admin@serviso.test` / `kasir@serviso.test`, password dummy tidak
-dipakai untuk login) tinggal untuk inspeksi; jalankan ulang skrip membersihkannya
-otomatis di awal. Hapus manual via Table Editor jika ingin bersih total.
+Data uji (email auth sintetis `admin@users.serviso.app` /
+`kasir01@users.serviso.app`; password dummy tidak dipakai untuk login; email
+pemulihan asli di metadata) tinggal untuk inspeksi; jalankan ulang skrip
+membersihkannya otomatis di awal. Hapus manual via Table Editor jika ingin
+bersih total.
 
 ## 7. Jalankan aplikasi
 
@@ -112,23 +132,30 @@ flutter run --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co --dart-
 - `audit_logs`: SELECT admin saja; tidak ada policy tulis untuk siapa pun — tulis
   hanya lewat trigger/fungsi SECURITY DEFINER.
 - `cancel_work_order` memvalidasi admin di dalam fungsi (selain RLS).
-- Update langsung status `work_orders` dijaga trigger transisi
-  (`menunggu→dikerjakan`, `dikerjakan→selesai/dibatalkan`,
-  `selesai→dibatalkan` hanya via `cancel_work_order` agar stok dibalikkan);
-  penyelesaian wajib lewat `complete_work_order` agar stok diposting.
+- Update langsung status `work_orders` dijaga trigger transisi dengan whitelist:
+  `menunggu→{dikerjakan,dibatalkan}`, `dikerjakan→{selesai,dibatalkan,menunggu}`
+  (kembali ke antrian sah), `selesai→dibatalkan`, `dibatalkan` terminal;
+  update tanpa perubahan status selalu sah. Transisi lain ditolak pesan Indonesia
+  (`Perubahan status dari X ke Y tidak diizinkan.`). Penyelesaian wajib lewat
+  `complete_work_order` agar stok diposting.
 
-### Catatan penting untuk Task 2 (login username)
+### Catatan login username (desain baru)
 
-`lookup_login_email` sengaja **tidak** bisa dipanggil oleh anon (brief: revoke from
-anon) untuk menutup enumerasi email. Alur login username memang butuh resolusi
-email sebelum `signInWithPassword`. Dua opsi saat implementasi Task 2:
+Email login dihitung client-side tanpa panggilan server: alamat sintetis
+deterministik `{trim+lowercase(username)}@users.serviso.app`. Tidak ada RPC
+pra-login — permukaan enumerasi username/email lewat API anon jadi nihil.
+`profiles.email` bukan email login lagi, melainkan email pemulihan asli yang
+hanya tersentuh alur reset password sisi admin (Edge Function Task 8).
 
-1. Terima trade-off internal: `grant execute on function public.lookup_login_email(citext)
-   to anon;` (migrasi kecil tambahan), atau
-2. Buat RPC gabungan server-side `login_with_username(username, password)` yang
-   memverifikasi kredensial di dalam database.
+### Batasan v1
 
-Diskusikan pilihan sebelum Task 2 dimulai.
+Update langsung via API/SQL `selesai -> dibatalkan` (mengisi `cancelled_at`)
+**lolos** guard transisi, tetapi **tidak** membuat entri pembalikan stok — jalur
+ini mem-bypass `cancel_work_order`. UI aplikasi secara eksklusif memakai RPC
+`cancel_work_order` yang memposting reversal; perlakukan jalur langsung sebagai
+kesalahan operator. Jejaknya tetap terlihat: `audit_logs` mencatat UPDATE
+work_orders tanpa movement `pembatalan` pendamping (v2 dapat menutup celah ini
+dengan security-definer wrapper atau policy kolom-granular).
 
 ## 9. Troubleshooting
 

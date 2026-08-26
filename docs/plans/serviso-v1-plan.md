@@ -105,8 +105,9 @@ Requirements:
        DEFAULT 'kasir', is_active bool DEFAULT true.
      - `vehicles.plate_no text UNIQUE NOT NULL` (disimpan uppercase; CHECK length>0),
        customer_id FK ON DELETE RESTRICT.
-     - `parts.stock_qty int NOT NULL DEFAULT 0 CHECK (stock_qty >= 0)`,
-       min_stock int DEFAULT 0, cost_price/sell_price numeric(14,2) CHECK >= 0.
+      - `parts.stock_qty numeric(12,2) NOT NULL DEFAULT 0 CHECK (stock_qty >= 0)`
+        (revisi fix-round: stok pecahan sah; movement qty numeric(10,2) masuk tanpa pembulatan),
+        min_stock int DEFAULT 0, cost_price/sell_price numeric(14,2) CHECK >= 0.
      - `work_orders.wo_number text UNIQUE NOT NULL DEFAULT gen_wo_number()`;
        assigned_to FK profiles; paid_amount numeric(14,2) DEFAULT 0; odometer_in int.
      - `wo_items.qty numeric(10,2) > 0`, unit_price numeric(14,2), discount numeric(14,2)
@@ -123,9 +124,11 @@ Requirements:
 2. **0002_functions.sql**
    - `gen_wo_number()` volatile security invoker: `'WO-'||to_char(now(),'YYMMDD')||'-'||
      lpad(nextval('wo_number_seq')::text,3,'0')`; sequence `wo_number_seq` start 1.
-   - `lookup_login_email(p_username citext) RETURNS text` SECURITY DEFINER:
-     return email profiles WHERE username=p_username AND is_active; null jika tidak ada.
-     Revoke from anon; grant execute to authenticated.
+    - (Revisi fix-round) TIDAK ada RPC pra-login untuk resolusi email login
+      (fungsi lookup lama dihapus total).
+      Email login = alamat sintetis deterministik `{username}@users.serviso.app`
+      dihitung client-side; `profiles.email` menyimpan email pemulihan asli dari
+      metadata undangan (`handle_new_user` memetakannya).
    - `record_auth_event(p_action audit_action)` SECURITY DEFINER: insert audit_logs
      (actor auth.uid(), action, table_name 'auth', record_id auth.uid()::text).
      Hanya menerima 'login'/'logout' (raise jika lain). Grant authenticated.
@@ -177,7 +180,8 @@ Requirements:
 1. `features/auth/models/profile.dart` — Profile (id, username, email?, fullName, role,
    isActive, phone?) + mapper dari Map.
 2. `features/auth/data/auth_repository.dart` — interface `AuthRepository`:
-   `Future<Profile> login({username, password})` — RPC lookup_login_email → signInWithPassword
+   `Future<Profile> login({username, password})` — hitung email sintetis
+   `{username.trim().toLowerCase()}@users.serviso.app` → signInWithPassword
    → fetch profiles → record_auth_event('login') (best-effort try/catch).
    `Future<void> logout()` — record_auth_event('logout') best-effort → signOut.
    `Stream<Profile?> watchSession()`, `Future<Profile?> currentProfile()`.
@@ -368,8 +372,10 @@ Requirements:
    `{action: 'create'|'deactivate'|'activate'|'reset_password', ...}`.
    - Verifikasi JWT pemanggil (Authorization Bearer) → getUser → cek profiles.role=admin,
      else 403.
-   - create: adminUser.inviteUserByEmail(email, {data:{username,full_name,role}}) —
-     password di-set user lewat email undangan. Validasi username unik (cek profiles dulu).
+    - create: adminUser.inviteUserByEmail(sintetisEmail, {data:{username,full_name,role,email}})
+      — email argumen = alamat sintetis `{username}@users.serviso.app` (revisi fix-round);
+      email pemulihan asli dikirim di `data.email`; password di-set user lewat email
+      undangan. Validasi username unik (cek profiles dulu).
    - deactivate/activate: admin.updateUserById(is_active ban=false/…: implement via
      profiles.is_active flag + ban/unban user agar sesi mati).
    - reset_password: trigger reset email.

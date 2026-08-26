@@ -1,19 +1,8 @@
 -- Serviso 0002: fungsi RPC bisnis + trigger sinkronisasi stok & transisi status WO.
 
--- ===== Lookup email untuk login username (Task 2) =====
-create or replace function public.lookup_login_email(p_username citext)
-returns text
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select email from public.profiles where username = p_username and is_active limit 1;
-$$;
-
-revoke execute on function public.lookup_login_email(citext) from public;
-revoke execute on function public.lookup_login_email(citext) from anon;
-grant execute on function public.lookup_login_email(citext) to authenticated, service_role;
+-- Catatan: tidak ada RPC pra-login. Email login adalah alamat sintetis
+-- deterministik {username}@users.serviso.app yang dihitung client-side;
+-- profiles.email menyimpan email pemulihan asli (lihat 0001 handle_new_user).
 
 -- ===== Audit event login/logout (dipanggil client setelah sign-in / sebelum sign-out) =====
 create or replace function public.record_auth_event(p_action public.audit_action)
@@ -62,7 +51,7 @@ create trigger trg_part_movements_stock
 after insert on public.part_movements
 for each row execute function public.apply_movement_to_stock();
 
--- ===== Penjaga transisi status work_orders (update langsung dari client tetap sah untuk start/pembayaran, ilegal untuk lompatan status) =====
+-- ===== Penjaga transisi status work_orders (update langsung dari client tetap sah untuk start/kembali-antri/pembayaran, ilegal untuk lompatan status) =====
 create or replace function public.enforce_wo_transition()
 returns trigger
 language plpgsql
@@ -72,12 +61,12 @@ begin
   if new.status is distinct from old.status then
     if old.status = 'menunggu' and new.status in ('dikerjakan', 'dibatalkan') then
       null;
-    elsif old.status = 'dikerjakan' and new.status in ('selesai', 'dibatalkan') then
+    elsif old.status = 'dikerjakan' and new.status in ('selesai', 'dibatalkan', 'menunggu') then
       null;
     elsif old.status = 'selesai' and new.status = 'dibatalkan' then
       null;
     else
-      raise exception 'Perubahan status % ke % tidak diizinkan.', old.status, new.status;
+      raise exception 'Perubahan status dari % ke % tidak diizinkan.', old.status, new.status;
     end if;
   end if;
   if new.status = 'selesai' and new.completed_at is null then
@@ -105,7 +94,7 @@ set search_path = public
 as $$
 declare
   v_status public.wo_status;
-  v_stock int;
+  v_stock numeric(12,2);
   rec record;
 begin
   select status into v_status

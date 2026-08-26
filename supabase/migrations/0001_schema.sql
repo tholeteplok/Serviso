@@ -40,6 +40,12 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Email login bersifat sintetis (auth.users.email = {username}@users.serviso.app,
+-- dihitung client-side); kolom ini menyimpan email pemulihan ASLI dari metadata
+-- undangan, hanya dipakai alur reset password sisi admin (Edge Function, Task 8).
+comment on column public.profiles.email is
+  'Email pemulihan asli (bukan email login); reset password via admin Edge Function.';
+
 create table public.customers (
   id uuid primary key default gen_random_uuid(),
   name text not null constraint customers_name_not_empty check (length(trim(name)) > 0),
@@ -67,7 +73,9 @@ create table public.parts (
   code text unique,
   name text not null constraint parts_name_not_empty check (length(trim(name)) > 0),
   unit text not null default 'pcs',
-  stock_qty int not null default 0 constraint parts_stock_qty_nonnegative check (stock_qty >= 0),
+  -- numeric(12,2): stok pecahan sah (mis. 0.5 liter); movement qty numeric(10,2)
+  -- masuk tanpa pembulatan; tetap tidak boleh minus.
+  stock_qty numeric(12,2) not null default 0 constraint parts_stock_qty_nonnegative check (stock_qty >= 0),
   min_stock int not null default 0,
   cost_price numeric(14,2) not null default 0 constraint parts_cost_price_nonnegative check (cost_price >= 0),
   sell_price numeric(14,2) not null default 0 constraint parts_sell_price_nonnegative check (sell_price >= 0),
@@ -161,6 +169,7 @@ set search_path = public
 as $$
 declare
   v_username text;
+  v_email text;
   v_full_name text;
   v_role text;
 begin
@@ -172,13 +181,16 @@ begin
   while exists (select 1 from public.profiles p where p.username = v_username) loop
     v_username := v_username || '_' || substr(md5(random()::text), 1, 4);
   end loop;
+  -- auth.users.email adalah alamat sintetis; email pemulihan asli dikirim via
+  -- metadata undangan (kunci 'email'). Fallback ke email auth bila metadata kosong.
+  v_email := coalesce(nullif(new.raw_user_meta_data ->> 'email', ''), new.email);
   v_full_name := coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), v_username);
   v_role := coalesce(new.raw_user_meta_data ->> 'role', 'kasir');
   insert into public.profiles (id, username, email, full_name, role, is_active)
   values (
     new.id,
     v_username,
-    new.email,
+    v_email,
     v_full_name,
     case when v_role in ('admin', 'kasir') then v_role::public.user_role else 'kasir' end,
     true

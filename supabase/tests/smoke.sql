@@ -40,28 +40,40 @@ insert into auth.users (
 values
   ('00000000-0000-0000-0000-000000000000',
    '11111111-1111-1111-1111-111111111111', 'authenticated', 'authenticated',
-   'admin@serviso.test', '$2a$10$smokedummyhashsmokedummyhashsmokedummyhashsmoke00',
+   'admin@users.serviso.app', '$2a$10$smokedummyhashsmokedummyhashsmokedummyhashsmoke00',
    now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"username":"admin","full_name":"Admin Bengkel","role":"admin"}',
+   '{"username":"admin","full_name":"Admin Bengkel","role":"admin","email":"pemilik@bengkel.test"}',
    '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000',
    '22222222-2222-2222-2222-222222222222', 'authenticated', 'authenticated',
-   'kasir@serviso.test', '$2a$10$smokedummyhashsmokedummyhashsmokedummyhashsmoke11',
+   'kasir01@users.serviso.app', '$2a$10$smokedummyhashsmokedummyhashsmokedummyhashsmoke11',
    now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"username":"kasir01","full_name":"Kasir Satu"}',
+   '{"username":"kasir01","full_name":"Kasir Satu","email":"kasir@bengkel.test"}',
    '', '', '', '');
 
+-- Email login = alamat sintetis deterministik: trim+lowercase(username) || '@users.serviso.app'
+-- (dihitung client-side; tidak ada RPC pra-login). profiles.email = email pemulihan asli.
 do $$
 begin
+  if (select email from auth.users where id = '11111111-1111-1111-1111-111111111111')
+     <> 'admin@users.serviso.app' then
+    raise exception 'ASSERT GAGAL: email auth harus alamat sintetis konvensi';
+  end if;
   if (select role from public.profiles where id = '11111111-1111-1111-1111-111111111111') <> 'admin' then
     raise exception 'ASSERT GAGAL: role admin tidak terisi dari metadata';
   end if;
   if (select username from public.profiles where id = '22222222-2222-2222-2222-222222222222') <> 'kasir01' then
     raise exception 'ASSERT GAGAL: username kasir tidak sesuai metadata';
   end if;
-  raise notice 'OK: trigger on_auth_user_created membuat profiles sesuai metadata';
+  if (select email from public.profiles where id = '11111111-1111-1111-1111-111111111111') <> 'pemilik@bengkel.test' then
+    raise exception 'ASSERT GAGAL: email pemulihan admin tidak dipetakan dari metadata';
+  end if;
+  if (select email from public.profiles where id = '22222222-2222-2222-2222-222222222222') <> 'kasir@bengkel.test' then
+    raise exception 'ASSERT GAGAL: email pemulihan kasir tidak dipetakan dari metadata';
+  end if;
+  raise notice 'OK: handle_new_user memetakan metadata (username, role, email pemulihan asli)';
 end $$;
 
 insert into public.app_settings (id, shop_name) values (1, 'Bengkel Uji Serviso');
@@ -112,19 +124,38 @@ set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","r
 update public.work_orders set status = 'dikerjakan', started_at = now()
 where id = '66666666-6666-6666-6666-666666666666';
 
--- Lompatan status langsung ke selesai harus ditolak trigger penjaga transisi.
+-- Update tanpa perubahan status harus tetap sah (guard hanya membatasi lompatan status).
 do $$
 begin
-  update public.work_orders set status = 'menunggu'
+  update public.work_orders set technician_note = 'Cek kompresi mesin.'
   where id = '66666666-6666-6666-6666-666666666666';
-  raise exception 'ASSERT GAGAL: regresi status harusnya ditolak';
+  if (select status from public.work_orders where id = '66666666-6666-6666-6666-666666666666') <> 'dikerjakan' then
+    raise exception 'ASSERT GAGAL: status berubah pada update non-status';
+  end if;
+  raise notice 'OK: update tanpa perubahan status lolos guard';
+end $$;
+
+-- Regresi dikerjakan->menunggu kini SAH (kembali ke antrian).
+update public.work_orders set status = 'menunggu'
+where id = '66666666-6666-6666-6666-666666666666';
+
+-- Lompatan langsung menunggu->selesai tetap ditolak trigger penjaga transisi.
+do $$
+begin
+  update public.work_orders set status = 'selesai', completed_at = now()
+  where id = '66666666-6666-6666-6666-666666666666';
+  raise exception 'ASSERT GAGAL: lompatan menunggu->selesai harusnya ditolak';
 exception
   when others then
-    if sqlerrm not like 'Perubahan status%' then
+    if sqlerrm not like 'Perubahan status dari menunggu ke selesai%' then
       raise exception 'ASSERT GAGAL: pesan transisi salah: %', sqlerrm;
     end if;
-    raise notice 'OK: lompatan/regresi status ditolak trigger: %', sqlerrm;
+    raise notice 'OK: lompatan menunggu->selesai ditolak trigger: %', sqlerrm;
 end $$;
+
+-- Lanjut alur normal: mulai lagi, lalu selesaikan lewat RPC.
+update public.work_orders set status = 'dikerjakan', started_at = coalesce(started_at, now())
+where id = '66666666-6666-6666-6666-666666666666';
 
 do $$
 declare n_before bigint; n_after bigint; v_qty numeric;
@@ -187,7 +218,7 @@ update public.work_orders set status = 'dikerjakan', started_at = now()
 where id = '77777777-7777-7777-7777-777777777777';
 
 do $$
-declare v_stock int;
+declare v_stock numeric(12,2);
 begin
   perform public.complete_work_order('77777777-7777-7777-7777-777777777777');
   raise exception 'ASSERT GAGAL: stok kurang harusnya ditolak';
@@ -213,7 +244,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 
 do $$
-declare v_stock int; n_rev int;
+declare v_stock numeric(12,2); n_rev int;
 begin
   perform public.cancel_work_order('66666666-6666-6666-6666-666666666666');
 
@@ -246,6 +277,20 @@ exception
       raise exception 'ASSERT GAGAL: pesan cancel ulang salah: %', sqlerrm;
     end if;
     raise notice 'OK: cancel ulang ditolak: %', sqlerrm;
+end $$;
+
+-- Status dibatalkan bersifat terminal: transisi keluar apa pun ditolak guard.
+do $$
+begin
+  update public.work_orders set status = 'dikerjakan', cancelled_at = null
+  where id = '66666666-6666-6666-6666-666666666666';
+  raise exception 'ASSERT GAGAL: transisi dari dibatalkan harusnya ditolak';
+exception
+  when others then
+    if sqlerrm not like 'Perubahan status dari dibatalkan ke dikerjakan%' then
+      raise exception 'ASSERT GAGAL: pesan status terminal salah: %', sqlerrm;
+    end if;
+    raise notice 'OK: dibatalkan terminal — %', sqlerrm;
 end $$;
 commit;
 
