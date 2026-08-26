@@ -55,6 +55,15 @@ class BerandaScreen extends ConsumerWidget {
                 onTap: () => context.go('/admin'),
               ),
             ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.people_outline),
+              title: const Text('Pelanggan'),
+              subtitle: const Text('Lihat dan kelola data pelanggan'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/pelanggan'),
+            ),
+          ),
         ],
       ),
     );

@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/app_config.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
+import '../../features/customers/screens/customer_detail_screen.dart';
+import '../../features/customers/screens/customer_list_screen.dart';
 import '../../features/auth/controllers/session_controller.dart';
 import '../../features/auth/models/profile.dart';
 import '../../features/auth/screens/admin_screen.dart';
@@ -27,6 +29,8 @@ abstract final class AppRoutes {
   static const laporan = '/laporan';
   static const profil = '/profil';
   static const admin = '/admin';
+  static const pelanggan = '/pelanggan';
+  static const pelangganDetail = '/pelanggan/:id';
 }
 
 String? authGuardRedirect({
@@ -112,6 +116,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.admin,
       builder: (context, state) => const AdminScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.pelanggan,
+      builder: (context, state) => const CustomerListScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.pelangganDetail,
+      builder: (context, state) =>
+          CustomerDetailScreen(customerId: state.pathParameters['id'] ?? ''),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
