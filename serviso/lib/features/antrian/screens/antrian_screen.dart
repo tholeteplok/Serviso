@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/section_card.dart';
 
 class AntrianScreen extends StatelessWidget {
   const AntrianScreen({super.key});
@@ -10,27 +9,22 @@ class AntrianScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('Antrian', style: textTheme.headlineSmall),
-          const SizedBox(height: 16),
-          SectionCard(
-            title: 'Daftar WO',
-            trailing: TextButton(
-              onPressed: () {},
-              child: const Text('Semua'),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Antrian')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_long_outlined, size: 48, color: AppColors.inkMuted),
+            const SizedBox(height: 12),
+            Text('Antrian', style: textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              'Modul belum tersedia pada versi ini.',
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
             ),
-            child: const EmptyState(
-              icon: Icons.receipt_long_rounded,
-              title: 'Antrian kosong',
-              message:
-                  'WO yang dibuat akan masuk ke sini. Tekan "Semua" untuk '
-                  'melihat riwayat pekerjaan.',
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

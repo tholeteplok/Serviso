@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/section_card.dart';
 
 class InventoriScreen extends StatelessWidget {
   const InventoriScreen({super.key});
@@ -10,27 +9,22 @@ class InventoriScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('Inventori', style: textTheme.headlineSmall),
-          const SizedBox(height: 16),
-          SectionCard(
-            title: 'Stok part',
-            trailing: TextButton(
-              onPressed: () {},
-              child: const Text('Stok Masuk'),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Inventori')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.inkMuted),
+            const SizedBox(height: 12),
+            Text('Inventori', style: textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              'Modul belum tersedia pada versi ini.',
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
             ),
-            child: const EmptyState(
-              icon: Icons.inventory_2_rounded,
-              title: 'Stok masih kosong',
-              message:
-                  'Catat Stok Masuk pertama untuk mulai melacak part di '
-                  'bengkel.',
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
