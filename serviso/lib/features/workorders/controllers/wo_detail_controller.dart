@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repository_exception.dart';
+import '../../../core/models/wo_status.dart';
 import '../logic/wo_state_machine.dart';
+import '../models/payment.dart';
 import '../models/work_order.dart';
 import 'work_order_providers.dart';
 
@@ -47,6 +49,25 @@ class WoDetailController
       throw const RepositoryException('Transisi status tidak diizinkan');
     }
     await repo.cancel(arg);
+    await _reload();
+  }
+
+  Future<void> pay({
+    required double paidAmount,
+    required PaymentMethod payMethod,
+  }) async {
+    final repo = ref.read(workOrderRepositoryProvider);
+    final current = state.valueOrNull;
+    if (current == null || current.status != WoStatus.selesai) {
+      throw const RepositoryException(
+        'Pembayaran hanya untuk work order yang sudah selesai',
+      );
+    }
+    await repo.pay(
+      id: arg,
+      paidAmount: paidAmount,
+      payMethod: payMethod,
+    );
     await _reload();
   }
 

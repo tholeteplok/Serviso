@@ -4,6 +4,7 @@ import '../../auth/models/profile.dart';
 import '../../../core/models/wo_status.dart';
 import '../data/work_order_repository.dart';
 import '../logic/wo_state_machine.dart';
+import '../models/payment.dart';
 import '../models/work_order.dart';
 import 'repository_exception.dart';
 
@@ -204,6 +205,24 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
       }
     }
     _update(id, order.copyWith(status: WoStatus.dibatalkan));
+    _emit();
+  }
+
+  @override
+  Future<void> pay({
+    required String id,
+    required double paidAmount,
+    required PaymentMethod payMethod,
+  }) async {
+    final order = _byId(id);
+    _update(
+      id,
+      order.copyWith(
+        paidAmount: paidAmount,
+        payMethod: payMethod,
+        paidAt: DateTime.now(),
+      ),
+    );
     _emit();
   }
 

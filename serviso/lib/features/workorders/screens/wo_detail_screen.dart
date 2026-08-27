@@ -9,9 +9,12 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../settings/data/settings_repository.dart';
 import '../controllers/wo_detail_controller.dart';
 import '../logic/wo_state_machine.dart';
 import '../models/work_order.dart';
+import '../pdf/receipt_actions.dart';
+import '../screens/payment_sheet.dart';
 
 class WoDetailScreen extends ConsumerStatefulWidget {
   const WoDetailScreen({super.key, required this.workOrderId});
@@ -79,9 +82,18 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     if (!confirmed) return;
     try {
       await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).complete();
+      final updated = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Work order selesai')),
+          SnackBar(
+            content: const Text('Work order selesai'),
+            action: updated == null
+                ? null
+                : SnackBarAction(
+                    label: 'Struk',
+                    onPressed: () => _onReceipt(updated),
+                  ),
+          ),
         );
       }
     } catch (e) {
@@ -119,6 +131,41 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     }
   }
 
+  Future<void> _onPay(WorkOrder order) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => PaymentSheet(
+        order: order,
+        onPaid: () {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Pembayaran dicatat'),
+              action: SnackBarAction(
+                label: 'Struk',
+                onPressed: () => _onReceipt(order),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _onReceipt(WorkOrder order) async {
+    final settings = await ref.read(settingsRepositoryProvider).getSettings();
+    final fullName =
+        ref.read(sessionProvider).valueOrNull?.fullName ?? 'Kasir';
+    if (!mounted) return;
+    showReceiptOptions(
+      context: context,
+      order: order,
+      settings: settings,
+      printedBy: fullName,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
@@ -138,6 +185,8 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
           onStart: _onStart,
           onComplete: _onComplete,
           onCancel: _onCancel,
+          onPay: _onPay,
+          onReceipt: _onReceipt,
           onEdit: (complaint, diagnosis, techNote) => ref
               .read(woDetailControllerProvider(widget.workOrderId).notifier)
               .updateDetail(
@@ -158,6 +207,8 @@ class _DetailBody extends StatelessWidget {
     required this.onStart,
     required this.onComplete,
     required this.onCancel,
+    required this.onPay,
+    required this.onReceipt,
     required this.onEdit,
   });
 
@@ -166,6 +217,8 @@ class _DetailBody extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback onComplete;
   final VoidCallback onCancel;
+  final Future<void> Function(WorkOrder) onPay;
+  final Future<void> Function(WorkOrder) onReceipt;
   final Future<void> Function(String?, String?, String?) onEdit;
 
   @override
@@ -181,7 +234,28 @@ class _DetailBody extends StatelessWidget {
         Row(
           children: [
             StatusChip(status: order.status),
-            const SizedBox(width: 12),
+            if (order.status == WoStatus.selesai) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: order.isPaid
+                      ? AppColors.tintOf(AppColors.teal)
+                      : AppColors.tintOf(AppColors.inkMuted),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  order.paymentStatusLabel,
+                  style: AppTypography.textTheme().labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: order.isPaid
+                            ? AppColors.teal
+                            : AppColors.inkMuted,
+                      ),
+                ),
+              ),
+            ],
+            const Spacer(),
             Expanded(
               child: Text(
                 order.woNumber,
@@ -189,6 +263,7 @@ class _DetailBody extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
+                textAlign: TextAlign.end,
               ),
             ),
           ],
@@ -303,6 +378,8 @@ class _DetailBody extends StatelessWidget {
           onStart: onStart,
           onComplete: onComplete,
           onCancel: onCancel,
+          onPay: () => onPay(order),
+          onReceipt: () => onReceipt(order),
         ),
       ],
       ),
@@ -422,6 +499,8 @@ class _ActionButtons extends StatelessWidget {
     required this.onStart,
     required this.onComplete,
     required this.onCancel,
+    required this.onPay,
+    required this.onReceipt,
   });
 
   final WoStatus status;
@@ -429,6 +508,8 @@ class _ActionButtons extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback onComplete;
   final VoidCallback onCancel;
+  final VoidCallback onPay;
+  final VoidCallback onReceipt;
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +535,19 @@ class _ActionButtons extends StatelessWidget {
             onPressed: onComplete,
             icon: const Icon(Icons.check_circle_outline),
             label: const Text('Selesaikan'),
+          ),
+        ],
+        if (status == WoStatus.selesai) ...[
+          FilledButton.icon(
+            onPressed: onPay,
+            icon: const Icon(Icons.payments_outlined),
+            label: const Text('Pembayaran'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onReceipt,
+            icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('Struk'),
           ),
         ],
         if (canCancel) ...[

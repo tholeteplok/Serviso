@@ -1,4 +1,5 @@
 import '../../../core/models/wo_status.dart';
+import 'payment.dart';
 
 double _parseNumeric(dynamic value) {
   if (value == null) return 0;
@@ -79,6 +80,9 @@ class WorkOrder {
     required this.createdAt,
     this.startedAt,
     this.completedAt,
+    this.paidAmount = 0,
+    this.payMethod,
+    this.paidAt,
     this.items = const [],
   });
 
@@ -98,7 +102,14 @@ class WorkOrder {
   final DateTime createdAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final double paidAmount;
+  final PaymentMethod? payMethod;
+  final DateTime? paidAt;
   final List<WoItem> items;
+
+  bool get isPaid => paidAt != null;
+
+  String get paymentStatusLabel => isPaid ? 'Lunas' : 'Belum Lunas';
 
   double get total => items.fold(0.0, (sum, i) => sum + i.lineTotal);
 
@@ -141,6 +152,11 @@ class WorkOrder {
       completedAt: map['completed_at'] == null
           ? null
           : DateTime.parse(map['completed_at'] as String),
+      paidAmount: _parseNumeric(map['paid_amount']),
+      payMethod: PaymentMethodX.fromValue(map['pay_method'] as String?),
+      paidAt: map['paid_at'] == null
+          ? null
+          : DateTime.parse(map['paid_at'] as String),
     );
   }
 
@@ -173,6 +189,9 @@ class WorkOrder {
     DateTime? createdAt,
     DateTime? startedAt,
     DateTime? completedAt,
+    double? paidAmount,
+    PaymentMethod? payMethod,
+    DateTime? paidAt,
     List<WoItem>? items,
   }) =>
       WorkOrder(
@@ -192,6 +211,9 @@ class WorkOrder {
         createdAt: createdAt ?? this.createdAt,
         startedAt: startedAt ?? this.startedAt,
         completedAt: completedAt ?? this.completedAt,
+        paidAmount: paidAmount ?? this.paidAmount,
+        payMethod: payMethod ?? this.payMethod,
+        paidAt: paidAt ?? this.paidAt,
         items: items ?? this.items,
       );
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/section_card.dart';
 import '../controllers/session_controller.dart';
@@ -231,6 +233,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                if (profile.isAdmin) ...[
+                  SectionCard(
+                    title: 'Administrasi',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.store_outlined),
+                      title: const Text('Pengaturan Toko'),
+                      subtitle: const Text('Nama, alamat, telepon'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(AppRoutes.pengaturan),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(

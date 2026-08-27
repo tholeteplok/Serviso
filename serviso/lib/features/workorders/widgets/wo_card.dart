@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
@@ -69,6 +70,28 @@ class WoCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (order.status == WoStatus.selesai) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: order.isPaid
+                        ? AppColors.tintOf(AppColors.teal)
+                        : AppColors.tintOf(AppColors.inkMuted),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    order.paymentStatusLabel,
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: order.isPaid
+                          ? AppColors.teal
+                          : AppColors.inkMuted,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Text(
                 timeId(order.createdAt),

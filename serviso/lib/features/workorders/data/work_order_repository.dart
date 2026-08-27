@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../auth/models/profile.dart';
+import '../models/payment.dart';
 import '../models/work_order.dart';
 import 'repository_exception.dart';
 
@@ -19,6 +20,12 @@ abstract class WorkOrderRepository {
   Future<void> complete(String id);
 
   Future<void> cancel(String id);
+
+  Future<void> pay({
+    required String id,
+    required double paidAmount,
+    required PaymentMethod payMethod,
+  });
 
   Future<void> addItem(String id, WoItemInput item);
 
@@ -174,6 +181,23 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
         'cancel_work_order',
         params: {'p_work_order_id': id},
       );
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<void> pay({
+    required String id,
+    required double paidAmount,
+    required PaymentMethod payMethod,
+  }) async {
+    try {
+      await _client.from('work_orders').update({
+        'paid_amount': paidAmount,
+        'pay_method': payMethod.value,
+        'paid_at': 'now()',
+      }).eq('id', id);
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }

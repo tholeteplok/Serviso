@@ -22,6 +22,7 @@ import '../../features/beranda/screens/beranda_screen.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
 import '../../features/inventori/screens/part_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
 
 abstract final class AppRoutes {
   static const splash = '/splash';
@@ -32,6 +33,7 @@ abstract final class AppRoutes {
   static const laporan = '/laporan';
   static const profil = '/profil';
   static const admin = '/admin';
+  static const pengaturan = '/admin/pengaturan';
   static const pelanggan = '/pelanggan';
   static const pelangganDetail = '/pelanggan/:id';
 }
@@ -119,6 +121,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.admin,
       builder: (context, state) => const AdminScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.pengaturan,
+      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: AppRoutes.pelanggan,
