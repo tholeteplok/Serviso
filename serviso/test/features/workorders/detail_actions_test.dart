@@ -64,26 +64,28 @@ Widget _pumpDetail({
 
 void main() {
   group('Detail WO aksi berdasar status & role', () {
-    testWidgets('menunggu + kasir: Mulai Kerja & Batalkan', (tester) async {
+    testWidgets('menunggu + kasir: Mulai Kerja tanpa Batalkan (admin-only)',
+        (tester) async {
       final fake = FakeWorkOrderRepository();
       final id = await _seed(fake, WoStatus.menunggu);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Mulai Kerja'), findsOneWidget);
-      expect(find.text('Batalkan'), findsOneWidget);
-      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
       expect(find.text('Selesaikan'), findsNothing);
+      expect(find.text('Batalkan'), findsNothing);
+      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });
 
-    testWidgets('dikerjakan + kasir: Selesaikan & Batalkan', (tester) async {
+    testWidgets('dikerjakan + kasir: Selesaikan tanpa Batalkan (admin-only)',
+        (tester) async {
       final fake = FakeWorkOrderRepository();
       final id = await _seed(fake, WoStatus.dikerjakan);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Selesaikan'), findsOneWidget);
-      expect(find.text('Batalkan'), findsOneWidget);
-      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
       expect(find.text('Mulai Kerja'), findsNothing);
+      expect(find.text('Batalkan'), findsNothing);
+      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });
 
     testWidgets('selesai + kasir: tidak ada tombol (Batalkan admin-only)',
@@ -95,6 +97,26 @@ void main() {
       expect(find.text('Selesaikan'), findsNothing);
       expect(find.text('Mulai Kerja'), findsNothing);
       expect(find.text('Batalkan'), findsNothing);
+      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
+    });
+
+    testWidgets('menunggu + admin: Batalkan tersedia', (tester) async {
+      final fake = FakeWorkOrderRepository();
+      final id = await _seed(fake, WoStatus.menunggu);
+      await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: true));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Mulai Kerja'), findsOneWidget);
+      expect(find.text('Batalkan'), findsOneWidget);
+      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
+    });
+
+    testWidgets('dikerjakan + admin: Batalkan tersedia', (tester) async {
+      final fake = FakeWorkOrderRepository();
+      final id = await _seed(fake, WoStatus.dikerjakan);
+      await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: true));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Selesaikan'), findsOneWidget);
+      expect(find.text('Batalkan'), findsOneWidget);
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });
 

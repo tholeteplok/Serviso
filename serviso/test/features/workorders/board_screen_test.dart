@@ -29,6 +29,7 @@ void main() {
     testWidgets('menampilkan 3 kolom dengan header status', (tester) async {
       final fake = FakeWorkOrderRepository();
       fake.seedPartStock('p1', 20);
+      final orders = <WorkOrder>[];
       for (final complaint in ['Ganti oli', 'Servis rem', 'Tune up']) {
         final created = await fake.create(
           WorkOrderDraft(
@@ -37,13 +38,12 @@ void main() {
             items: const [],
           ),
         );
-        await fake.start(created.id);
+        orders.add(created);
       }
-      // satu masih menunggu, dua dikerjakan
-      final orders = fake.store;
-      await fake.start(orders[1].id); // sudah dikerjakan
-      await fake.complete(orders[1].id); // selesai
-      // orders[0] menunggu, orders[1] selesai, orders[2] dikerjakan
+      // orders[0] tetap menunggu, orders[1] selesai, orders[2] dikerjakan
+      await fake.start(orders[1].id);
+      await fake.complete(orders[1].id);
+      await fake.start(orders[2].id);
 
       await tester.pumpWidget(_pumpBoard(fake));
       await tester.pumpAndSettle();

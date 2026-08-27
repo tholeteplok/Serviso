@@ -15,9 +15,16 @@ void main() {
           WoStatus.selesai);
     });
 
-    test('dikerjakan -> menunggu via start (batal kerja)', () {
+    test('start hanya menunggu -> dikerjakan', () {
+      expect(WoStateMachine.transition(WoStatus.menunggu, WoEvent.start),
+          WoStatus.dikerjakan);
       expect(WoStateMachine.transition(WoStatus.dikerjakan, WoEvent.start),
-          WoStatus.menunggu);
+          isNull);
+      expect(WoStateMachine.canTransition(WoStatus.dikerjakan, WoEvent.start),
+          isFalse);
+      expect(WoStateMachine.transition(WoStatus.selesai, WoEvent.start), isNull);
+      expect(WoStateMachine.transition(WoStatus.dibatalkan, WoEvent.start),
+          isNull);
     });
 
     test('menunggu -> dibatalkan via cancel', () {

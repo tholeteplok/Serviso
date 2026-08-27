@@ -438,7 +438,7 @@ class _ActionButtons extends StatelessWidget {
         WoStateMachine.canTransition(status, WoEvent.complete);
     final canCancel = WoStateMachine.canTransition(status, WoEvent.cancel) &&
         (status != WoStatus.dibatalkan) &&
-        (isAdmin || status != WoStatus.selesai);
+        isAdmin;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

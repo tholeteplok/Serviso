@@ -14,7 +14,7 @@ class IllegalTransitionException implements Exception {
 abstract final class WoStateMachine {
   static const _allowed = {
     WoStatus.menunggu: {WoEvent.start, WoEvent.cancel},
-    WoStatus.dikerjakan: {WoEvent.start, WoEvent.complete, WoEvent.cancel},
+    WoStatus.dikerjakan: {WoEvent.complete, WoEvent.cancel},
     WoStatus.selesai: {WoEvent.cancel},
     WoStatus.dibatalkan: <WoEvent>{},
   };
@@ -29,8 +29,6 @@ abstract final class WoStateMachine {
         return WoStatus.dikerjakan;
       case (WoStatus.menunggu, WoEvent.cancel):
         return WoStatus.dibatalkan;
-      case (WoStatus.dikerjakan, WoEvent.start):
-        return WoStatus.menunggu;
       case (WoStatus.dikerjakan, WoEvent.complete):
         return WoStatus.selesai;
       case (WoStatus.dikerjakan, WoEvent.cancel):
