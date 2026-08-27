@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 
 import '../../settings/models/app_settings.dart';
@@ -38,7 +40,11 @@ Future<void> shareReceipt({
   final result = await buildReceiptPdf(
     _buildInput(order: order, settings: settings, printedBy: printedBy),
   );
-  await Printing.sharePdf(bytes: result.bytes, filename: result.filename);
+  final file = await _saveTempPdf(result);
+  await Printing.sharePdf(
+    bytes: await file.readAsBytes(),
+    filename: result.filename,
+  );
 }
 
 Future<void> previewReceipt({
@@ -49,10 +55,18 @@ Future<void> previewReceipt({
   final result = await buildReceiptPdf(
     _buildInput(order: order, settings: settings, printedBy: printedBy),
   );
+  final file = await _saveTempPdf(result);
   await Printing.layoutPdf(
     name: result.filename,
-    onLayout: (format) async => Uint8List.fromList(result.bytes),
+    onLayout: (format) async => Uint8List.fromList(await file.readAsBytes()),
   );
+}
+
+Future<File> _saveTempPdf(ReceiptBuildResult result) async {
+  final dir = await getTemporaryDirectory();
+  final file = File('${dir.path}/${result.filename}');
+  await file.writeAsBytes(result.bytes);
+  return file;
 }
 
 void showReceiptOptions({

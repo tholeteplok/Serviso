@@ -196,7 +196,7 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
       await _client.from('work_orders').update({
         'paid_amount': paidAmount,
         'pay_method': payMethod.value,
-        'paid_at': 'now()',
+        'paid_at': DateTime.now().toIso8601String(),
       }).eq('id', id);
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));

@@ -113,7 +113,7 @@ pw.Document _buildDocument(ReceiptInput input) {
           pw.SizedBox(height: 6),
           _line('Metode', input.payMethod, mono),
           _line('Bayar', _rupiah(input.paidAmount), mono, align: true),
-          if (input.paidAmount > input.total)
+          if (shouldShowChange(input.payMethod, input.paidAmount, input.total))
             _line(
               'Kembali',
               _rupiah(input.paidAmount - input.total),
@@ -123,7 +123,7 @@ pw.Document _buildDocument(ReceiptInput input) {
           pw.Spacer(),
           pw.Divider(thickness: 0.5),
           pw.Text(
-            'Dicetak oleh ${input.printedBy} · ${_dateTimeId(input.printedAt)}',
+            buildReceiptFooter(input.printedBy, input.printedAt),
             style: pw.TextStyle(font: mono, fontSize: 7),
           ),
         ],
@@ -230,6 +230,14 @@ String _dateTimeId(DateTime value) {
   ];
   return '${value.day} ${months[value.month - 1]} ${value.year}, '
       '${pad(value.hour)}.${pad(value.minute)}';
+}
+
+bool shouldShowChange(String payMethod, double paid, double total) {
+  return payMethod == 'Tunai' && paid > total;
+}
+
+String buildReceiptFooter(String printedBy, DateTime printedAt) {
+  return 'Dicetak oleh $printedBy · ${_dateTimeId(printedAt)}';
 }
 
 Future<ReceiptBuildResult> buildReceiptPdf(ReceiptInput input) async {

@@ -166,6 +166,36 @@ void main() {
     });
   });
 
+  group('kembalian hanya untuk Tunai', () {
+    test('overpay Tunai -> tampil', () {
+      expect(shouldShowChange('Tunai', 200000, 190000), isTrue);
+    });
+
+    test('overpay Transfer/QRIS -> tidak tampil', () {
+      expect(shouldShowChange('Transfer', 200000, 190000), isFalse);
+      expect(shouldShowChange('QRIS', 200000, 190000), isFalse);
+    });
+
+    test('pas/ kurang -> tidak tampil untuk semua metode', () {
+      expect(shouldShowChange('Tunai', 190000, 190000), isFalse);
+      expect(shouldShowChange('Tunai', 100000, 190000), isFalse);
+      expect(shouldShowChange('Transfer', 100000, 190000), isFalse);
+    });
+  });
+
+  group('footer struk', () {
+    test('mengandung · dan tidak mengandung -+', () {
+      final footer = buildReceiptFooter('Sari', DateTime(2026, 1, 1, 10, 30));
+      expect(footer.contains('·'), isTrue);
+      expect(footer.contains('-+'), isFalse);
+    });
+
+    test('footer menyertakan nama pencetak', () {
+      final footer = buildReceiptFooter('Budi', DateTime(2026, 1, 1, 10, 30));
+      expect(footer, contains('Dicetak oleh Budi'));
+    });
+  });
+
   group('FakeSettingsRepository admin gate', () {
     test('update berhasil untuk admin', () async {
       final repo = FakeSettingsRepository(allowAdmin: true);
