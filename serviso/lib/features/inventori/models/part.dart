@@ -58,7 +58,7 @@ class Part {
     double? stockQty,
     DateTime? createdAt,
   }) =>
-      Part(
+       Part(
         id: id ?? this.id,
         name: name ?? this.name,
         code: code ?? this.code,
@@ -69,18 +69,6 @@ class Part {
         stockQty: stockQty ?? this.stockQty,
         createdAt: createdAt ?? this.createdAt,
       );
-
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name.trim(),
-        'code': code?.trim().isEmpty == true ? null : code?.trim(),
-        'unit': unit?.trim().isEmpty == true ? 'pcs' : unit?.trim(),
-        'min_stock': minStock,
-        'cost_price': costPrice,
-        'sell_price': sellPrice,
-        'stock_qty': stockQty,
-        'created_at': createdAt.toIso8601String(),
-      };
 }
 
 class PartInput {
@@ -90,8 +78,8 @@ class PartInput {
     this.code,
     this.unit,
     this.minStock = 0,
-    this.costPrice = 0,
-    this.sellPrice = 0,
+    this.costPrice,
+    this.sellPrice,
   });
 
   final String? id;
@@ -99,8 +87,8 @@ class PartInput {
   final String? code;
   final String? unit;
   final int minStock;
-  final double costPrice;
-  final double sellPrice;
+  final double? costPrice;
+  final double? sellPrice;
 
   Map<String, dynamic> toMap({bool includeId = false}) {
     final map = <String, dynamic>{
@@ -108,8 +96,8 @@ class PartInput {
       'code': code?.trim().isEmpty == true ? null : code?.trim(),
       'unit': unit?.trim().isEmpty == true ? 'pcs' : unit?.trim(),
       'min_stock': minStock,
-      'cost_price': costPrice,
-      'sell_price': sellPrice,
+      if (costPrice != null) 'cost_price': costPrice,
+      if (sellPrice != null) 'sell_price': sellPrice,
     };
     if (includeId && id != null) map['id'] = id;
     return map;

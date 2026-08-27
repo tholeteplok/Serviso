@@ -292,12 +292,10 @@ class _MovementRow extends StatelessWidget {
     final textTheme = AppTypography.textTheme();
     final isIn = movement.direction == MovementDirection.in_;
     final isAdjust = movement.direction == MovementDirection.adjust;
-    final sign = isIn ? '+' : (isAdjust && movement.qty < 0 ? '' : '-');
     final color = isIn
         ? AppColors.teal
         : (isAdjust ? AppColors.primary : AppColors.action);
-    final qtyText =
-        '$sign${_formatQty(movement.qty)} ${movement.refType == MovementRef.koreksi ? '' : ''}';
+    final qtyText = _formatSignedQty(movement.signedQuantity);
     return Row(
       children: [
         Container(
@@ -350,9 +348,10 @@ class _MovementRow extends StatelessWidget {
   }
 }
 
-String _formatQty(double qty) {
-  final abs = qty.abs();
+String _formatSignedQty(double value) {
+  final sign = value >= 0 ? '+' : '-';
+  final abs = value.abs();
   final normalized =
       abs.truncateToDouble() == abs ? abs.toInt().toString() : abs.toString();
-  return normalized;
+  return '$sign$normalized';
 }

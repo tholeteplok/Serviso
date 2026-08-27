@@ -60,8 +60,8 @@ class FakePartRepository implements PartRepository {
       code: input.code?.trim().isEmpty == true ? null : input.code?.trim(),
       unit: input.unit?.trim().isEmpty == true ? 'pcs' : input.unit?.trim(),
       minStock: input.minStock,
-      costPrice: input.costPrice,
-      sellPrice: input.sellPrice,
+      costPrice: input.costPrice ?? 0,
+      sellPrice: input.sellPrice ?? 0,
       stockQty: 0,
       createdAt: DateTime.now(),
     );
@@ -81,8 +81,8 @@ class FakePartRepository implements PartRepository {
       code: input.code?.trim().isEmpty == true ? null : input.code?.trim(),
       unit: input.unit?.trim().isEmpty == true ? 'pcs' : input.unit?.trim(),
       minStock: input.minStock,
-      costPrice: input.costPrice,
-      sellPrice: input.sellPrice,
+      costPrice: input.costPrice ?? 0,
+      sellPrice: input.sellPrice ?? 0,
     );
     _parts[index] = updated;
     return _withStock(updated).copyWith();

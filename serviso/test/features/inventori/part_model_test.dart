@@ -88,4 +88,63 @@ void main() {
       expect(m.actorName, isNull);
     });
   });
+
+  group('signedQuantity rendering', () {
+    String formatSigned(double value) {
+      final sign = value >= 0 ? '+' : '-';
+      final abs = value.abs();
+      final normalized = abs.truncateToDouble() == abs
+          ? abs.toInt().toString()
+          : abs.toString();
+      return '$sign$normalized';
+    }
+
+    test('in +3 -> "+3"', () {
+      final m = PartMovement.fromMap({
+        'id': 'a',
+        'part_id': 'p',
+        'direction': 'in',
+        'qty': '3',
+        'ref_type': 'pembelian',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(formatSigned(m.signedQuantity), '+3');
+    });
+
+    test('out +3 -> "-3"', () {
+      final m = PartMovement.fromMap({
+        'id': 'b',
+        'part_id': 'p',
+        'direction': 'out',
+        'qty': '3',
+        'ref_type': 'wo',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(formatSigned(m.signedQuantity), '-3');
+    });
+
+    test('adjust -5 -> "-5"', () {
+      final m = PartMovement.fromMap({
+        'id': 'c',
+        'part_id': 'p',
+        'direction': 'adjust',
+        'qty': '-5',
+        'ref_type': 'koreksi',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(formatSigned(m.signedQuantity), '-5');
+    });
+
+    test('adjust +3 -> "+3"', () {
+      final m = PartMovement.fromMap({
+        'id': 'd',
+        'part_id': 'p',
+        'direction': 'adjust',
+        'qty': '3',
+        'ref_type': 'koreksi',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(formatSigned(m.signedQuantity), '+3');
+    });
+  });
 }

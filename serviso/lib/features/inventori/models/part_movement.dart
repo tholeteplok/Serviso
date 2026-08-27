@@ -56,6 +56,17 @@ class PartMovement {
     }
   }
 
+  double get signedQuantity {
+    switch (direction) {
+      case MovementDirection.in_:
+        return qty;
+      case MovementDirection.out:
+        return -qty;
+      case MovementDirection.adjust:
+        return qty;
+    }
+  }
+
   PartMovement copyWith({
     String? id,
     String? partId,

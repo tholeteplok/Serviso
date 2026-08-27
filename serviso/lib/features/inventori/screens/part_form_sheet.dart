@@ -83,8 +83,8 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
         ref.read(partFormControllerProvider(widget.initial).notifier);
     final minStock =
         int.tryParse(_minStockController.text.trim()) ?? 0;
-    final cost = isAdmin ? (double.tryParse(_costController.text) ?? 0.0) : 0.0;
-    final sell = isAdmin ? (double.tryParse(_sellController.text) ?? 0.0) : 0.0;
+    final cost = isAdmin ? double.tryParse(_costController.text) : null;
+    final sell = isAdmin ? double.tryParse(_sellController.text) : null;
     try {
       await controller.submit(
         name: _nameController.text,

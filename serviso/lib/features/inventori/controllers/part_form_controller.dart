@@ -14,8 +14,8 @@ class PartFormController
     String? code,
     String? unit,
     required int minStock,
-    required double costPrice,
-    required double sellPrice,
+    double? costPrice,
+    double? sellPrice,
   }) async {
     final repo = ref.read(partRepositoryProvider);
     final input = PartInput(
