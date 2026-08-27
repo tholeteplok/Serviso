@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/connectivity/offline_banner.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
+import '../../features/workorders/screens/wo_detail_screen.dart';
 import '../../features/customers/screens/customer_detail_screen.dart';
 import '../../features/customers/screens/customer_list_screen.dart';
 import '../../features/auth/controllers/session_controller.dart';
@@ -145,6 +147,11 @@ final GoRouter appRouter = GoRouter(
               path: AppRoutes.antrian,
               builder: (context, state) => const AntrianScreen(),
             ),
+            GoRoute(
+              path: '${AppRoutes.antrian}/:id',
+              builder: (context, state) =>
+                  WoDetailScreen(workOrderId: state.pathParameters['id'] ?? ''),
+            ),
           ],
         ),
         StatefulShellBranch(
@@ -174,15 +181,20 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(
