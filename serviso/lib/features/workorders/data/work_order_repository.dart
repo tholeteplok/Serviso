@@ -156,7 +156,7 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
       }
       await _client
           .from('work_orders')
-          .update({'status': 'dikerjakan', 'started_at': 'now()'}).eq('id', id);
+          .update({'status': 'dikerjakan', 'started_at': DateTime.now().toIso8601String()}).eq('id', id);
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }
