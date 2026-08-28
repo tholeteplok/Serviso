@@ -7,6 +7,7 @@ import 'package:serviso/core/theme/app_theme.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/workorders/controllers/work_order_providers.dart';
 import 'package:serviso/features/workorders/data/fakes.dart';
+import 'package:serviso/features/workorders/models/payment.dart';
 import 'package:serviso/features/workorders/models/work_order.dart';
 import 'package:serviso/features/workorders/screens/wo_detail_screen.dart';
 
@@ -88,16 +89,30 @@ void main() {
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });
 
-    testWidgets('selesai + kasir: tidak ada tombol (Batalkan admin-only)',
+    testWidgets('selesai + kasir: belum bayar menampilkan Pembayaran & Struk',
         (tester) async {
       final fake = FakeWorkOrderRepository();
       final id = await _seed(fake, WoStatus.selesai);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Pembayaran'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Struk'), findsOneWidget);
       expect(find.text('Selesaikan'), findsNothing);
       expect(find.text('Mulai Kerja'), findsNothing);
       expect(find.text('Batalkan'), findsNothing);
-      expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
+    });
+
+    testWidgets('selesai + kasir: sudah bayar menampilkan Selesai & Struk',
+        (tester) async {
+      final fake = FakeWorkOrderRepository();
+      final id = await _seed(fake, WoStatus.selesai);
+      await fake.pay(id: id, paidAmount: 100000, payMethod: PaymentMethod.cash);
+      await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Selesai'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Struk'), findsOneWidget);
+      expect(find.text('Pembayaran'), findsNothing);
+      expect(find.text('Batalkan'), findsNothing);
     });
 
     testWidgets('menunggu + admin: Batalkan tersedia', (tester) async {

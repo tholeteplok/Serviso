@@ -76,10 +76,28 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
   Future<void> _onComplete() async {
     final order = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
     if (order == null) return;
+
+    final hasParts = order.items.any((i) => i.kind == WoItemKind.part);
+    final hasJasa = order.items.any((i) => i.kind == WoItemKind.jasa);
+
+    String message;
+    if (hasParts && hasJasa) {
+      message =
+          'Pekerjaan selesai & stok suku cadang akan dikurangi otomatis. Total tagihan: ${rupiah(order.total)}.';
+    } else if (hasParts) {
+      message =
+          'Stok suku cadang akan dikurangi otomatis dari inventori. Total tagihan: ${rupiah(order.total)}.';
+    } else if (hasJasa) {
+      message =
+          'Pekerjaan jasa telah selesai. Total tagihan: ${rupiah(order.total)}.';
+    } else {
+      message =
+          'Selesaikan work order ini? Total tagihan: ${rupiah(order.total)}.';
+    }
+
     final confirmed = await _confirm(
       title: 'Selesaikan work order?',
-      message:
-          'Stok part akan dikurangi otomatis. Total: ${rupiah(order.total)}.',
+      message: message,
       confirmLabel: 'Selesaikan',
     );
     if (!confirmed) return;
@@ -387,6 +405,7 @@ class _DetailBody extends StatelessWidget {
         const SizedBox(height: 20),
         _ActionButtons(
           status: order.status,
+          isPaid: order.isPaid,
           isAdmin: isAdmin,
           onStart: onStart,
           onComplete: onComplete,
@@ -461,25 +480,39 @@ class _EditableField extends StatefulWidget {
 
 class _EditableFieldState extends State<_EditableField> {
   late final TextEditingController _controller;
-  final FocusNode _focus = FocusNode();
+  late final FocusNode _focus;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initial);
-    _focus.addListener(() {
-      if (!_focus.hasFocus) _save();
-    });
+    _focus = FocusNode()..addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditableField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initial != widget.initial &&
+        _controller.text != widget.initial) {
+      _controller.text = widget.initial;
+    }
   }
 
   @override
   void dispose() {
+    _focus.removeListener(_onFocusChange);
     _focus.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  void _onFocusChange() {
+    if (!_focus.hasFocus) {
+      _submit();
+    }
+  }
+
+  Future<void> _submit() async {
     if (_controller.text.trim() == widget.initial.trim()) return;
     await widget.onSaved(_controller.text);
   }
@@ -508,6 +541,7 @@ class _EditableFieldState extends State<_EditableField> {
 class _ActionButtons extends StatelessWidget {
   const _ActionButtons({
     required this.status,
+    required this.isPaid,
     required this.isAdmin,
     required this.onStart,
     required this.onComplete,
@@ -517,6 +551,7 @@ class _ActionButtons extends StatelessWidget {
   });
 
   final WoStatus status;
+  final bool isPaid;
   final bool isAdmin;
   final VoidCallback onStart;
   final VoidCallback onComplete;
@@ -551,11 +586,18 @@ class _ActionButtons extends StatelessWidget {
           ),
         ],
         if (status == WoStatus.selesai) ...[
-          FilledButton.icon(
-            onPressed: onPay,
-            icon: const Icon(Icons.payments_outlined),
-            label: const Text('Pembayaran'),
-          ),
+          if (!isPaid)
+            FilledButton.icon(
+              onPressed: onPay,
+              icon: const Icon(Icons.payments_outlined),
+              label: const Text('Pembayaran'),
+            )
+          else
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.check),
+              label: const Text('Selesai'),
+            ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onReceipt,
