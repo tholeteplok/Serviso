@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../auth/controllers/session_controller.dart';
@@ -10,6 +9,8 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../inventori/controllers/part_providers.dart';
+import '../../inventori/models/part.dart';
 import '../../settings/data/settings_repository.dart';
 import '../controllers/wo_detail_controller.dart';
 import '../controllers/work_order_providers.dart';
@@ -59,22 +60,31 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
 
   Future<void> _onStart() async {
     try {
-      await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).start();
+      await ref
+          .read(woDetailControllerProvider(widget.workOrderId).notifier)
+          .start();
       ref.invalidate(boardControllerProvider);
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Work order mulai dikerjakan')),
+          const SnackBar(
+            content: Text('Work order mulai dikerjakan'),
+            duration: Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
       }
     }
   }
 
   Future<void> _onComplete() async {
-    final order = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
+    final order =
+        ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
     if (order == null) return;
 
     final hasParts = order.items.any((i) => i.kind == WoItemKind.part);
@@ -102,13 +112,18 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     );
     if (!confirmed) return;
     try {
-      await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).complete();
+      await ref
+          .read(woDetailControllerProvider(widget.workOrderId).notifier)
+          .complete();
       ref.invalidate(boardControllerProvider);
-      final updated = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
+      final updated =
+          ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Work order selesai'),
+            duration: const Duration(seconds: 3),
             action: updated == null
                 ? null
                 : SnackBarAction(
@@ -120,13 +135,16 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
       }
     }
   }
 
   Future<void> _onCancel() async {
-    final order = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
+    final order =
+        ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
     if (order == null) return;
     final isCompleted = order.status == WoStatus.selesai;
     final isWaiting = order.status == WoStatus.menunggu;
@@ -143,21 +161,257 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     );
     if (!confirmed) return;
     try {
-      await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).cancel();
+      await ref
+          .read(woDetailControllerProvider(widget.workOrderId).notifier)
+          .cancel();
       ref.invalidate(boardControllerProvider);
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isWaiting ? 'Antrian berhasil dibatalkan' : 'Work order dibatalkan'),
+            content: Text(isWaiting
+                ? 'Antrian berhasil dibatalkan'
+                : 'Work order dibatalkan'),
+            duration: const Duration(seconds: 2),
           ),
         );
         if (isWaiting) {
-          context.pop();
+          Navigator.of(context).pop();
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
+  Future<void> _onAddJasa() async {
+    final descCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final added = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Tambah Jasa'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'Deskripsi Jasa'),
+                autofocus: true,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: priceCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Harga Jasa',
+                  prefixText: 'Rp ',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final p = double.tryParse(v?.trim() ?? '');
+                  if (p == null || p <= 0) return 'Harga harus > 0';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.of(dialogCtx).pop(true);
+              }
+            },
+            child: const Text('Tambah'),
+          ),
+        ],
+      ),
+    );
+
+    if (added == true) {
+      final price = double.tryParse(priceCtrl.text.trim()) ?? 0;
+      try {
+        await ref
+            .read(woDetailControllerProvider(widget.workOrderId).notifier)
+            .addItem(
+              WoItemInput(
+                kind: WoItemKind.jasa,
+                description: descCtrl.text.trim(),
+                qty: 1,
+                unitPrice: price,
+              ),
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Jasa berhasil ditambahkan'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _onAddPart() async {
+    final selectedPart = await showModalBottomSheet<Part>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetCtx) => const _DetailPartPickerSheet(),
+    );
+
+    if (selectedPart == null || !mounted) return;
+
+    final qtyCtrl = TextEditingController(text: '1');
+    final priceCtrl = TextEditingController(
+      text: selectedPart.sellPrice.toStringAsFixed(0),
+    );
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text('Tambah ${selectedPart.name}'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Stok tersedia: ${selectedPart.stockQty.toStringAsFixed(0)} ${selectedPart.unit ?? 'pcs'}',
+                style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: qtyCtrl,
+                decoration: const InputDecoration(labelText: 'Jumlah (Qty)'),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final q = double.tryParse(v?.trim() ?? '');
+                  if (q == null || q <= 0) return 'Jumlah harus > 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: priceCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Harga Satuan',
+                  prefixText: 'Rp ',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final p = double.tryParse(v?.trim() ?? '');
+                  if (p == null || p <= 0) return 'Harga harus > 0';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.of(dialogCtx).pop(true);
+              }
+            },
+            child: const Text('Tambah'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1;
+      final price =
+          double.tryParse(priceCtrl.text.trim()) ?? selectedPart.sellPrice;
+      try {
+        await ref
+            .read(woDetailControllerProvider(widget.workOrderId).notifier)
+            .addItem(
+              WoItemInput(
+                kind: WoItemKind.part,
+                partId: selectedPart.id,
+                partName: selectedPart.name,
+                description: selectedPart.name,
+                qty: qty,
+                unitPrice: price,
+              ),
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Part berhasil ditambahkan'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _onRemoveItem(String itemId) async {
+    final confirmed = await _confirm(
+      title: 'Hapus item?',
+      message: 'Item ini akan dihapus dari work order.',
+      confirmLabel: 'Hapus',
+      confirmColor: AppColors.action,
+    );
+    if (!confirmed) return;
+    try {
+      await ref
+          .read(woDetailControllerProvider(widget.workOrderId).notifier)
+          .removeItem(itemId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Item berhasil dihapus'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
       }
     }
   }
@@ -170,13 +424,11 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
         order: order,
         onPaid: () {
           if (!mounted) return;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Pembayaran dicatat'),
-              action: SnackBarAction(
-                label: 'Struk',
-                onPressed: () => _onReceipt(order),
-              ),
+            const SnackBar(
+              content: Text('Pembayaran berhasil dicatat'),
+              duration: Duration(seconds: 2),
             ),
           );
         },
@@ -208,7 +460,8 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorView(
           message: e.toString(),
-          onRetry: () => ref.invalidate(woDetailControllerProvider(widget.workOrderId)),
+          onRetry: () =>
+              ref.invalidate(woDetailControllerProvider(widget.workOrderId)),
         ),
         data: (order) => _DetailBody(
           order: order,
@@ -218,6 +471,9 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
           onCancel: _onCancel,
           onPay: _onPay,
           onReceipt: _onReceipt,
+          onAddJasa: _onAddJasa,
+          onAddPart: _onAddPart,
+          onRemoveItem: _onRemoveItem,
           onEdit: (complaint, diagnosis, techNote) => ref
               .read(woDetailControllerProvider(widget.workOrderId).notifier)
               .updateDetail(
@@ -240,6 +496,9 @@ class _DetailBody extends StatelessWidget {
     required this.onCancel,
     required this.onPay,
     required this.onReceipt,
+    required this.onAddJasa,
+    required this.onAddPart,
+    required this.onRemoveItem,
     required this.onEdit,
   });
 
@@ -250,179 +509,233 @@ class _DetailBody extends StatelessWidget {
   final VoidCallback onCancel;
   final Future<void> Function(WorkOrder) onPay;
   final Future<void> Function(WorkOrder) onReceipt;
+  final VoidCallback onAddJasa;
+  final VoidCallback onAddPart;
+  final Future<void> Function(String) onRemoveItem;
   final Future<void> Function(String?, String?, String?) onEdit;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
     final editable = order.status == WoStatus.dikerjakan;
+    final canEditItems = order.status == WoStatus.menunggu ||
+        order.status == WoStatus.dikerjakan;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        Row(
-          children: [
-            StatusChip(status: order.status),
-            if (order.status == WoStatus.selesai) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: order.isPaid
-                      ? AppColors.tintOf(AppColors.teal)
-                      : AppColors.tintOf(AppColors.inkMuted),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  order.paymentStatusLabel,
-                  style: AppTypography.textTheme().labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: order.isPaid
-                            ? AppColors.teal
-                            : AppColors.inkMuted,
-                      ),
-                ),
-              ),
-            ],
-            const Spacer(),
-            Expanded(
-              child: Text(
-                order.woNumber,
-                style: AppTypography.mono(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PlateChip(plateText: order.plateNo ?? '—'),
-                const SizedBox(height: 8),
-                Text(
-                  order.vehicleDesc ?? 'Kendaraan',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  order.customerName ?? 'Pelanggan',
-                  style: textTheme.titleMedium,
-                ),
-                if (order.odometerIn != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'KM masuk: ${order.odometerIn}',
-                    style: AppTypography.mono(
-                      fontSize: 13,
-                      color: AppColors.inkMuted,
+          Row(
+            children: [
+              StatusChip(status: order.status),
+              if (order.status == WoStatus.selesai) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: order.isPaid
+                        ? AppColors.tintOf(AppColors.teal)
+                        : AppColors.tintOf(AppColors.action),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          order.isPaid ? AppColors.teal : AppColors.action,
+                      width: 1,
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Keluhan', style: textTheme.labelMedium),
-                const SizedBox(height: 6),
-                _EditableField(
-                  initial: order.complaint ?? '',
-                  readOnly: !editable,
-                  maxLines: 3,
-                  onSaved: (value) => onEdit(value, order.diagnosis, order.techNote),
-                ),
-                const SizedBox(height: 12),
-                Text('Diagnosis', style: textTheme.labelMedium),
-                const SizedBox(height: 6),
-                _EditableField(
-                  initial: order.diagnosis ?? '',
-                  readOnly: !editable,
-                  maxLines: 3,
-                  onSaved: (value) => onEdit(order.complaint, value, order.techNote),
-                ),
-                const SizedBox(height: 12),
-                Text('Catatan teknisi', style: textTheme.labelMedium),
-                const SizedBox(height: 6),
-                _EditableField(
-                  initial: order.techNote ?? '',
-                  readOnly: !editable,
-                  maxLines: 2,
-                  onSaved: (value) => onEdit(order.complaint, order.diagnosis, value),
+                  child: Text(
+                    order.isPaid ? 'Lunas' : 'Belum Bayar',
+                    style: textTheme.labelSmall?.copyWith(
+                      color:
+                          order.isPaid ? AppColors.teal : AppColors.action,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
-            ),
+              const Spacer(),
+              Text(
+                order.woNumber,
+                style: AppTypography.mono(fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Item', style: textTheme.titleMedium),
-                const SizedBox(height: 8),
-                if (order.items.isEmpty)
-                  Text(
-                    'Belum ada item.',
-                    style: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
-                  )
-                else
-                  ...order.items.map((item) => _ItemRow(item: item)),
-                const Divider(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Total', style: textTheme.titleMedium),
-                    Text(
-                      rupiah(order.total),
-                      style: AppTypography.mono(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (order.plateNo != null) ...[
+                        PlateChip(plateText: order.plateNo!),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(
+                        child: Text(
+                          order.vehicleDesc ?? 'Kendaraan',
+                          style: textTheme.titleMedium,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    order.customerName ?? 'Pelanggan',
+                    style: textTheme.bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  if (order.odometerIn != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'KM masuk: ${order.odometerIn}',
+                      style: textTheme.bodySmall
+                          ?.copyWith(color: AppColors.inkMuted),
                     ),
                   ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-        _ActionButtons(
-          status: order.status,
-          isPaid: order.isPaid,
-          isAdmin: isAdmin,
-          onStart: onStart,
-          onComplete: onComplete,
-          onCancel: onCancel,
-          onPay: () => onPay(order),
-          onReceipt: () => onReceipt(order),
-        ),
-      ],
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Keluhan', style: textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  _EditableField(
+                    initial: order.complaint ?? '',
+                    readOnly: !editable,
+                    maxLines: 3,
+                    onSaved: (value) =>
+                        onEdit(value, order.diagnosis, order.techNote),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Diagnosis', style: textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  _EditableField(
+                    initial: order.diagnosis ?? '',
+                    readOnly: !editable,
+                    maxLines: 3,
+                    onSaved: (value) =>
+                        onEdit(order.complaint, value, order.techNote),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Catatan teknisi', style: textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  _EditableField(
+                    initial: order.techNote ?? '',
+                    readOnly: !editable,
+                    maxLines: 2,
+                    onSaved: (value) =>
+                        onEdit(order.complaint, order.diagnosis, value),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('Item', style: textTheme.titleMedium),
+                      ),
+                      if (canEditItems) ...[
+                        TextButton.icon(
+                          onPressed: onAddJasa,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Jasa'),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        TextButton.icon(
+                          onPressed: onAddPart,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Part'),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (order.items.isEmpty)
+                    Text(
+                      'Belum ada item.',
+                      style: textTheme.bodyMedium
+                          ?.copyWith(color: AppColors.inkMuted),
+                    )
+                  else
+                    ...order.items.map(
+                      (item) => _ItemRow(
+                        item: item,
+                        canDelete: canEditItems,
+                        onDelete: () => onRemoveItem(item.id),
+                      ),
+                    ),
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Total', style: textTheme.titleMedium),
+                      Text(
+                        rupiah(order.total),
+                        style: AppTypography.mono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _ActionButtons(
+            status: order.status,
+            isPaid: order.isPaid,
+            isAdmin: isAdmin,
+            onStart: onStart,
+            onComplete: onComplete,
+            onCancel: onCancel,
+            onPay: () => onPay(order),
+            onReceipt: () => onReceipt(order),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _ItemRow extends StatelessWidget {
-  const _ItemRow({required this.item});
+  const _ItemRow({
+    required this.item,
+    this.canDelete = false,
+    this.onDelete,
+  });
 
   final WoItem item;
+  final bool canDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +759,8 @@ class _ItemRow extends StatelessWidget {
                 Text(title, style: textTheme.bodyMedium),
                 Text(
                   '${item.qty} x ${rupiah(item.unitPrice)}',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
+                  style:
+                      textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
                 ),
               ],
             ),
@@ -455,6 +769,17 @@ class _ItemRow extends StatelessWidget {
             rupiah(item.lineTotal),
             style: AppTypography.mono(fontSize: 13),
           ),
+          if (canDelete && onDelete != null) ...[
+            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.delete_outline,
+                  size: 18, color: AppColors.action),
+              onPressed: onDelete,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: 'Hapus item',
+            ),
+          ],
         ],
       ),
     );
@@ -594,7 +919,10 @@ class _ActionButtons extends StatelessWidget {
             )
           else
             FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                Navigator.of(context).pop();
+              },
               icon: const Icon(Icons.check),
               label: const Text('Selesai'),
             ),
@@ -620,6 +948,126 @@ class _ActionButtons extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _DetailPartPickerSheet extends ConsumerStatefulWidget {
+  const _DetailPartPickerSheet();
+
+  @override
+  ConsumerState<_DetailPartPickerSheet> createState() =>
+      _DetailPartPickerSheetState();
+}
+
+class _DetailPartPickerSheetState
+    extends ConsumerState<_DetailPartPickerSheet> {
+  final _searchController = TextEditingController();
+  List<Part>? _parts;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchParts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchParts([String? query]) async {
+    setState(() => _loading = true);
+    try {
+      final repo = ref.read(partRepositoryProvider);
+      final result = await repo.list(
+        search: query?.trim().isEmpty == true ? null : query?.trim(),
+      );
+      if (mounted) {
+        setState(() {
+          _parts = result;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _parts = [];
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = AppTypography.textTheme();
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scroll) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Pilih Suku Cadang', style: textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Cari nama atau kode part...',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (q) => _fetchParts(q),
+            ),
+            const SizedBox(height: 12),
+            if (_loading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_parts == null || _parts!.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Tidak ada suku cadang ditemukan',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: ListView.separated(
+                  controller: scroll,
+                  itemCount: _parts!.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final part = _parts![index];
+                    return ListTile(
+                      title: Text(part.name, style: textTheme.titleSmall),
+                      subtitle: Text(
+                        'Stok: ${part.stockQty.toStringAsFixed(0)} ${part.unit ?? 'pcs'} • ${rupiah(part.sellPrice)}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.inkMuted,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).pop(part),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

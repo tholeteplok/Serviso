@@ -71,6 +71,32 @@ class WoDetailController
     await _reload();
   }
 
+  Future<void> addItem(WoItemInput item) async {
+    final repo = ref.read(workOrderRepositoryProvider);
+    final current = state.valueOrNull;
+    if (current == null ||
+        (current.status != WoStatus.menunggu && current.status != WoStatus.dikerjakan)) {
+      throw const RepositoryException(
+        'Item hanya bisa ditambah saat status Menunggu atau Dikerjakan',
+      );
+    }
+    await repo.addItem(arg, item);
+    await _reload();
+  }
+
+  Future<void> removeItem(String itemId) async {
+    final repo = ref.read(workOrderRepositoryProvider);
+    final current = state.valueOrNull;
+    if (current == null ||
+        (current.status != WoStatus.menunggu && current.status != WoStatus.dikerjakan)) {
+      throw const RepositoryException(
+        'Item hanya bisa dihapus saat status Menunggu atau Dikerjakan',
+      );
+    }
+    await repo.removeItem(arg, itemId);
+    await _reload();
+  }
+
   Future<void> updateDetail({
     String? complaint,
     String? diagnosis,

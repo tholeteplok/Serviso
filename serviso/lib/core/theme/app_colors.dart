@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const primary = Color(0xFF512D6D);
-  static const primaryDim = Color(0xFF8E77A0);
+  static const primary = Color(0xFF86ABA1);
+  static const primaryDim = Color(0xFFCFDDD9);
   static const action = Color(0xFFF8485E);
   static const actionDim = Color(0xFFFA919E);
   static const teal = Color(0xFF00C1D4);
