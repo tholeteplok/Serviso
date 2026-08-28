@@ -104,12 +104,14 @@ class PartDetailScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: part.isLowStock
+                  color: (part.isLowStock || part.isOutOfStock)
                       ? AppColors.tintAction
                       : AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: part.isLowStock ? AppColors.action : AppColors.line,
+                    color: (part.isLowStock || part.isOutOfStock)
+                        ? AppColors.action
+                        : AppColors.line,
                   ),
                 ),
                 child: Column(
@@ -120,14 +122,15 @@ class PartDetailScreen extends ConsumerWidget {
                       _formatStock(part),
                       style: AppTypography.chakra(
                         fontSize: 48,
-                        color:
-                            part.isLowStock ? AppColors.action : AppColors.ink,
+                        color: (part.isLowStock || part.isOutOfStock)
+                            ? AppColors.action
+                            : AppColors.ink,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${part.unit ?? 'pcs'}'
-                      '${part.isLowStock ? ' • Stok Menipis' : ''}',
+                      '${part.isOutOfStock ? ' • Stok Habis' : (part.isLowStock ? ' • Stok Menipis' : '')}',
                       style: textTheme.bodySmall,
                     ),
                   ],

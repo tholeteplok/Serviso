@@ -91,6 +91,17 @@ abstract final class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.surface,
+        elevation: 3,
+        focusElevation: 4,
+        hoverElevation: 4,
+        highlightElevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: AppColors.surface,

@@ -4,6 +4,12 @@ double parseNumeric(dynamic value) {
   return double.tryParse(value.toString()) ?? 0;
 }
 
+int parseInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? 0;
+}
+
 class Part {
   const Part({
     required this.id,
@@ -35,7 +41,7 @@ class Part {
       name: (map['name'] as String? ?? '').trim(),
       code: rawCode?.trim().isEmpty == true ? null : rawCode?.trim(),
       unit: rawUnit?.trim().isEmpty == true ? null : rawUnit?.trim(),
-      minStock: (map['min_stock'] as int?) ?? 0,
+      minStock: parseInt(map['min_stock']),
       costPrice: parseNumeric(map['cost_price']),
       sellPrice: parseNumeric(map['sell_price']),
       stockQty: parseNumeric(map['stock_qty']),
@@ -45,7 +51,8 @@ class Part {
     );
   }
 
-  bool get isLowStock => stockQty <= minStock;
+  bool get isLowStock => minStock > 0 && stockQty <= minStock;
+  bool get isOutOfStock => stockQty <= 0;
 
   Part copyWith({
     String? id,

@@ -61,7 +61,7 @@ class SupabaseReportRepository implements ReportRepository {
       final lowStockCount = (partsResult as List).where((p) {
         final stock = (p['stock_qty'] as num?)?.toDouble() ?? 0;
         final minStock = (p['min_stock'] as num?)?.toInt() ?? 0;
-        return stock <= minStock;
+        return minStock > 0 && stock <= minStock;
       }).length;
 
       return DashboardSummary(

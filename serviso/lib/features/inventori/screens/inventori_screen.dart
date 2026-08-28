@@ -93,13 +93,17 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: FilterChip(
-              label: const Text('Stok Menipis'),
-              selected: lowStockOnly,
-              selectedColor: AppColors.tintAction,
-              checkmarkColor: AppColors.action,
-              onSelected: (value) =>
-                  ref.read(partLowStockFilterProvider.notifier).state = value,
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Stok Menipis'),
+                  selected: lowStockOnly,
+                  selectedColor: AppColors.tintAction,
+                  checkmarkColor: AppColors.action,
+                  onSelected: (value) =>
+                      ref.read(partLowStockFilterProvider.notifier).state = value,
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -173,9 +177,46 @@ class _PartCard extends StatelessWidget {
 
   final Part part;
 
+  static String _formatStockQty(double value) {
+    return value.truncateToDouble() == value
+        ? value.toInt().toString()
+        : value.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
+    final hasAlert = part.isLowStock || part.isOutOfStock;
+
+    Widget? trailingWidget;
+    if (part.isOutOfStock) {
+      trailingWidget = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.tintAction,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Stok Habis',
+          style: textTheme.labelSmall?.copyWith(color: AppColors.action),
+        ),
+      );
+    } else if (part.isLowStock) {
+      trailingWidget = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.tintAction,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Stok Menipis',
+          style: textTheme.labelSmall?.copyWith(color: AppColors.action),
+        ),
+      );
+    } else {
+      trailingWidget = const Icon(Icons.chevron_right);
+    }
+
     return Card(
       child: ListTile(
         onTap: () => context.push('/inventori/${part.id}'),
@@ -183,7 +224,7 @@ class _PartCard extends StatelessWidget {
           backgroundColor: AppColors.tintPrimary,
           child: Icon(
             Icons.inventory_2_outlined,
-            color: part.isLowStock ? AppColors.action : AppColors.primary,
+            color: hasAlert ? AppColors.action : AppColors.primary,
           ),
         ),
         title: Row(
@@ -204,25 +245,12 @@ class _PartCard extends StatelessWidget {
           children: [
             const SizedBox(height: 2),
             Text(
-              '${rupiah(part.sellPrice)} • ${part.unit ?? 'pcs'}',
+              'Stok: ${_formatStockQty(part.stockQty)} ${part.unit ?? 'pcs'} • ${rupiah(part.sellPrice)}',
               style: textTheme.bodySmall,
             ),
           ],
         ),
-        trailing: part.isLowStock
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.tintAction,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Stok Menipis',
-                  style: textTheme.labelSmall
-                      ?.copyWith(color: AppColors.action),
-                ),
-              )
-            : const Icon(Icons.chevron_right),
+        trailing: trailingWidget,
       ),
     );
   }

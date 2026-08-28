@@ -42,7 +42,7 @@ void main() {
       expect(p.costPrice, 0);
     });
 
-    test('stok <= min_stock -> isLowStock', () {
+    test('stok <= min_stock -> isLowStock jika min_stock > 0', () {
       final p = Part.fromMap({
         'id': 'p3',
         'name': 'Kampas',
@@ -53,6 +53,35 @@ void main() {
         'created_at': '2025-01-02T03:04:05.000Z',
       });
       expect(p.isLowStock, isTrue);
+      expect(p.isOutOfStock, isFalse);
+    });
+
+    test('stok > min_stock -> isLowStock false', () {
+      final p = Part.fromMap({
+        'id': 'p4',
+        'name': 'Oli Gardan',
+        'min_stock': 5,
+        'cost_price': 0,
+        'sell_price': 0,
+        'stock_qty': 10,
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(p.isLowStock, isFalse);
+      expect(p.isOutOfStock, isFalse);
+    });
+
+    test('min_stock 0 (tidak disetel batas) -> isLowStock tetap false meski stok 0', () {
+      final p = Part.fromMap({
+        'id': 'p5',
+        'name': 'Baut',
+        'min_stock': 0,
+        'cost_price': 0,
+        'sell_price': 0,
+        'stock_qty': 0,
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(p.isLowStock, isFalse);
+      expect(p.isOutOfStock, isTrue);
     });
   });
 

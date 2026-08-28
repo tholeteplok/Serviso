@@ -21,9 +21,8 @@ class UserManagementScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddUserDialog(context, ref),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.person_add_outlined, color: Colors.white),
-        label: const Text('Tambah User', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.person_add_outlined),
+        label: const Text('Tambah User'),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(userListProvider),
