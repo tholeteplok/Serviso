@@ -178,7 +178,7 @@ class _PartCard extends StatelessWidget {
     final textTheme = AppTypography.textTheme();
     return Card(
       child: ListTile(
-        onTap: () => context.go('/inventori/${part.id}'),
+        onTap: () => context.push('/inventori/${part.id}'),
         leading: CircleAvatar(
           backgroundColor: AppColors.tintPrimary,
           child: Icon(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
@@ -28,7 +30,7 @@ class BerandaScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             tooltip: 'Profil',
-            onPressed: () => context.go('/profil'),
+            onPressed: () => context.push(AppRoutes.profil),
           ),
         ],
       ),
@@ -331,14 +333,14 @@ class BerandaScreen extends ConsumerWidget {
             icon: Icons.add_task_rounded,
             label: 'WO Baru',
             color: AppColors.primary,
-            onTap: () => context.go('/antrian'),
+            onTap: () => context.push(AppRoutes.woBaru),
           ),
           _buildActionButton(
             context,
             icon: Icons.person_add_outlined,
             label: 'Pelanggan',
             color: AppColors.teal,
-            onTap: () => context.go('/pelanggan'),
+            onTap: () => context.push(AppRoutes.pelanggan),
           ),
           _buildActionButton(
             context,

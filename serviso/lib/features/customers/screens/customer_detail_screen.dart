@@ -227,7 +227,7 @@ class CustomerDetailScreen extends ConsumerWidget {
           .read(customerDetailControllerProvider(customerId).notifier)
           .deleteCustomer();
       if (!context.mounted) return;
-      context.go('/pelanggan');
+      context.pop();
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

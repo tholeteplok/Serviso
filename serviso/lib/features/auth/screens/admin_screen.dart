@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 
@@ -33,7 +34,7 @@ class AdminScreen extends StatelessWidget {
             icon: Icons.manage_accounts_outlined,
             title: 'Kelola Pengguna',
             subtitle: 'Tambah akun kasir/admin, nonaktifkan, dan reset password',
-            onTap: () => context.push('/admin/users'),
+            onTap: () => context.push(AppRoutes.adminUsers),
           ),
           const SizedBox(height: 12),
           _buildMenuCard(
@@ -41,7 +42,7 @@ class AdminScreen extends StatelessWidget {
             icon: Icons.history_edu_outlined,
             title: 'Audit Log Sistem',
             subtitle: 'Riwayat perubahan data, transaksi, dan aktivitas login/logout',
-            onTap: () => context.push('/admin/audit-logs'),
+            onTap: () => context.push(AppRoutes.adminAuditLogs),
           ),
           const SizedBox(height: 12),
           _buildMenuCard(
@@ -49,7 +50,7 @@ class AdminScreen extends StatelessWidget {
             icon: Icons.store_outlined,
             title: 'Pengaturan Bengkel',
             subtitle: 'Ubah nama bengkel, alamat, dan nomor telepon cetakan struk',
-            onTap: () => context.push('/admin/pengaturan'),
+            onTap: () => context.push(AppRoutes.pengaturan),
           ),
         ],
       ),

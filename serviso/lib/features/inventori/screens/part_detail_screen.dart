@@ -220,7 +220,7 @@ class PartDetailScreen extends ConsumerWidget {
           .read(partDetailControllerProvider(partId).notifier)
           .deletePart();
       if (!context.mounted) return;
-      context.go('/inventori');
+      context.pop();
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

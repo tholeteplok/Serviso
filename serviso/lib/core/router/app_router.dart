@@ -6,6 +6,7 @@ import '../../core/connectivity/offline_banner.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
 import '../../features/workorders/screens/wo_detail_screen.dart';
+import '../../features/workorders/screens/wo_wizard_screen.dart';
 import '../../features/customers/screens/customer_detail_screen.dart';
 import '../../features/customers/screens/customer_list_screen.dart';
 import '../../features/auth/controllers/session_controller.dart';
@@ -37,6 +38,7 @@ abstract final class AppRoutes {
   static const pengaturan = '/admin/pengaturan';
   static const pelanggan = '/pelanggan';
   static const pelangganDetail = '/pelanggan/:id';
+  static const woBaru = '/antrian/baru';
 }
 
 String? authGuardRedirect({
@@ -176,6 +178,10 @@ final List<RouteBase> _appRoutes = [
             GoRoute(
               path: AppRoutes.antrian,
               builder: (context, state) => const AntrianScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.woBaru,
+              builder: (context, state) => const WoWizardScreen(),
             ),
             GoRoute(
               path: '${AppRoutes.antrian}/:id',

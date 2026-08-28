@@ -55,6 +55,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     }
     for (final p in _partLines) {
       p.qtyController.dispose();
+      p.priceController.dispose();
     }
     super.dispose();
   }
@@ -151,7 +152,12 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
               final nav = Navigator.of(dialogContext);
               try {
                 final customer = await customerRepo.create(
-                  CustomerInput(name: nameController.text),
+                  CustomerInput(
+                    name: nameController.text,
+                    phone: phoneController.text.trim().isEmpty
+                        ? null
+                        : phoneController.text.trim(),
+                  ),
                 );
                 final vehicle = await vehicleRepo.create(
                   VehicleInput(
@@ -220,6 +226,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   void _removePart(int index) {
     setState(() {
       _partLines[index].qtyController.dispose();
+      _partLines[index].priceController.dispose();
       _partLines.removeAt(index);
     });
   }
@@ -245,7 +252,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         partName: line.part.name,
         description: line.part.name,
         qty: double.tryParse(line.qtyController.text) ?? 0,
-        unitPrice: line.part.sellPrice,
+        unitPrice: double.tryParse(line.priceController.text) ?? line.part.sellPrice,
       ));
     }
     return items;
@@ -276,7 +283,8 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     }
     for (final line in _partLines) {
       final qty = double.tryParse(line.qtyController.text) ?? 0;
-      total += qty * line.part.sellPrice;
+      final price = double.tryParse(line.priceController.text) ?? line.part.sellPrice;
+      total += qty * price;
     }
     return total;
   }
@@ -306,7 +314,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Work order dibuat')));
-      context.go('/antrian');
+      context.pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -389,10 +397,15 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
 }
 
 class _PartLine {
-  _PartLine({required this.part}) : qtyController = TextEditingController(text: '1');
+  _PartLine({required this.part})
+      : qtyController = TextEditingController(text: '1'),
+        priceController = TextEditingController(
+          text: part.sellPrice.toStringAsFixed(0),
+        );
 
   final Part part;
   final TextEditingController qtyController;
+  final TextEditingController priceController;
 }
 
 class _BottomBar extends StatelessWidget {
@@ -776,9 +789,14 @@ class _PartLineTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    '${rupiah(line.part.sellPrice)} / unit',
-                    style: textTheme.bodyMedium,
+                  child: TextFormField(
+                    controller: line.priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Harga / unit',
+                      isDense: true,
+                      prefixText: 'Rp ',
+                    ),
+                    keyboardType: TextInputType.number,
                   ),
                 ),
               ],

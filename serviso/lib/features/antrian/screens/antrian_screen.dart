@@ -10,7 +10,7 @@ import '../../../core/widgets/error_view.dart';
 import '../../workorders/controllers/work_order_providers.dart';
 import '../../workorders/models/work_order.dart';
 import '../../workorders/widgets/wo_card.dart';
-import '../../workorders/screens/wo_wizard_screen.dart';
+import '../../../core/router/app_router.dart';
 
 class AntrianScreen extends ConsumerStatefulWidget {
   const AntrianScreen({super.key});
@@ -61,9 +61,7 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const WoWizardScreen()),
-        ),
+        onPressed: () => context.push(AppRoutes.woBaru),
         icon: const Icon(Icons.add),
         label: const Text('WO Baru'),
       ),

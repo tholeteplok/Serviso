@@ -244,7 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: const Text('Kelola Pengguna'),
                           subtitle: const Text('Tambah kasir/admin & reset password'),
                           trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.push('/admin/users'),
+                          onTap: () => context.push(AppRoutes.adminUsers),
                         ),
                         const Divider(height: 1, color: AppColors.line),
                         ListTile(
@@ -253,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: const Text('Audit Log Sistem'),
                           subtitle: const Text('Riwayat aktivitas & transaksi'),
                           trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.push('/admin/audit-logs'),
+                          onTap: () => context.push(AppRoutes.adminAuditLogs),
                         ),
                         const Divider(height: 1, color: AppColors.line),
                         ListTile(

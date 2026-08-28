@@ -124,7 +124,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               for (final customer in data.items) ...[
                 Card(
                   child: ListTile(
-                    onTap: () => context.go('/pelanggan/${customer.id}'),
+                    onTap: () => context.push('/pelanggan/${customer.id}'),
                     leading: CircleAvatar(
                       backgroundColor: Colors.grey.shade200,
                       child: Text(
