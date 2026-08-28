@@ -220,16 +220,6 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     });
   }
 
-  Future<void> _searchParts(String query, StateSetter setSheet) async {
-    final parts = await ref.read(partRepositoryProvider).list(
-          search: query.isEmpty ? null : query,
-          limit: 20,
-        );
-    setSheet(() => _partSearchResults = parts);
-  }
-
-  List<Part> _partSearchResults = [];
-
   void _addPart(Part part) {
     if (_partLines.any((p) => p.part.id == part.id)) return;
     setState(() {
@@ -248,16 +238,13 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   List<WoItemInput> _buildItems() {
     final items = <WoItemInput>[];
     for (var i = 0; i < _jasaDesc.length; i++) {
-      final desc = _jasaDesc[i].text.trim();
-      final price = double.tryParse(_jasaPrice[i].text) ?? 0;
-      if (desc.isNotEmpty) {
-        items.add(WoItemInput(
-          kind: WoItemKind.jasa,
-          description: desc,
-          qty: 1,
-          unitPrice: price,
-        ));
-      }
+      if (_jasaDesc[i].text.trim().isEmpty) continue;
+      items.add(WoItemInput(
+        kind: WoItemKind.jasa,
+        description: _jasaDesc[i].text.trim(),
+        qty: 1,
+        unitPrice: double.tryParse(_jasaPrice[i].text) ?? 0,
+      ));
     }
     for (final line in _partLines) {
       items.add(WoItemInput(
@@ -325,6 +312,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         items: _buildItems(),
       );
       await ref.read(workOrderRepositoryProvider).create(draft);
+      ref.invalidate(boardControllerProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Work order dibuat')));
@@ -384,10 +372,9 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
               partLines: _partLines,
               onAddJasa: _addJasa,
               onRemoveJasa: _removeJasa,
-              onSearchParts: _searchParts,
               onAddPart: _addPart,
               onRemovePart: _removePart,
-              partSearchResults: _partSearchResults,
+              onItemsChanged: () => setState(() {}),
             ),
           ),
         ],
@@ -668,10 +655,9 @@ class _StepItems extends StatelessWidget {
     required this.partLines,
     required this.onAddJasa,
     required this.onRemoveJasa,
-    required this.onSearchParts,
     required this.onAddPart,
     required this.onRemovePart,
-    required this.partSearchResults,
+    required this.onItemsChanged,
   });
 
   final List<TextEditingController> jasaDesc;
@@ -679,10 +665,9 @@ class _StepItems extends StatelessWidget {
   final List<_PartLine> partLines;
   final VoidCallback onAddJasa;
   final void Function(int) onRemoveJasa;
-  final Future<void> Function(String, StateSetter) onSearchParts;
   final void Function(Part) onAddPart;
   final void Function(int) onRemovePart;
-  final List<Part> partSearchResults;
+  final VoidCallback onItemsChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -718,6 +703,7 @@ class _StepItems extends StatelessWidget {
                         labelText: 'Deskripsi jasa',
                         isDense: true,
                       ),
+                      onChanged: (_) => onItemsChanged(),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -730,6 +716,7 @@ class _StepItems extends StatelessWidget {
                         isDense: true,
                       ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => onItemsChanged(),
                     ),
                   ),
                   IconButton(
@@ -749,12 +736,12 @@ class _StepItems extends StatelessWidget {
                 await showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
+                  showDragHandle: true,
                   builder: (sheetContext) => _PartPickerSheet(
-                    onSearch: onSearchParts,
-                    results: partSearchResults,
                     onAddPart: onAddPart,
                   ),
                 );
+                onItemsChanged();
               },
               icon: const Icon(Icons.add),
               label: const Text('Pilih part'),
@@ -766,6 +753,7 @@ class _StepItems extends StatelessWidget {
           _PartLineTile(
             line: partLines[i],
             onRemove: () => onRemovePart(i),
+            onItemsChanged: onItemsChanged,
           ),
       ],
     );
@@ -773,10 +761,15 @@ class _StepItems extends StatelessWidget {
 }
 
 class _PartLineTile extends StatelessWidget {
-  const _PartLineTile({required this.line, required this.onRemove});
+  const _PartLineTile({
+    required this.line,
+    required this.onRemove,
+    required this.onItemsChanged,
+  });
 
   final _PartLine line;
   final VoidCallback onRemove;
+  final VoidCallback onItemsChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -814,6 +807,7 @@ class _PartLineTile extends StatelessWidget {
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => onItemsChanged(),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -826,6 +820,7 @@ class _PartLineTile extends StatelessWidget {
                       prefixText: 'Rp ',
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => onItemsChanged(),
                   ),
                 ),
               ],
@@ -850,34 +845,55 @@ class _PartLineTile extends StatelessWidget {
   }
 }
 
-class _PartPickerSheet extends StatefulWidget {
+class _PartPickerSheet extends ConsumerStatefulWidget {
   const _PartPickerSheet({
-    required this.onSearch,
-    required this.results,
     required this.onAddPart,
   });
 
-  final Future<void> Function(String, StateSetter) onSearch;
-  final List<Part> results;
   final void Function(Part) onAddPart;
 
   @override
-  State<_PartPickerSheet> createState() => _PartPickerSheetState();
+  ConsumerState<_PartPickerSheet> createState() => _PartPickerSheetState();
 }
 
-class _PartPickerSheetState extends State<_PartPickerSheet> {
+class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
   final _controller = TextEditingController();
+  List<Part> _results = [];
+  bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    widget.onSearch('', setState);
+    _fetch('');
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetch(String query) async {
+    setState(() => _loading = true);
+    try {
+      final list = await ref.read(partRepositoryProvider).list(
+            search: query.trim().isEmpty ? null : query.trim(),
+            limit: 30,
+          );
+      if (mounted) {
+        setState(() {
+          _results = list;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _results = [];
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -887,9 +903,13 @@ class _PartPickerSheetState extends State<_PartPickerSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Pilih part', style: textTheme.headlineSmall),
@@ -900,26 +920,46 @@ class _PartPickerSheetState extends State<_PartPickerSheet> {
                 labelText: 'Cari nama atau kode',
                 prefixIcon: Icon(Icons.search),
               ),
-              onChanged: (value) => widget.onSearch(value, setState),
+              onChanged: (value) => _fetch(value),
+              autofocus: true,
             ),
             const SizedBox(height: 12),
-            ...widget.results.map(
-              (p) => ListTile(
-                title: Text(p.name),
-                subtitle: Text(
-                  'Stok: ${p.stockQty.toStringAsFixed(0)} · ${rupiah(p.sellPrice)}',
+            if (_loading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
                 ),
-                trailing: const Icon(Icons.add_circle_outline),
-                onTap: () {
-                  widget.onAddPart(p);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-            if (widget.results.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Tidak ada part ditemukan.'),
+              )
+            else if (_results.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('Tidak ada part ditemukan.'),
+                ),
+              )
+            else
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _results.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final p = _results[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(p.name),
+                      subtitle: Text(
+                        'Stok: ${p.stockQty.toStringAsFixed(0)} · ${rupiah(p.sellPrice)}',
+                      ),
+                      trailing: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                      onTap: () {
+                        widget.onAddPart(p);
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                ),
               ),
           ],
         ),

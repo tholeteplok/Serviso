@@ -7,6 +7,7 @@ import 'package:serviso/features/customers/data/fakes.dart';
 import 'package:serviso/features/customers/models/vehicle.dart';
 import 'package:serviso/features/inventori/controllers/part_providers.dart';
 import 'package:serviso/features/inventori/data/fakes.dart';
+import 'package:serviso/features/inventori/models/part.dart';
 import 'package:serviso/features/workorders/controllers/work_order_providers.dart';
 import 'package:serviso/features/workorders/data/fakes.dart';
 import 'package:serviso/features/workorders/screens/wo_wizard_screen.dart';
@@ -21,7 +22,21 @@ void main() {
     vehicleRepo = FakeVehicleRepository();
     customerRepo = FakeCustomerRepository();
     woRepo = FakeWorkOrderRepository();
-    partRepo = FakePartRepository();
+    partRepo = FakePartRepository(
+      initial: [
+        Part(
+          id: 'p1',
+          name: 'Busi CPR9EA',
+          code: 'BUSI-01',
+          unit: 'pcs',
+          stockQty: 10,
+          minStock: 2,
+          costPrice: 15000,
+          sellPrice: 35000,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    );
   });
 
   Widget createSubject({Vehicle? initialVehicle}) {
@@ -79,6 +94,69 @@ void main() {
     // Verifikasi BERHASIL berpindah ke Step 2: Item work order
     expect(find.text('Item work order'), findsOneWidget);
     expect(find.text('Buat Work Order'), findsOneWidget);
+  });
+
+  testWidgets('WoWizardScreen: kalkulasi live total harga saat input jasa & part', (tester) async {
+    final now = DateTime.now();
+    final sampleVehicle = Vehicle(
+      id: 'v1',
+      customerId: 'c1',
+      plateNo: 'B 1234 TEST',
+      brand: 'Honda',
+      model: 'Vario',
+      createdAt: now,
+    );
+
+    await tester.pumpWidget(createSubject(initialVehicle: sampleVehicle));
+    await tester.pumpAndSettle();
+
+    // Lanjut ke Step 1
+    await tester.tap(find.widgetWithText(FilledButton, 'Lanjut'));
+    await tester.pumpAndSettle();
+
+    // Isi keluhan & lanjut ke Step 2
+    await tester.enterText(find.widgetWithText(TextFormField, 'Keluhan'), 'Servis berkala');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Lanjut'));
+    await tester.pumpAndSettle();
+
+    // Verifikasi awal Total Rp0
+    expect(find.text('Rp0'), findsOneWidget);
+
+    // Tambah jasa
+    await tester.tap(find.text('Tambah jasa'));
+    await tester.pumpAndSettle();
+
+    // Input deskripsi jasa & harga 25000
+    await tester.enterText(find.widgetWithText(TextFormField, 'Deskripsi jasa'), 'Ganti oli');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Harga'), '25000');
+    await tester.pumpAndSettle();
+
+    // Verifikasi Total langsung berubah menjadi Rp25.000 (live calculation)
+    expect(find.text('Rp25.000'), findsOneWidget);
+
+    // Buka pencarian part
+    await tester.tap(find.text('Pilih part'));
+    await tester.pumpAndSettle();
+
+    // Verifikasi PartPickerSheet muncul dan menampilkan Busi
+    expect(find.text('Pilih part'), findsWidgets);
+    expect(find.text('Busi CPR9EA'), findsOneWidget);
+
+    // Pilih part Busi
+    await tester.tap(find.text('Busi CPR9EA'));
+    await tester.pumpAndSettle();
+
+    // Total sekarang: 25.000 (jasa) + 35.000 (1 part busi) = 60.000
+    expect(find.text('Rp60.000'), findsOneWidget);
+
+    // Tekan "Buat Work Order"
+    await tester.tap(find.widgetWithText(FilledButton, 'Buat Work Order'));
+    await tester.pumpAndSettle();
+
+    // Verifikasi Work Order berhasil dibuat di repository
+    expect(woRepo.store.length, 1);
+    expect(woRepo.store.first.complaint, 'Servis berkala');
   });
 
   testWidgets('WoWizardScreen: belum pilih kendaraan -> tekan Lanjut muncul peringatan SnackBar', (tester) async {

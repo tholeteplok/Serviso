@@ -49,10 +49,11 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
   }
 
   bool _isToday(DateTime value) {
+    final local = value.toLocal();
     final now = DateTime.now();
-    return value.year == now.year &&
-        value.month == now.month &&
-        value.day == now.day;
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
   }
 
   @override

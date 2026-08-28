@@ -19,7 +19,7 @@ final boardControllerProvider =
   return ref.watch(workOrderRepositoryProvider).watchBoard();
 });
 
-final todayFilterProvider = StateProvider<bool>((ref) => true);
+final todayFilterProvider = StateProvider<bool>((ref) => false);
 
 final techniciansProvider = FutureProvider<List<Profile>>((ref) {
   return ref.watch(workOrderRepositoryProvider).listTechnicians();
