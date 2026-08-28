@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../laporan/controllers/report_controllers.dart';
 import '../models/part.dart';
 import 'part_list_controller.dart';
 import 'part_providers.dart';
@@ -35,6 +36,7 @@ class PartFormController
         await repo.updatePart(input);
       }
       ref.invalidate(partListControllerProvider);
+      ref.invalidate(dashboardSummaryProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

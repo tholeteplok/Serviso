@@ -13,6 +13,7 @@ import '../../customers/models/customer.dart';
 import '../../customers/models/vehicle.dart';
 import '../../inventori/controllers/part_providers.dart';
 import '../../inventori/models/part.dart';
+import '../../laporan/controllers/report_controllers.dart';
 import '../controllers/work_order_providers.dart';
 import '../logic/wo_validators.dart';
 import '../models/work_order.dart';
@@ -313,6 +314,8 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
       );
       await ref.read(workOrderRepositoryProvider).create(draft);
       ref.invalidate(boardControllerProvider);
+      ref.invalidate(dashboardSummaryProvider);
+      ref.invalidate(laporanDailySummariesProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Work order dibuat')));

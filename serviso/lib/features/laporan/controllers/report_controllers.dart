@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../workorders/controllers/work_order_providers.dart';
 import '../data/report_repository.dart';
 import '../models/report_models.dart';
 
@@ -23,6 +24,8 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 
 final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
   final repo = ref.watch(reportRepositoryProvider);
+  // Auto-recalculate whenever work orders change in real-time
+  ref.watch(boardControllerProvider);
   return repo.fetchDashboardSummary();
 });
 

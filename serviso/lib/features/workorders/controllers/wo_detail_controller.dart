@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/repository_exception.dart';
 import '../../../core/models/wo_status.dart';
+import '../../inventori/controllers/part_list_controller.dart';
+import '../../laporan/controllers/report_controllers.dart';
+import '../data/repository_exception.dart';
 import '../logic/wo_state_machine.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
@@ -115,6 +117,10 @@ class WoDetailController
   Future<void> _reload() async {
     ref.invalidateSelf();
     ref.invalidate(boardControllerProvider);
+    ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(laporanDailySummariesProvider);
+    ref.invalidate(topPartsProvider);
+    ref.invalidate(partListControllerProvider);
     await future;
   }
 }

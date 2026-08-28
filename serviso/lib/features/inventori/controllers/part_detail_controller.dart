@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../laporan/controllers/report_controllers.dart';
 import '../data/repository_exception.dart';
 import '../models/part.dart';
 import '../models/part_movement.dart';
@@ -34,6 +35,7 @@ class PartDetailController
     await repo.stockIn(arg, qty, note: note);
     ref.invalidateSelf();
     ref.invalidate(partListControllerProvider);
+    ref.invalidate(dashboardSummaryProvider);
   }
 
   Future<void> adjustStock(double signedDelta, String reason) async {
@@ -41,12 +43,14 @@ class PartDetailController
     await repo.adjustStock(arg, signedDelta, reason);
     ref.invalidateSelf();
     ref.invalidate(partListControllerProvider);
+    ref.invalidate(dashboardSummaryProvider);
   }
 
   Future<void> deletePart() async {
     final repo = ref.read(partRepositoryProvider);
     await repo.deletePart(arg);
     ref.invalidate(partListControllerProvider);
+    ref.invalidate(dashboardSummaryProvider);
   }
 
   Future<void> reload() async => ref.invalidateSelf();

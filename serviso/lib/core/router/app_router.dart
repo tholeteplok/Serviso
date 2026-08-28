@@ -19,6 +19,7 @@ import '../../features/auth/screens/splash_screen.dart';
 import '../../features/beranda/screens/beranda_screen.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
 import '../../features/inventori/screens/part_detail_screen.dart';
+import '../../features/laporan/controllers/report_controllers.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
@@ -232,6 +233,7 @@ class HomeShell extends ConsumerWidget {
       canPop: isHome,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop && !isHome) {
+          ref.invalidate(dashboardSummaryProvider);
           navigationShell.goBranch(0);
         }
       },
@@ -244,10 +246,18 @@ class HomeShell extends ConsumerWidget {
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          ),
+          onDestinationSelected: (index) {
+            if (index == 0) {
+              ref.invalidate(dashboardSummaryProvider);
+            } else if (index == 3) {
+              ref.invalidate(laporanDailySummariesProvider);
+              ref.invalidate(topPartsProvider);
+            }
+            navigationShell.goBranch(
+              index,
+              initialLocation: index == navigationShell.currentIndex,
+            );
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
