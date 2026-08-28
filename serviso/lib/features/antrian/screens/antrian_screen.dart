@@ -61,198 +61,196 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
     final board = ref.watch(boardControllerProvider);
     final onlyToday = ref.watch(todayFilterProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _searching ? null : const Text('Antrian'),
-        bottom: _searching
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: SearchBar(
-                    controller: _searchController,
-                    hintText: 'Cari plat, no WO, atau pelanggan',
-                    hintStyle: WidgetStateProperty.all(
-                      textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                    ),
-                    leading: const Icon(Icons.search),
-                    trailing: [
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Tutup pencarian',
-                        onPressed: _closeSearch,
-                      ),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _searchQuery = value.trim()),
-                    autoFocus: true,
-                  ),
-                ),
-              )
-            : null,
-        actions: [
-          if (!_searching) ...[
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: 'Cari work order',
-              onPressed: _openSearch,
-            ),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today_outlined, size: 16),
-                const SizedBox(width: 4),
-                const Text('Hari ini'),
-                Switch(
-                  value: !onlyToday,
-                  onChanged: (_) =>
-                      ref.read(todayFilterProvider.notifier).state = !onlyToday,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                const Text('Semua'),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ],
-        ],
+    return board.when(
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Antrian')),
+        body: const Center(child: CircularProgressIndicator()),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutes.woBaru),
-        icon: const Icon(Icons.add),
-        label: const Text('WO Baru'),
-      ),
-      body: board.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorView(
+      error: (e, _) => Scaffold(
+        appBar: AppBar(title: const Text('Antrian')),
+        body: ErrorView(
           message: e.toString(),
           onRetry: () => ref.refresh(boardControllerProvider),
         ),
-        data: (orders) {
-          final dateFiltered = onlyToday
-              ? orders.where((o) => _isToday(o.createdAt)).toList()
-              : orders;
+      ),
+      data: (orders) {
+        final dateFiltered = onlyToday
+            ? orders.where((o) => _isToday(o.createdAt)).toList()
+            : orders;
 
-          final visible = _searchQuery.isEmpty
-              ? dateFiltered
-              : dateFiltered.where((o) {
-                  final q = _searchQuery.toLowerCase();
-                  return o.woNumber.toLowerCase().contains(q) ||
-                      (o.plateNo?.toLowerCase().contains(q) ?? false) ||
-                      (o.customerName?.toLowerCase().contains(q) ?? false) ||
-                      (o.vehicleDesc?.toLowerCase().contains(q) ?? false) ||
-                      (o.assignedName?.toLowerCase().contains(q) ?? false) ||
-                      (o.complaint?.toLowerCase().contains(q) ?? false);
-                }).toList();
+        final visible = _searchQuery.isEmpty
+            ? dateFiltered
+            : dateFiltered.where((o) {
+                final q = _searchQuery.toLowerCase();
+                return o.woNumber.toLowerCase().contains(q) ||
+                    (o.plateNo?.toLowerCase().contains(q) ?? false) ||
+                    (o.customerName?.toLowerCase().contains(q) ?? false) ||
+                    (o.vehicleDesc?.toLowerCase().contains(q) ?? false) ||
+                    (o.assignedName?.toLowerCase().contains(q) ?? false) ||
+                    (o.complaint?.toLowerCase().contains(q) ?? false);
+              }).toList();
 
-          final grouped = {
-            for (final status in _columns)
-              status: visible.where((o) => o.status == status).toList(),
-          };
+        final grouped = {
+          for (final status in _columns)
+            status: visible.where((o) => o.status == status).toList(),
+        };
 
-          return RefreshIndicator(
-            onRefresh: () => ref.refresh(boardControllerProvider.future),
-            child: ListView(
-              children: [
-                SizedBox(
-                  height: MediaQuery.of(context).size.height - 200,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final status in _columns)
-                          _BoardColumn(
-                            status: status,
-                            orders: grouped[status]!,
-                            textTheme: textTheme,
-                          ),
+        return DefaultTabController(
+          length: _columns.length,
+          child: Scaffold(
+            appBar: AppBar(
+              title: _searching
+                  ? SearchBar(
+                      controller: _searchController,
+                      hintText: 'Cari plat, WO, pelanggan...',
+                      hintStyle: WidgetStateProperty.all(
+                        textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      ),
+                      leading: const Icon(Icons.search, size: 20),
+                      trailing: [
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          tooltip: 'Tutup',
+                          onPressed: _closeSearch,
+                        ),
                       ],
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value.trim()),
+                      autoFocus: true,
+                    )
+                  : const Text('Antrian'),
+              bottom: TabBar(
+                isScrollable: false,
+                indicatorColor: AppColors.primary,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.inkMuted,
+                tabs: [
+                  for (final status in _columns)
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(status.label),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: status.bgColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${grouped[status]?.length ?? 0}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: status.accentColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                ],
+              ),
+              actions: [
+                if (!_searching) ...[
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Cari work order',
+                    onPressed: _openSearch,
                   ),
-                ),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Hari ini'),
+                      Switch(
+                        value: !onlyToday,
+                        onChanged: (_) => ref
+                            .read(todayFilterProvider.notifier)
+                            .state = !onlyToday,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      const Text('Semua'),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ],
               ],
             ),
-          );
-        },
-      ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () => context.push(AppRoutes.woBaru),
+              icon: const Icon(Icons.add),
+              label: const Text('WO Baru'),
+            ),
+            body: TabBarView(
+              children: [
+                for (final status in _columns)
+                  _StatusListTab(
+                    status: status,
+                    orders: grouped[status]!,
+                    onRefresh: () =>
+                        ref.refresh(boardControllerProvider.future),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _BoardColumn extends StatelessWidget {
-  const _BoardColumn({
+class _StatusListTab extends StatelessWidget {
+  const _StatusListTab({
     required this.status,
     required this.orders,
-    required this.textTheme,
+    required this.onRefresh,
   });
 
   final WoStatus status;
   final List<WorkOrder> orders;
-  final TextTheme textTheme;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 300,
-      margin: const EdgeInsets.only(right: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: status.bgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  status.label,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: status.accentColor,
-                    fontWeight: FontWeight.w700,
-                  ),
+    if (orders.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.45,
+              child: Center(
+                child: EmptyState(
+                  icon: Icons.inbox_outlined,
+                  title: 'Tidak ada antrian ${status.label.toLowerCase()}',
+                  message: 'Work order pada status ini akan tampil di sini.',
                 ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '${orders.length}',
-                    style: textTheme.labelMedium?.copyWith(
-                      color: status.accentColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: orders.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (context, index) => WoCard(
+          order: orders[index],
+          onTap: () => context.push(
+            '/antrian/${orders[index].id}',
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: orders.isEmpty
-                ? const Center(
-                    child: EmptyState(
-                      icon: Icons.inbox_outlined,
-                      title: 'Belum ada work order',
-                      message: 'Buat WO baru lewat tombol WO Baru.',
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: orders.length,
-                    itemBuilder: (context, index) => WoCard(
-                      order: orders[index],
-                      onTap: () => context.push(
-                        '/antrian/${orders[index].id}',
-                      ),
-                    ),
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }

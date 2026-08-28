@@ -26,7 +26,7 @@ Widget _pumpBoard(FakeWorkOrderRepository fake) {
 
 void main() {
   group('Antrian board', () {
-    testWidgets('menampilkan 3 kolom dengan header status', (tester) async {
+    testWidgets('menampilkan 3 tab status dan bisa berpindah antar tab', (tester) async {
       final fake = FakeWorkOrderRepository();
       fake.seedPartStock('p1', 20);
       final orders = <WorkOrder>[];
@@ -48,19 +48,30 @@ void main() {
       await tester.pumpWidget(_pumpBoard(fake));
       await tester.pumpAndSettle();
 
+      // Verifikasi 3 tab ada
       expect(find.text('Menunggu'), findsWidgets);
       expect(find.text('Dikerjakan'), findsWidgets);
       expect(find.text('Selesai'), findsWidgets);
+
+      // Tab default adalah Menunggu -> 'Ganti oli' terlihat
       expect(find.text('Ganti oli'), findsOneWidget);
-      expect(find.text('Servis rem'), findsOneWidget);
+
+      // Tap tab Dikerjakan
+      await tester.tap(find.text('Dikerjakan').first);
+      await tester.pumpAndSettle();
       expect(find.text('Tune up'), findsOneWidget);
+
+      // Tap tab Selesai
+      await tester.tap(find.text('Selesai').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Servis rem'), findsOneWidget);
     });
 
     testWidgets('empty state saat tidak ada work order', (tester) async {
       final fake = FakeWorkOrderRepository();
       await tester.pumpWidget(_pumpBoard(fake));
       await tester.pumpAndSettle();
-      expect(find.text('Belum ada work order'), findsWidgets);
+      expect(find.text('Tidak ada antrian menunggu'), findsOneWidget);
     });
 
     testWidgets('toggle filter Hari ini/Semua tidak menyebabkan crash',
@@ -79,10 +90,10 @@ void main() {
       expect(find.text('Hari ini'), findsOneWidget);
       expect(find.text('Semua'), findsOneWidget);
 
-      final switchFinder = find.byType(Switch);
-      expect(switchFinder, findsOneWidget);
-      await tester.tap(switchFinder);
+      await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
+
+      expect(find.text('Hari ini'), findsOneWidget);
     });
   });
 }

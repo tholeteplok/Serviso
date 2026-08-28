@@ -162,6 +162,23 @@ final List<RouteBase> _appRoutes = [
       builder: (context, state) =>
           CustomerDetailScreen(customerId: state.pathParameters['id'] ?? ''),
     ),
+    GoRoute(
+      path: AppRoutes.woBaru,
+      builder: (context, state) => WoWizardScreen(
+        initialVehicle: state.extra as Vehicle?,
+      ),
+    ),
+    GoRoute(
+      path: '${AppRoutes.antrian}/:id',
+      builder: (context, state) =>
+          WoDetailScreen(workOrderId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: '${AppRoutes.inventori}/:id',
+      builder: (context, state) => PartDetailScreen(
+        partId: state.pathParameters['id'] ?? '',
+      ),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           HomeShell(navigationShell: navigationShell),
@@ -180,31 +197,14 @@ final List<RouteBase> _appRoutes = [
               path: AppRoutes.antrian,
               builder: (context, state) => const AntrianScreen(),
             ),
-            GoRoute(
-              path: AppRoutes.woBaru,
-              builder: (context, state) => WoWizardScreen(
-                initialVehicle: state.extra as Vehicle?,
-              ),
-            ),
-            GoRoute(
-              path: '${AppRoutes.antrian}/:id',
-              builder: (context, state) =>
-                  WoDetailScreen(workOrderId: state.pathParameters['id'] ?? ''),
-            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-    GoRoute(
-      path: AppRoutes.inventori,
-      builder: (context, state) => const InventoriScreen(),
-    ),
-    GoRoute(
-      path: '${AppRoutes.inventori}/:id',
-      builder: (context, state) => PartDetailScreen(
-        partId: state.pathParameters['id'] ?? '',
-      ),
-    ),
+            GoRoute(
+              path: AppRoutes.inventori,
+              builder: (context, state) => const InventoriScreen(),
+            ),
           ],
         ),
         StatefulShellBranch(

@@ -57,11 +57,6 @@ class PartDetailScreen extends ConsumerWidget {
           ],
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showStockInDialog(context, ref, partId),
-        icon: const Icon(Icons.add_box_outlined),
-        label: const Text('Stok Masuk'),
-      ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorView(
