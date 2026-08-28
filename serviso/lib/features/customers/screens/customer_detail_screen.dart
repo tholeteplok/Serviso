@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -45,7 +46,7 @@ class CustomerDetailScreen extends ConsumerWidget {
               ref.read(customerDetailControllerProvider(customerId).notifier).reload(),
         ),
         icon: const Icon(Icons.directions_car_outlined),
-        label: const Text('Kendaraan'),
+        label: const Text('Kendaraan Baru'),
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -119,9 +120,28 @@ class CustomerDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               SectionCard(
                 title: 'Kendaraan',
-                trailing: Text(
-                  '${data.vehicles.length}',
-                  style: textTheme.titleMedium,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${data.vehicles.length}',
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Tambah'),
+                      onPressed: () => showVehicleForm(
+                        context: context,
+                        ref: ref,
+                        customerId: customerId,
+                        onSaved: () => ref
+                            .read(customerDetailControllerProvider(customerId)
+                                .notifier)
+                            .reload(),
+                      ),
+                    ),
+                  ],
                 ),
                 child: data.vehicles.isEmpty
                     ? const Padding(
@@ -150,6 +170,34 @@ class CustomerDetailScreen extends ConsumerWidget {
                             leading: PlateChip(plateText: vehicle.plateNo),
                             title: Text(
                               subtitle.isNotEmpty ? subtitle : 'Kendaraan',
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: InkWell(
+                                onTap: () => context.push(
+                                  AppRoutes.woBaru,
+                                  extra: vehicle,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.add_task_rounded,
+                                      size: 15,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Buat Work Order',
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                             trailing: isAdmin
                                 ? Row(

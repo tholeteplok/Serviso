@@ -56,11 +56,25 @@ class SupabaseVehicleRepository implements VehicleRepository {
     int offset = 0,
   }) async {
     final q = _sanitize(query);
+    if (q.isEmpty) return [];
     try {
+      final matchingCustomers = await _client
+          .from('customers')
+          .select('id')
+          .ilike('name', '%$q%');
+      final customerIds = (matchingCustomers as List)
+          .map((c) => c['id'] as String)
+          .toList();
+
+      var filter = 'plate_no.ilike.%$q%,brand.ilike.%$q%,model.ilike.%$q%';
+      if (customerIds.isNotEmpty) {
+        filter += ',customer_id.in.(${customerIds.join(',')})';
+      }
+
       final result = await _client
           .from('vehicles')
           .select('*, customers(name)')
-          .or('plate_no.ilike.%$q%,customers.name.ilike.%$q%')
+          .or(filter)
           .order('plate_no')
           .range(offset, offset + limit - 1);
       return (result as List).map((m) => Vehicle.fromMap(m)).toList();

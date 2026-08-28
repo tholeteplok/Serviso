@@ -18,7 +18,9 @@ import '../logic/wo_validators.dart';
 import '../models/work_order.dart';
 
 class WoWizardScreen extends ConsumerStatefulWidget {
-  const WoWizardScreen({super.key});
+  const WoWizardScreen({super.key, this.initialVehicle});
+
+  final Vehicle? initialVehicle;
 
   @override
   ConsumerState<WoWizardScreen> createState() => _WoWizardScreenState();
@@ -43,6 +45,14 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   bool _creating = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialVehicle != null) {
+      _vehicle = widget.initialVehicle;
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _complaintController.dispose();
@@ -65,10 +75,14 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
       setState(() => _vehicleResults = []);
       return;
     }
-    final results = await ref
-        .read(vehicleRepositoryProvider)
-        .searchVehicles(query, limit: 20);
-    setState(() => _vehicleResults = results);
+    try {
+      final results = await ref
+          .read(vehicleRepositoryProvider)
+          .searchVehicles(query, limit: 20);
+      if (mounted) setState(() => _vehicleResults = results);
+    } catch (_) {
+      if (mounted) setState(() => _vehicleResults = []);
+    }
   }
 
   void _selectVehicle(Vehicle vehicle) {

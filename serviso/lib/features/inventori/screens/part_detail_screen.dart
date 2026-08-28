@@ -13,6 +13,7 @@ import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
 import '../models/part_movement.dart';
 import 'adjust_stock_dialog.dart';
+import 'part_form_sheet.dart';
 import 'stock_in_dialog.dart';
 
 class PartDetailScreen extends ConsumerWidget {
@@ -30,12 +31,30 @@ class PartDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Detail Suku Cadang'),
         actions: [
-          if (isAdmin)
+          if (isAdmin) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Ubah suku cadang',
+              onPressed: () {
+                final currentPart = state.valueOrNull?.part;
+                if (currentPart != null) {
+                  showPartForm(
+                    context,
+                    ref,
+                    currentPart,
+                    onSaved: () => ref
+                        .read(partDetailControllerProvider(partId).notifier)
+                        .reload(),
+                  );
+                }
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Hapus suku cadang',
               onPressed: () => _confirmDelete(context, ref),
             ),
+          ],
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -60,12 +79,27 @@ class PartDetailScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(part.name, style: textTheme.headlineSmall),
                   ),
-                  if (part.code != null)
+                  if (part.code != null) ...[
                     Text(
                       part.code!,
                       style: AppTypography.mono(
                         fontSize: 14,
                         color: AppColors.inkMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (isAdmin)
+                    TextButton.icon(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Ubah'),
+                      onPressed: () => showPartForm(
+                        context,
+                        ref,
+                        part,
+                        onSaved: () => ref
+                            .read(partDetailControllerProvider(partId).notifier)
+                            .reload(),
                       ),
                     ),
                 ],

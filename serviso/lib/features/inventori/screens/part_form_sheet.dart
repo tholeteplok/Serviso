@@ -8,19 +8,25 @@ import '../controllers/part_form_controller.dart';
 import '../controllers/part_list_controller.dart';
 import '../models/part.dart';
 
-void showPartForm(BuildContext context, WidgetRef ref, Part? initial) {
+void showPartForm(
+  BuildContext context,
+  WidgetRef ref,
+  Part? initial, {
+  VoidCallback? onSaved,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => PartFormSheet(initial: initial),
+    builder: (_) => PartFormSheet(initial: initial, onSaved: onSaved),
   );
 }
 
 class PartFormSheet extends ConsumerStatefulWidget {
-  const PartFormSheet({super.key, this.initial});
+  const PartFormSheet({super.key, this.initial, this.onSaved});
 
   final Part? initial;
+  final VoidCallback? onSaved;
 
   @override
   ConsumerState<PartFormSheet> createState() => _PartFormSheetState();
@@ -97,6 +103,7 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ref.invalidate(partListControllerProvider);
+      widget.onSaved?.call();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

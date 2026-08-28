@@ -26,6 +26,28 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
     WoStatus.selesai,
   ];
 
+  bool _searching = false;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searching = true);
+  }
+
+  void _closeSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+      _searching = false;
+    });
+  }
+
   bool _isToday(DateTime value) {
     final now = DateTime.now();
     return value.year == now.year &&
@@ -41,23 +63,56 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Antrian'),
+        title: _searching ? null : const Text('Antrian'),
+        bottom: _searching
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(60),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: SearchBar(
+                    controller: _searchController,
+                    hintText: 'Cari plat, no WO, atau pelanggan',
+                    hintStyle: WidgetStateProperty.all(
+                      textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    ),
+                    leading: const Icon(Icons.search),
+                    trailing: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: 'Tutup pencarian',
+                        onPressed: _closeSearch,
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value.trim()),
+                    autoFocus: true,
+                  ),
+                ),
+              )
+            : null,
         actions: [
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined, size: 16),
-              const SizedBox(width: 4),
-              const Text('Hari ini'),
-              Switch(
-                value: !onlyToday,
-                onChanged: (_) =>
-                    ref.read(todayFilterProvider.notifier).state = !onlyToday,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              const Text('Semua'),
-              const SizedBox(width: 8),
-            ],
-          ),
+          if (!_searching) ...[
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Cari work order',
+              onPressed: _openSearch,
+            ),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 16),
+                const SizedBox(width: 4),
+                const Text('Hari ini'),
+                Switch(
+                  value: !onlyToday,
+                  onChanged: (_) =>
+                      ref.read(todayFilterProvider.notifier).state = !onlyToday,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                const Text('Semua'),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ],
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -72,9 +127,22 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
           onRetry: () => ref.refresh(boardControllerProvider),
         ),
         data: (orders) {
-          final visible = onlyToday
+          final dateFiltered = onlyToday
               ? orders.where((o) => _isToday(o.createdAt)).toList()
               : orders;
+
+          final visible = _searchQuery.isEmpty
+              ? dateFiltered
+              : dateFiltered.where((o) {
+                  final q = _searchQuery.toLowerCase();
+                  return o.woNumber.toLowerCase().contains(q) ||
+                      (o.plateNo?.toLowerCase().contains(q) ?? false) ||
+                      (o.customerName?.toLowerCase().contains(q) ?? false) ||
+                      (o.vehicleDesc?.toLowerCase().contains(q) ?? false) ||
+                      (o.assignedName?.toLowerCase().contains(q) ?? false) ||
+                      (o.complaint?.toLowerCase().contains(q) ?? false);
+                }).toList();
+
           final grouped = {
             for (final status in _columns)
               status: visible.where((o) => o.status == status).toList(),
