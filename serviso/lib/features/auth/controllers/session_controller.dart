@@ -26,7 +26,14 @@ class SessionController extends AsyncNotifier<Profile?> {
   @override
   Future<Profile?> build() async {
     _auth = ref.watch(authRepositoryProvider);
-    return _auth.currentProfile();
+    try {
+      return await _auth.currentProfile().timeout(
+            const Duration(seconds: 4),
+            onTimeout: () => null,
+          );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> login({

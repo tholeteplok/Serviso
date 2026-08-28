@@ -90,14 +90,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       key: const Key('username'),
                       controller: _usernameController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
+                        labelText: 'Username atau Email',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       validator: (value) => value == null || value.trim().isEmpty
-                          ? 'Username wajib diisi'
+                          ? 'Username atau email wajib diisi'
                           : null,
                     ),
                     const SizedBox(height: 16),

@@ -18,16 +18,17 @@ Future<void> main() async {
   runApp(const ProviderScope(child: ServisoApp()));
 }
 
-class ServisoApp extends StatelessWidget {
+class ServisoApp extends ConsumerWidget {
   const ServisoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'Serviso',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: appRouter,
+      routerConfig: router,
       builder: (context, child) {
         if (!AppConfig.isConfigured) return const ConfigErrorScreen();
         return child ?? const SizedBox.shrink();

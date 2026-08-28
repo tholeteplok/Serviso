@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/config/app_config.dart';
 import '../../core/connectivity/offline_banner.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
@@ -49,6 +45,7 @@ String? authGuardRedirect({
   required String location,
 }) {
   if (session.isLoading) {
+    if (location == AppRoutes.login) return null;
     return location == AppRoutes.splash ? null : AppRoutes.splash;
   }
   final profile = session.valueOrNull;
@@ -69,31 +66,29 @@ String? authGuardRedirect({
   return null;
 }
 
-class SessionRefreshListenable extends ChangeNotifier implements Listenable {
-  SessionRefreshListenable() {
-    _subscription = Supabase.instance.client.auth.onAuthStateChange.listen(
-      (_) => notifyListeners(),
+final routerProvider = Provider<GoRouter>((ref) {
+  final notifier = RouterNotifier(ref);
+  return GoRouter(
+    initialLocation: AppRoutes.splash,
+    refreshListenable: notifier,
+    redirect: (context, state) => notifier._redirect(context, state),
+    routes: _appRoutes,
+  );
+});
+
+class RouterNotifier extends ChangeNotifier {
+  RouterNotifier(this._ref) {
+    _ref.listen<AsyncValue<Profile?>>(
+      sessionProvider,
+      (previous, next) => notifyListeners(),
     );
-    // Cover the initial session restore (e.g. persisted session).
-    notifyListeners();
   }
 
-  late final StreamSubscription<AuthState> _subscription;
+  final Ref _ref;
 
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-}
-
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.splash,
-  refreshListenable:
-      AppConfig.isConfigured ? SessionRefreshListenable() : null,
-  redirect: (context, state) {
-    final session = ProviderScope.containerOf(context).read(sessionProvider);
-    final isAdmin = ProviderScope.containerOf(context).read(isAdminProvider);
+  String? _redirect(BuildContext context, GoRouterState state) {
+    final session = _ref.read(sessionProvider);
+    final isAdmin = _ref.read(isAdminProvider);
     final target = authGuardRedirect(
       session: session,
       isAdmin: isAdmin,
@@ -109,8 +104,24 @@ final GoRouter appRouter = GoRouter(
       });
     }
     return target;
+  }
+}
+
+final GoRouter appRouter = GoRouter(
+  initialLocation: AppRoutes.splash,
+  redirect: (context, state) {
+    final session = ProviderScope.containerOf(context).read(sessionProvider);
+    final isAdmin = ProviderScope.containerOf(context).read(isAdminProvider);
+    return authGuardRedirect(
+      session: session,
+      isAdmin: isAdmin,
+      location: state.uri.path,
+    );
   },
-  routes: [
+  routes: _appRoutes,
+);
+
+final List<RouteBase> _appRoutes = [
     GoRoute(
       path: AppRoutes.splash,
       builder: (context, state) => const SplashScreen(),
@@ -197,8 +208,7 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
-  ],
-);
+];
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.navigationShell});

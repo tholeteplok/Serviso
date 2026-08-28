@@ -43,13 +43,22 @@ void main() {
       expect(target, isNull);
     });
 
-    test('saat sesi loading tampilkan splash', () {
+    test('saat sesi loading tampilkan splash untuk rute selain login', () {
       final target = authGuardRedirect(
         session: const AsyncLoading<Profile?>(),
         isAdmin: false,
         location: AppRoutes.beranda,
       );
       expect(target, AppRoutes.splash);
+    });
+
+    test('saat sesi loading di login jangan dialihkan ke splash', () {
+      final target = authGuardRedirect(
+        session: const AsyncLoading<Profile?>(),
+        isAdmin: false,
+        location: AppRoutes.login,
+      );
+      expect(target, isNull);
     });
   });
 
@@ -126,6 +135,25 @@ void main() {
       final future = container.read(sessionProvider.notifier).logout();
       await expectLater(future, completes);
       expect(container.read(sessionProvider).valueOrNull, isNull);
+    });
+  });
+
+  group('resolveLoginEmail (Universal Login)', () {
+    test('username biasa ditambahkan domain sintetis', () {
+      expect(resolveLoginEmail('admin'), 'admin@users.serviso.app');
+      expect(resolveLoginEmail('  kasir01  '), 'kasir01@users.serviso.app');
+    });
+
+    test('email langsung dipakai apa adanya', () {
+      expect(resolveLoginEmail('owner@gmail.com'), 'owner@gmail.com');
+      expect(resolveLoginEmail('  User@Bengkel.co.id  '), 'user@bengkel.co.id');
+    });
+
+    test('email domain sintetis tetap valid', () {
+      expect(
+        resolveLoginEmail('admin@users.serviso.app'),
+        'admin@users.serviso.app',
+      );
     });
   });
 }

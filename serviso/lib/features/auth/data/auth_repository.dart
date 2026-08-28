@@ -14,8 +14,15 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
-String syntheticLoginEmail(String username) =>
-    '${username.trim().toLowerCase()}@users.serviso.app';
+String resolveLoginEmail(String identifier) {
+  final clean = identifier.trim().toLowerCase();
+  if (clean.contains('@')) {
+    return clean;
+  }
+  return '$clean@users.serviso.app';
+}
+
+String syntheticLoginEmail(String username) => resolveLoginEmail(username);
 
 abstract class AuthRepository {
   Future<Profile> login({required String username, required String password});
@@ -41,7 +48,7 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     try {
       final response = await _client.auth.signInWithPassword(
-        email: syntheticLoginEmail(username),
+        email: resolveLoginEmail(username),
         password: password,
       );
       final user = response.user;
