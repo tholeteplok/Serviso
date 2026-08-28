@@ -236,13 +236,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 if (profile.isAdmin) ...[
                   SectionCard(
                     title: 'Administrasi',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.store_outlined),
-                      title: const Text('Pengaturan Toko'),
-                      subtitle: const Text('Nama, alamat, telepon'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(AppRoutes.pengaturan),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.manage_accounts_outlined),
+                          title: const Text('Kelola Pengguna'),
+                          subtitle: const Text('Tambah kasir/admin & reset password'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/admin/users'),
+                        ),
+                        const Divider(height: 1, color: AppColors.line),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.history_edu_outlined),
+                          title: const Text('Audit Log Sistem'),
+                          subtitle: const Text('Riwayat aktivitas & transaksi'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/admin/audit-logs'),
+                        ),
+                        const Divider(height: 1, color: AppColors.line),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.store_outlined),
+                          title: const Text('Pengaturan Toko'),
+                          subtitle: const Text('Nama, alamat, telepon'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(AppRoutes.pengaturan),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),

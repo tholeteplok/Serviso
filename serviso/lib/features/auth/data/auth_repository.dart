@@ -217,7 +217,7 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Profile?> currentProfile() async => _current;
+  Future<Profile?> currentProfile() async => _current ?? profileToReturn;
 
   @override
   Future<Profile> updateProfile({String? fullName, String? phone}) async {

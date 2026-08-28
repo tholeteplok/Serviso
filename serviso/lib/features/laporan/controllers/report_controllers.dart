@@ -1,0 +1,63 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/config/app_config.dart';
+import '../data/report_repository.dart';
+import '../models/report_models.dart';
+
+enum LaporanPeriod {
+  days7('7 Hari'),
+  days30('30 Hari'),
+  thisMonth('Bulan Ini');
+
+  final String label;
+  const LaporanPeriod(this.label);
+}
+
+final reportRepositoryProvider = Provider<ReportRepository>((ref) {
+  if (AppConfig.isConfigured) {
+    return SupabaseReportRepository(Supabase.instance.client);
+  }
+  return FakeReportRepository();
+});
+
+final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchDashboardSummary();
+});
+
+final laporanPeriodProvider = StateProvider<LaporanPeriod>((ref) {
+  return LaporanPeriod.days7;
+});
+
+final laporanDailySummariesProvider =
+    FutureProvider<List<DailySummaryRow>>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  final period = ref.watch(laporanPeriodProvider);
+  final now = DateTime.now();
+
+  late DateTime start;
+  late DateTime end;
+
+  switch (period) {
+    case LaporanPeriod.days7:
+      start = now.subtract(const Duration(days: 6));
+      end = now;
+      break;
+    case LaporanPeriod.days30:
+      start = now.subtract(const Duration(days: 29));
+      end = now;
+      break;
+    case LaporanPeriod.thisMonth:
+      start = DateTime(now.year, now.month, 1);
+      end = now;
+      break;
+  }
+
+  return repo.fetchDailySummaries(start: start, end: end);
+});
+
+final topPartsProvider = FutureProvider<List<TopPartRow>>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchTopParts(month: DateTime.now());
+});
