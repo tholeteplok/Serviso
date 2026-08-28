@@ -177,10 +177,18 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
   @override
   Future<void> cancel(String id) async {
     try {
-      await _client.rpc(
-        'cancel_work_order',
-        params: {'p_work_order_id': id},
-      );
+      final status = await _currentStatus(id);
+      if (status == WoStatus.menunggu) {
+        await _client.from('work_orders').update({
+          'status': 'dibatalkan',
+          'cancelled_at': DateTime.now().toIso8601String(),
+        }).eq('id', id);
+      } else {
+        await _client.rpc(
+          'cancel_work_order',
+          params: {'p_work_order_id': id},
+        );
+      }
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }

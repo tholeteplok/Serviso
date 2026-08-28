@@ -88,6 +88,7 @@ class WoDetailController
 
   Future<void> _reload() async {
     ref.invalidateSelf();
+    ref.invalidate(boardControllerProvider);
     await future;
   }
 }

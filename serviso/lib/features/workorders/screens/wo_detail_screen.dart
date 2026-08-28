@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../auth/controllers/session_controller.dart';
@@ -11,6 +12,7 @@ import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../settings/data/settings_repository.dart';
 import '../controllers/wo_detail_controller.dart';
+import '../controllers/work_order_providers.dart';
 import '../logic/wo_state_machine.dart';
 import '../models/work_order.dart';
 import '../pdf/receipt_actions.dart';
@@ -58,6 +60,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
   Future<void> _onStart() async {
     try {
       await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).start();
+      ref.invalidate(boardControllerProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Work order mulai dikerjakan')),
@@ -82,6 +85,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     if (!confirmed) return;
     try {
       await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).complete();
+      ref.invalidate(boardControllerProvider);
       final updated = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -107,22 +111,31 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     final order = ref.read(woDetailControllerProvider(widget.workOrderId)).valueOrNull;
     if (order == null) return;
     final isCompleted = order.status == WoStatus.selesai;
+    final isWaiting = order.status == WoStatus.menunggu;
     final warning = isCompleted
         ? 'Work order sudah selesai. Membatalkan akan mengembalikan stok part ke inventori.'
-        : 'Work order akan dibatalkan dan tidak dapat dikerjakan lagi.';
+        : isWaiting
+            ? 'Hapus work order ini dari daftar antrian?'
+            : 'Work order akan dibatalkan dan tidak dapat dikerjakan lagi.';
     final confirmed = await _confirm(
-      title: 'Batalkan work order?',
+      title: isWaiting ? 'Hapus antrian?' : 'Batalkan work order?',
       message: warning,
-      confirmLabel: 'Batalkan',
+      confirmLabel: isWaiting ? 'Hapus' : 'Batalkan',
       confirmColor: AppColors.action,
     );
     if (!confirmed) return;
     try {
       await ref.read(woDetailControllerProvider(widget.workOrderId).notifier).cancel();
+      ref.invalidate(boardControllerProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Work order dibatalkan')),
+          SnackBar(
+            content: Text(isWaiting ? 'Antrian berhasil dibatalkan' : 'Work order dibatalkan'),
+          ),
         );
+        if (isWaiting) {
+          context.pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -519,7 +532,7 @@ class _ActionButtons extends StatelessWidget {
         WoStateMachine.canTransition(status, WoEvent.complete);
     final canCancel = WoStateMachine.canTransition(status, WoEvent.cancel) &&
         (status != WoStatus.dibatalkan) &&
-        isAdmin;
+        (isAdmin || status == WoStatus.menunggu);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
