@@ -352,12 +352,12 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
           ),
         ),
       ),
-      body: Form(
-        key: _formKeys[_step],
-        child: IndexedStack(
-          index: _step,
-          children: [
-            _StepVehicle(
+      body: IndexedStack(
+        index: _step,
+        children: [
+          Form(
+            key: _formKeys[0],
+            child: _StepVehicle(
               searchController: _searchController,
               results: _vehicleResults,
               selected: _vehicle,
@@ -365,14 +365,20 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
               onSelect: _selectVehicle,
               onCreateNew: _createCustomerAndVehicle,
             ),
-            _StepDetail(
+          ),
+          Form(
+            key: _formKeys[1],
+            child: _StepDetail(
               complaintController: _complaintController,
               odometerController: _odometerController,
               technician: _technician,
               ref: ref,
               onTechnicianChanged: (p) => setState(() => _technician = p),
             ),
-            _StepItems(
+          ),
+          Form(
+            key: _formKeys[2],
+            child: _StepItems(
               jasaDesc: _jasaDesc,
               jasaPrice: _jasaPrice,
               partLines: _partLines,
@@ -383,8 +389,8 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
               onRemovePart: _removePart,
               partSearchResults: _partSearchResults,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: _BottomBar(
         step: _step,
@@ -392,16 +398,25 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         total: _liveTotal(),
         onBack: () => setState(() => _step = (_step - 1).clamp(0, 2)),
         onNext: () {
-          if (!_formKeys[_step].currentState!.validate()) return;
-          if (_step == 0 && _vehicle == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pilih atau buat kendaraan dulu')),
-            );
+          if (_step == 0) {
+            if (_vehicle == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pilih atau buat kendaraan dulu')),
+              );
+              return;
+            }
+            setState(() => _step = 1);
             return;
           }
-          if (_step < 2) {
-            setState(() => _step++);
-          } else {
+
+          if (_step == 1) {
+            if (!(_formKeys[1].currentState?.validate() ?? false)) return;
+            setState(() => _step = 2);
+            return;
+          }
+
+          if (_step == 2) {
+            if (!(_formKeys[2].currentState?.validate() ?? false)) return;
             _submit();
           }
         },
