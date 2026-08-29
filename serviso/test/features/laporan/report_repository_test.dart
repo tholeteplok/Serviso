@@ -35,4 +35,25 @@ void main() {
     expect(counts.inProgress, 2);
     expect(counts.done, 10);
   });
+
+  test('fetchOwnerFinancialSummary returns revenue, cogs, and net profit', () async {
+    final start = DateTime(2026, 8, 20);
+    final end = DateTime(2026, 8, 26);
+    final fin = await repo.fetchOwnerFinancialSummary(start: start, end: end);
+    expect(fin.totalRevenue, 2500000);
+    expect(fin.totalCogs, 950000);
+    expect(fin.netProfit, 1550000);
+    expect(fin.totalUnpaidDebt, 750000);
+  });
+
+  test('fetchDistributorDebts and markDebtPaid work properly', () async {
+    final debts = await repo.fetchDistributorDebts();
+    expect(debts.length, 1);
+    expect(debts.first.distributor, 'PT Pertamina Lubricants');
+    expect(debts.first.totalDebt, 750000);
+
+    await repo.markDebtPaid(debts.first.movementId);
+    final after = await repo.fetchDistributorDebts();
+    expect(after, isEmpty);
+  });
 }

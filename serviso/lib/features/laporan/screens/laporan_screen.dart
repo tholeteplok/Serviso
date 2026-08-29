@@ -8,7 +8,9 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../auth/controllers/session_controller.dart';
 import '../controllers/report_controllers.dart';
+import '../models/report_models.dart';
 
 class LaporanScreen extends ConsumerWidget {
   const LaporanScreen({super.key});
@@ -19,6 +21,10 @@ class LaporanScreen extends ConsumerWidget {
     final period = ref.watch(laporanPeriodProvider);
     final dailySummariesAsync = ref.watch(laporanDailySummariesProvider);
     final topPartsAsync = ref.watch(topPartsProvider);
+    final isAdmin = ref.watch(isAdminProvider);
+    final ownerFinancialAsync =
+        isAdmin ? ref.watch(ownerFinancialSummaryProvider) : null;
+    final debtsAsync = isAdmin ? ref.watch(distributorDebtsProvider) : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +34,10 @@ class LaporanScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(laporanDailySummariesProvider);
           ref.invalidate(topPartsProvider);
+          if (isAdmin) {
+            ref.invalidate(ownerFinancialSummaryProvider);
+            ref.invalidate(distributorDebtsProvider);
+          }
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -94,7 +104,13 @@ class LaporanScreen extends ConsumerWidget {
               ),
               error: (err, stack) => ErrorView(
                 message: err.toString(),
-                onRetry: () => ref.invalidate(laporanDailySummariesProvider),
+                onRetry: () {
+                  ref.invalidate(laporanDailySummariesProvider);
+                  if (isAdmin) {
+                    ref.invalidate(ownerFinancialSummaryProvider);
+                    ref.invalidate(distributorDebtsProvider);
+                  }
+                },
               ),
               data: (rows) {
                 if (rows.isEmpty) {
@@ -122,20 +138,100 @@ class LaporanScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     // Summary Metric Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildMetricCard(
-                            context,
-                            title: 'Total Omset',
-                            value: rupiah(totalRevenue),
-                            icon: Icons.payments_outlined,
-                            color: AppColors.primary,
+                    if (isAdmin && ownerFinancialAsync != null) ...[
+                      ownerFinancialAsync.when(
+                        data: (fin) => Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildMetricCard(
+                                    context,
+                                    title: 'Total Omset',
+                                    value: rupiah(fin.totalRevenue),
+                                    icon: Icons.payments_outlined,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildMetricCard(
+                                    context,
+                                    title: 'Untung Bersih',
+                                    value: rupiah(fin.netProfit),
+                                    subtitle: 'Omzet - Modal Part',
+                                    icon: Icons.trending_up_rounded,
+                                    color: AppColors.teal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildMetricCard(
+                                    context,
+                                    title: 'Modal Part (HPP)',
+                                    value: rupiah(fin.totalCogs),
+                                    icon: Icons.shopping_bag_outlined,
+                                    color: AppColors.inkMuted,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildMetricCard(
+                                    context,
+                                    title: 'Hutang Distributor',
+                                    value: rupiah(fin.totalUnpaidDebt),
+                                    icon: Icons.receipt_long_outlined,
+                                    color: fin.totalUnpaidDebt > 0
+                                        ? AppColors.action
+                                        : AppColors.teal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        loading: () => const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: LinearProgressIndicator(),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                        error: (_, _) => Row(
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Total Omset',
+                                value: rupiah(totalRevenue),
+                                icon: Icons.payments_outlined,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              title: 'Total Omset',
+                              value: rupiah(totalRevenue),
+                              icon: Icons.payments_outlined,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
                     Row(
                       children: [
                         Expanded(
@@ -172,7 +268,8 @@ class LaporanScreen extends ConsumerWidget {
                             gridData: const FlGridData(
                               show: true,
                               drawVerticalLine: false,
-                              getDrawingHorizontalLine: _getLaporanHorizontalLine,
+                              getDrawingHorizontalLine:
+                                  _getLaporanHorizontalLine,
                             ),
                             titlesData: FlTitlesData(
                               topTitles: const AxisTitles(
@@ -208,15 +305,19 @@ class LaporanScreen extends ConsumerWidget {
                               ),
                             ),
                             borderData: FlBorderData(show: false),
-                            barGroups: rows.asMap().entries.map((e) {
+                            barGroups: rows.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final row = entry.value;
                               return BarChartGroupData(
-                                x: e.key,
+                                x: index,
                                 barRods: [
                                   BarChartRodData(
-                                    toY: e.value.revenue,
+                                    toY: row.revenue,
                                     color: AppColors.primary,
-                                    width: 12,
-                                    borderRadius: BorderRadius.circular(4),
+                                    width: 16,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(4),
+                                    ),
                                   ),
                                 ],
                               );
@@ -235,39 +336,28 @@ class LaporanScreen extends ConsumerWidget {
             topPartsAsync.when(
               loading: () => const SizedBox.shrink(),
               error: (err, stack) => const SizedBox.shrink(),
-              data: (topParts) {
-                if (topParts.isEmpty) return const SizedBox.shrink();
+              data: (parts) {
+                if (parts.isEmpty) return const SizedBox.shrink();
+
                 return SectionCard(
                   title: 'Suku Cadang Terlaris Bulan Ini',
                   child: Column(
-                    children: topParts.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final item = entry.value;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          border: index < topParts.length - 1
-                              ? const Border(
-                                  bottom: BorderSide(color: AppColors.line),
-                                )
-                              : null,
-                        ),
+                    children: parts.map((part) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: index == 0
-                                  ? AppColors.primary
-                                  : AppColors.line,
-                              child: Text(
-                                '${index + 1}',
-                                style: AppTypography.mono(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: index == 0
-                                      ? Colors.white
-                                      : AppColors.ink,
-                                ),
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.settings_outlined,
+                                color: AppColors.primary,
+                                size: 18,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -276,14 +366,13 @@ class LaporanScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item.name,
+                                    part.name,
                                     style: textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.ink,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   Text(
-                                    'Terjual ${item.qtyOut.toStringAsFixed(0)} pcs',
+                                    ' pcs terjual',
                                     style: textTheme.bodySmall?.copyWith(
                                       color: AppColors.inkMuted,
                                     ),
@@ -292,11 +381,10 @@ class LaporanScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              rupiah(item.revenue),
+                              rupiah(part.revenue),
                               style: AppTypography.mono(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.teal,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.ink,
                               ),
                             ),
                           ],
@@ -306,6 +394,205 @@ class LaporanScreen extends ConsumerWidget {
                   ),
                 );
               },
+            ),
+
+            // Khusus Owner: Section Hutang Distributor
+            if (isAdmin && debtsAsync != null) ...[
+              const SizedBox(height: 16),
+              debtsAsync.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (debts) {
+                  return SectionCard(
+                    title: 'Daftar Hutang Distributor (Tempo)',
+                    trailing: IconButton(
+                      icon: const Icon(Icons.refresh, size: 18),
+                      tooltip: 'Perbarui Data Hutang',
+                      onPressed: () {
+                        ref.invalidate(distributorDebtsProvider);
+                        ref.invalidate(ownerFinancialSummaryProvider);
+                      },
+                    ),
+                    child: debts.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: AppColors.teal,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Tidak ada hutang distributor yang belum lunas. Semua kewajiban telah terbayar!',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.teal,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Column(
+                            children: debts
+                                .map((d) => _buildDebtItemCard(context, ref, d))
+                                .toList(),
+                          ),
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDebtItemCard(
+    BuildContext context,
+    WidgetRef ref,
+    DistributorDebtItem debt,
+  ) {
+    final textTheme = AppTypography.textTheme();
+    final isPastDue = debt.dueDate != null &&
+        debt.dueDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isPastDue
+              ? AppColors.action.withValues(alpha: 0.5)
+              : AppColors.line,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isPastDue
+                    ? AppColors.action.withValues(alpha: 0.12)
+                    : AppColors.inkMuted.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.local_shipping_outlined,
+                color: isPastDue ? AppColors.action : AppColors.ink,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    debt.distributor,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    ' •  pcs',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                  if (debt.dueDate != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Jatuh Tempo: ',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: isPastDue ? AppColors.action : AppColors.inkMuted,
+                        fontWeight:
+                            isPastDue ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  rupiah(debt.totalDebt),
+                  style: AppTypography.mono(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.action,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Pelunasan Hutang'),
+                        content: Text(
+                          'Konfirmasi pelunasan hutang ke "${debt.distributor}" sebesar ${rupiah(debt.totalDebt)}?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Batal'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Ya, Lunasi'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      try {
+                        await ref
+                            .read(reportRepositoryProvider)
+                            .markDebtPaid(debt.movementId);
+                        ref.invalidate(distributorDebtsProvider);
+                        ref.invalidate(ownerFinancialSummaryProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Hutang distributor berhasil dilunasi'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: const Text('Lunasi'),
+                ),
+              ],
             ),
           ],
         ),
@@ -317,6 +604,7 @@ class LaporanScreen extends ConsumerWidget {
     BuildContext context, {
     required String title,
     required String value,
+    String? subtitle,
     required IconData icon,
     required Color color,
   }) {
@@ -328,7 +616,7 @@ class LaporanScreen extends ConsumerWidget {
         side: const BorderSide(color: AppColors.line),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Row(
           children: [
             CircleAvatar(
@@ -336,7 +624,7 @@ class LaporanScreen extends ConsumerWidget {
               backgroundColor: color.withValues(alpha: 0.12),
               child: Icon(icon, color: color, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,17 +633,30 @@ class LaporanScreen extends ConsumerWidget {
                     title,
                     style: AppTypography.textTheme().bodySmall?.copyWith(
                           color: AppColors.inkMuted,
+                          fontSize: 12,
                         ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.mono(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppColors.ink,
                     ),
                   ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: AppTypography.textTheme().labelSmall?.copyWith(
+                            color: AppColors.inkMuted,
+                            fontSize: 10,
+                          ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -370,4 +671,3 @@ FlLine _getLaporanHorizontalLine(double val) => const FlLine(
       color: AppColors.line,
       strokeWidth: 1,
     );
-

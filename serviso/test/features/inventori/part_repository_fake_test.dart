@@ -112,5 +112,41 @@ void main() {
       expect(byCode.length, 1);
       expect(byCode.first.name, 'Busi');
     });
+
+    test('stockIn dengan distributor, purchasePrice, dan hutang mencatat status belum_lunas', () async {
+      final repo = FakePartRepository();
+      final part = await repo.createPart(PartInput(name: 'Oli Top 1', costPrice: 40000));
+      await repo.stockIn(
+        part.id,
+        10,
+        distributor: 'PT Sumber Makmur',
+        purchasePrice: 45000,
+        paymentType: 'hutang',
+        dueDate: DateTime.now().add(const Duration(days: 14)),
+        updateCostPrice: true,
+      );
+
+      final movements = await repo.movements(part.id);
+      expect(movements.first.distributor, 'PT Sumber Makmur');
+      expect(movements.first.purchasePrice, 45000);
+      expect(movements.first.paymentType, 'hutang');
+      expect(movements.first.debtStatus, 'belum_lunas');
+      expect(movements.first.isUnpaidDebt, isTrue);
+      expect(movements.first.totalPurchaseAmount, 450000);
+
+      // Verify master cost price was updated
+      final updated = await repo.getById(part.id);
+      expect(updated!.costPrice, 45000);
+
+      // Verify outstanding debts query
+      final debts = await repo.getOutstandingDebts();
+      expect(debts.length, 1);
+      expect(debts.first.distributor, 'PT Sumber Makmur');
+
+      // Pay debt
+      await repo.markDebtPaid(debts.first.id);
+      final remainingDebts = await repo.getOutstandingDebts();
+      expect(remainingDebts, isEmpty);
+    });
   });
 }

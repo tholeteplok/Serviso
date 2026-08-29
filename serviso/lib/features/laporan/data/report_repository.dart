@@ -14,6 +14,15 @@ abstract class ReportRepository {
   Future<List<TopPartRow>> fetchTopParts({required DateTime month});
 
   Future<QueueCounts> fetchQueueCounts();
+
+  Future<OwnerFinancialSummary> fetchOwnerFinancialSummary({
+    required DateTime start,
+    required DateTime end,
+  });
+
+  Future<List<DistributorDebtItem>> fetchDistributorDebts();
+
+  Future<void> markDebtPaid(String movementId);
 }
 
 class SupabaseReportRepository implements ReportRepository {
@@ -140,6 +149,121 @@ class SupabaseReportRepository implements ReportRepository {
       throw RepositoryException(mapRepositoryError(e));
     }
   }
+
+  @override
+  Future<OwnerFinancialSummary> fetchOwnerFinancialSummary({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+
+      // 1. Total revenue in range from v_daily_summary
+      final dailyRes = await _client
+          .from('v_daily_summary')
+          .select('revenue')
+          .gte('date', startStr)
+          .lte('date', endStr);
+      double totalRev = 0.0;
+      for (final r in dailyRes as List) {
+        totalRev += (r['revenue'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      // 2. Total COGS (modal part) from wo_items join parts
+      double totalCogs = 0.0;
+      try {
+        final cogsRes = await _client
+            .from('wo_items')
+            .select('qty, parts(cost_price), work_orders!inner(status, completed_at)')
+            .eq('kind', 'part')
+            .eq('work_orders.status', 'selesai')
+            .gte('work_orders.completed_at', '${startStr}T00:00:00')
+            .lte('work_orders.completed_at', '${endStr}T23:59:59');
+        for (final item in cogsRes as List) {
+          final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+          final partMap = item['parts'] as Map?;
+          final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+          totalCogs += qty * cost;
+        }
+      } catch (_) {
+        // Safe fallback
+      }
+
+      // 3. Total unpaid debts
+      double totalUnpaid = 0.0;
+      try {
+        final debtsRes = await _client
+            .from('part_movements')
+            .select('qty, purchase_price')
+            .eq('payment_type', 'hutang')
+            .eq('debt_status', 'belum_lunas');
+        for (final d in debtsRes as List) {
+          final q = (d['qty'] as num?)?.toDouble() ?? 0.0;
+          final p = (d['purchase_price'] as num?)?.toDouble() ?? 0.0;
+          totalUnpaid += q * p;
+        }
+      } catch (_) {
+        // Safe fallback
+      }
+
+      return OwnerFinancialSummary(
+        totalRevenue: totalRev,
+        totalCogs: totalCogs,
+        totalUnpaidDebt: totalUnpaid,
+      );
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<DistributorDebtItem>> fetchDistributorDebts() async {
+    try {
+      final res = await _client
+          .from('part_movements')
+          .select('id, part_id, qty, purchase_price, distributor, created_at, due_date, debt_status, parts(name)')
+          .eq('payment_type', 'hutang')
+          .eq('debt_status', 'belum_lunas')
+          .order('created_at', ascending: false);
+
+      return (res as List).map((m) {
+        final partMap = m['parts'] as Map?;
+        final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
+        final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+        final price = (m['purchase_price'] as num?)?.toDouble() ?? 0.0;
+        return DistributorDebtItem(
+          movementId: m['id'] as String,
+          partId: m['part_id'] as String,
+          partName: pName,
+          distributor: (m['distributor'] as String?) ?? 'Distributor Umum',
+          qty: qty,
+          purchasePrice: price,
+          totalDebt: qty * price,
+          createdAt: DateTime.parse(m['created_at'].toString()),
+          dueDate: m['due_date'] != null ? DateTime.tryParse(m['due_date'].toString()) : null,
+          debtStatus: (m['debt_status'] as String?) ?? 'belum_lunas',
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    try {
+      await _client
+          .from('part_movements')
+          .update({
+            'debt_status': 'lunas',
+            'paid_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', movementId);
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
 }
 
 class FakeReportRepository implements ReportRepository {
@@ -218,5 +342,59 @@ class FakeReportRepository implements ReportRepository {
   Future<QueueCounts> fetchQueueCounts() async {
     return mockQueueCounts ??
         const QueueCounts(waiting: 2, inProgress: 2, done: 10);
+  }
+
+  OwnerFinancialSummary? mockFinancialSummary;
+  List<DistributorDebtItem>? mockDistributorDebts;
+
+  @override
+  Future<OwnerFinancialSummary> fetchOwnerFinancialSummary({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    return mockFinancialSummary ??
+        const OwnerFinancialSummary(
+          totalRevenue: 2500000,
+          totalCogs: 950000,
+          totalUnpaidDebt: 750000,
+        );
+  }
+
+  @override
+  Future<List<DistributorDebtItem>> fetchDistributorDebts() async {
+    mockDistributorDebts ??= [
+      DistributorDebtItem(
+        movementId: 'm-debt-1',
+        partId: 'p1',
+        partName: 'Oli Mesin Fastron 1L',
+        distributor: 'PT Pertamina Lubricants',
+        qty: 12,
+        purchasePrice: 62500,
+        totalDebt: 750000,
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        dueDate: DateTime.now().add(const Duration(days: 11)),
+        debtStatus: 'belum_lunas',
+      ),
+    ];
+    return List.from(mockDistributorDebts!);
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    mockDistributorDebts ??= [
+      DistributorDebtItem(
+        movementId: 'm-debt-1',
+        partId: 'p1',
+        partName: 'Oli Mesin Fastron 1L',
+        distributor: 'PT Pertamina Lubricants',
+        qty: 12,
+        purchasePrice: 62500,
+        totalDebt: 750000,
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        dueDate: DateTime.now().add(const Duration(days: 11)),
+        debtStatus: 'belum_lunas',
+      ),
+    ];
+    mockDistributorDebts!.removeWhere((d) => d.movementId == movementId);
   }
 }

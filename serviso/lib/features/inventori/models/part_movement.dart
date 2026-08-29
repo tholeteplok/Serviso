@@ -14,6 +14,12 @@ class PartMovement {
     this.refId,
     this.note,
     this.actorName,
+    this.distributor,
+    this.purchasePrice,
+    this.paymentType = 'tunai',
+    this.debtStatus = 'lunas',
+    this.dueDate,
+    this.paidAt,
     required this.createdAt,
   });
 
@@ -25,6 +31,12 @@ class PartMovement {
   final String? refId;
   final String? note;
   final String? actorName;
+  final String? distributor;
+  final double? purchasePrice;
+  final String paymentType;
+  final String debtStatus;
+  final DateTime? dueDate;
+  final DateTime? paidAt;
   final DateTime createdAt;
 
   factory PartMovement.fromMap(Map<String, dynamic> map) {
@@ -39,11 +51,27 @@ class PartMovement {
       refId: map['ref_id'] as String?,
       note: map['note'] as String?,
       actorName: actorName,
+      distributor: map['distributor'] as String?,
+      purchasePrice: map['purchase_price'] != null
+          ? parseNumeric(map['purchase_price'])
+          : null,
+      paymentType: (map['payment_type'] as String?) ?? 'tunai',
+      debtStatus: (map['debt_status'] as String?) ?? 'lunas',
+      dueDate: map['due_date'] != null
+          ? DateTime.tryParse(map['due_date'].toString())
+          : null,
+      paidAt: map['paid_at'] != null
+          ? DateTime.tryParse(map['paid_at'].toString())
+          : null,
       createdAt: map['created_at'] == null
           ? DateTime.now()
           : DateTime.parse(map['created_at'] as String),
     );
   }
+
+  bool get isDebt => paymentType == 'hutang';
+  bool get isUnpaidDebt => isDebt && debtStatus == 'belum_lunas';
+  double get totalPurchaseAmount => qty * (purchasePrice ?? 0);
 
   double get signedDelta {
     switch (direction) {
@@ -76,6 +104,12 @@ class PartMovement {
     String? refId,
     String? note,
     String? actorName,
+    String? distributor,
+    double? purchasePrice,
+    String? paymentType,
+    String? debtStatus,
+    DateTime? dueDate,
+    DateTime? paidAt,
     DateTime? createdAt,
   }) =>
       PartMovement(
@@ -87,6 +121,12 @@ class PartMovement {
         refId: refId ?? this.refId,
         note: note ?? this.note,
         actorName: actorName ?? this.actorName,
+        distributor: distributor ?? this.distributor,
+        purchasePrice: purchasePrice ?? this.purchasePrice,
+        paymentType: paymentType ?? this.paymentType,
+        debtStatus: debtStatus ?? this.debtStatus,
+        dueDate: dueDate ?? this.dueDate,
+        paidAt: paidAt ?? this.paidAt,
         createdAt: createdAt ?? this.createdAt,
       );
 
@@ -98,6 +138,12 @@ class PartMovement {
         'ref_type': _refToString(refType),
         'ref_id': refId,
         'note': note,
+        'distributor': distributor,
+        'purchase_price': purchasePrice,
+        'payment_type': paymentType,
+        'debt_status': debtStatus,
+        'due_date': dueDate?.toIso8601String().substring(0, 10),
+        'paid_at': paidAt?.toIso8601String(),
       };
 }
 

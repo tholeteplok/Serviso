@@ -95,7 +95,16 @@ class FakePartRepository implements PartRepository {
   }
 
   @override
-  Future<void> stockIn(String partId, double qty, {String? note}) async {
+  Future<void> stockIn(
+    String partId,
+    double qty, {
+    String? note,
+    String? distributor,
+    double? purchasePrice,
+    String paymentType = 'tunai',
+    DateTime? dueDate,
+    bool updateCostPrice = false,
+  }) async {
     if (qty <= 0) {
       throw const RepositoryException('Jumlah stok masuk harus lebih dari 0');
     }
@@ -105,7 +114,35 @@ class FakePartRepository implements PartRepository {
       qty: qty,
       refType: MovementRef.pembelian,
       note: note,
+      distributor: distributor,
+      purchasePrice: purchasePrice,
+      paymentType: paymentType,
+      debtStatus: paymentType == 'hutang' ? 'belum_lunas' : 'lunas',
+      dueDate: dueDate,
     );
+
+    if (updateCostPrice && purchasePrice != null && purchasePrice > 0) {
+      final index = _parts.indexWhere((p) => p.id == partId);
+      if (index != -1) {
+        _parts[index] = _parts[index].copyWith(costPrice: purchasePrice);
+      }
+    }
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    final idx = _movements.indexWhere((m) => m.id == movementId);
+    if (idx != -1) {
+      _movements[idx] = _movements[idx].copyWith(
+        debtStatus: 'lunas',
+        paidAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<List<PartMovement>> getOutstandingDebts() async {
+    return _movements.where((m) => m.isUnpaidDebt).toList();
   }
 
   @override
@@ -146,6 +183,11 @@ class FakePartRepository implements PartRepository {
     required double qty,
     required MovementRef refType,
     String? note,
+    String? distributor,
+    double? purchasePrice,
+    String paymentType = 'tunai',
+    String debtStatus = 'lunas',
+    DateTime? dueDate,
   }) {
     final movement = PartMovement(
       id: 'm${_movements.length + 1}',
@@ -155,6 +197,11 @@ class FakePartRepository implements PartRepository {
       refType: refType,
       note: note?.trim().isEmpty == true ? null : note?.trim(),
       actorName: actorName,
+      distributor: distributor?.trim().isEmpty == true ? null : distributor?.trim(),
+      purchasePrice: purchasePrice,
+      paymentType: paymentType,
+      debtStatus: debtStatus,
+      dueDate: dueDate,
       createdAt: DateTime.now().add(Duration(milliseconds: _seq++)),
     );
     _movements.add(movement);

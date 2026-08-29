@@ -64,3 +64,37 @@ final topPartsProvider = FutureProvider<List<TopPartRow>>((ref) async {
   final repo = ref.watch(reportRepositoryProvider);
   return repo.fetchTopParts(month: DateTime.now());
 });
+
+final ownerFinancialSummaryProvider =
+    FutureProvider<OwnerFinancialSummary>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  final period = ref.watch(laporanPeriodProvider);
+  ref.watch(boardControllerProvider);
+  final now = DateTime.now();
+
+  late DateTime start;
+  late DateTime end;
+
+  switch (period) {
+    case LaporanPeriod.days7:
+      start = now.subtract(const Duration(days: 6));
+      end = now;
+      break;
+    case LaporanPeriod.days30:
+      start = now.subtract(const Duration(days: 29));
+      end = now;
+      break;
+    case LaporanPeriod.thisMonth:
+      start = DateTime(now.year, now.month, 1);
+      end = now;
+      break;
+  }
+
+  return repo.fetchOwnerFinancialSummary(start: start, end: end);
+});
+
+final distributorDebtsProvider =
+    FutureProvider<List<DistributorDebtItem>>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchDistributorDebts();
+});

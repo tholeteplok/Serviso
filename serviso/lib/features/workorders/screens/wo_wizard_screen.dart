@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../auth/models/profile.dart';
 import '../../customers/controllers/customer_providers.dart';
@@ -651,7 +652,7 @@ class _StepDetail extends StatelessWidget {
   }
 }
 
-class _StepItems extends StatelessWidget {
+class _StepItems extends ConsumerWidget {
   const _StepItems({
     required this.jasaDesc,
     required this.jasaPrice,
@@ -673,7 +674,7 @@ class _StepItems extends StatelessWidget {
   final VoidCallback onItemsChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = AppTypography.textTheme();
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -682,11 +683,12 @@ class _StepItems extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: Text('Jasa', style: textTheme.titleMedium),
-            ),
+            Expanded(child: Text('Jasa', style: textTheme.titleMedium)),
             TextButton.icon(
-              onPressed: onAddJasa,
+              onPressed: () {
+                onAddJasa();
+                onItemsChanged();
+              },
               icon: const Icon(Icons.add),
               label: const Text('Tambah jasa'),
             ),
@@ -695,6 +697,7 @@ class _StepItems extends StatelessWidget {
         const SizedBox(height: 8),
         for (var i = 0; i < jasaDesc.length; i++)
           Card(
+            margin: const EdgeInsets.only(bottom: 8),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -734,6 +737,24 @@ class _StepItems extends StatelessWidget {
         Row(
           children: [
             Expanded(child: Text('Part', style: textTheme.titleMedium)),
+            IconButton(
+              tooltip: 'Scan Barcode Part',
+              icon: const Icon(Icons.qr_code_scanner_outlined, color: AppColors.primary),
+              onPressed: () async {
+                final code = await showBarcodeScanner(context);
+                if (code != null && code.isNotEmpty) {
+                  final list = await ref.read(partRepositoryProvider).list(search: code, limit: 10);
+                  if (list.isNotEmpty) {
+                    onAddPart(list.first);
+                    onItemsChanged();
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Part dengan barcode "$code" tidak ditemukan')),
+                    );
+                  }
+                }
+              },
+            ),
             TextButton.icon(
               onPressed: () async {
                 await showModalBottomSheet<void>(
@@ -919,9 +940,25 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Cari nama atau kode',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  tooltip: 'Scan Barcode',
+                  onPressed: () async {
+                    final nav = Navigator.of(context);
+                    final code = await showBarcodeScanner(context);
+                    if (code != null && code.isNotEmpty) {
+                      _controller.text = code;
+                      await _fetch(code);
+                      if (_results.length == 1 && mounted) {
+                        widget.onAddPart(_results.first);
+                        nav.pop();
+                      }
+                    }
+                  },
+                ),
               ),
               onChanged: (value) => _fetch(value),
               autofocus: true,

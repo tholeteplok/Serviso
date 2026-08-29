@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../controllers/part_list_controller.dart';
@@ -63,6 +64,17 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                     leading: const Icon(Icons.search),
                     trailing: [
                       IconButton(
+                        icon: const Icon(Icons.qr_code_scanner_outlined),
+                        tooltip: 'Scan Barcode',
+                        onPressed: () async {
+                          final code = await showBarcodeScanner(context);
+                          if (code != null && code.isNotEmpty) {
+                            _searchController.text = code;
+                            ref.read(partSearchProvider.notifier).state = code;
+                          }
+                        },
+                      ),
+                      IconButton(
                         icon: const Icon(Icons.close),
                         tooltip: 'Tutup pencarian',
                         onPressed: _closeSearch,
@@ -76,12 +88,25 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
               )
             : null,
         actions: [
-          if (!_searching)
+          if (!_searching) ...[
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner_outlined),
+              tooltip: 'Scan Barcode',
+              onPressed: () async {
+                final code = await showBarcodeScanner(context);
+                if (code != null && code.isNotEmpty) {
+                  _openSearch();
+                  _searchController.text = code;
+                  ref.read(partSearchProvider.notifier).state = code;
+                }
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.search),
               tooltip: 'Cari suku cadang',
               onPressed: _openSearch,
             ),
+          ],
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

@@ -6,6 +6,7 @@ import '../../auth/controllers/session_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -1018,9 +1019,24 @@ class _DetailPartPickerSheetState
             const SizedBox(height: 12),
             TextField(
               controller: _searchController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Cari nama atau kode part...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  tooltip: 'Scan Barcode',
+                  onPressed: () async {
+                    final nav = Navigator.of(context);
+                    final code = await showBarcodeScanner(context);
+                    if (code != null && code.isNotEmpty) {
+                      _searchController.text = code;
+                      await _fetchParts(code);
+                      if (_parts != null && _parts!.length == 1 && mounted) {
+                        nav.pop(_parts!.first);
+                      }
+                    }
+                  },
+                ),
               ),
               onChanged: (q) => _fetchParts(q),
             ),

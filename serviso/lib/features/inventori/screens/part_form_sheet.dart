@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_form_controller.dart';
 import '../controllers/part_list_controller.dart';
@@ -153,10 +154,22 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _codeController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Kode',
-                  prefixIcon: Icon(Icons.tag_outlined),
-                  helperText: 'Saran kode otomatis, dapat diubah',
+                  prefixIcon: const Icon(Icons.tag_outlined),
+                  helperText: 'Saran kode otomatis, atau scan barcode',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.qr_code_scanner_outlined),
+                    tooltip: 'Scan Barcode',
+                    onPressed: () async {
+                      final code = await showBarcodeScanner(context);
+                      if (code != null && code.isNotEmpty) {
+                        setState(() {
+                          _codeController.text = code;
+                        });
+                      }
+                    },
+                  ),
                 ),
                 textInputAction: TextInputAction.next,
               ),

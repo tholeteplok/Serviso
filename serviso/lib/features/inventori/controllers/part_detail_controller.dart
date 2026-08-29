@@ -30,9 +30,26 @@ class PartDetailController
     return PartDetailData(part: part, movements: movements);
   }
 
-  Future<void> stockIn(double qty, {String? note}) async {
+  Future<void> stockIn(
+    double qty, {
+    String? note,
+    String? distributor,
+    double? purchasePrice,
+    String paymentType = 'tunai',
+    DateTime? dueDate,
+    bool updateCostPrice = false,
+  }) async {
     final repo = ref.read(partRepositoryProvider);
-    await repo.stockIn(arg, qty, note: note);
+    await repo.stockIn(
+      arg,
+      qty,
+      note: note,
+      distributor: distributor,
+      purchasePrice: purchasePrice,
+      paymentType: paymentType,
+      dueDate: dueDate,
+      updateCostPrice: updateCostPrice,
+    );
     ref.invalidateSelf();
     ref.invalidate(partListControllerProvider);
     ref.invalidate(dashboardSummaryProvider);

@@ -20,7 +20,20 @@ abstract class PartRepository {
 
   Future<void> deletePart(String id);
 
-  Future<void> stockIn(String partId, double qty, {String? note});
+  Future<void> stockIn(
+    String partId,
+    double qty, {
+    String? note,
+    String? distributor,
+    double? purchasePrice,
+    String paymentType = 'tunai',
+    DateTime? dueDate,
+    bool updateCostPrice = false,
+  });
+
+  Future<void> markDebtPaid(String movementId);
+
+  Future<List<PartMovement>> getOutstandingDebts();
 
   Future<void> adjustStock(String partId, double signedDelta, String reason);
 
@@ -120,17 +133,85 @@ class SupabasePartRepository implements PartRepository {
   }
 
   @override
-  Future<void> stockIn(String partId, double qty, {String? note}) async {
+  Future<void> stockIn(
+    String partId,
+    double qty, {
+    String? note,
+    String? distributor,
+    double? purchasePrice,
+    String paymentType = 'tunai',
+    DateTime? dueDate,
+    bool updateCostPrice = false,
+  }) async {
     try {
-      await _client.from('part_movements').insert({
+      final insertMap = <String, dynamic>{
         'part_id': partId,
         'direction': 'in',
         'qty': qty,
         'ref_type': 'pembelian',
         'note': note?.trim().isEmpty == true ? null : note?.trim(),
-      });
+        'distributor': distributor?.trim().isEmpty == true ? null : distributor?.trim(),
+        'purchase_price': purchasePrice,
+        'payment_type': paymentType,
+        'debt_status': paymentType == 'hutang' ? 'belum_lunas' : 'lunas',
+        'due_date': dueDate?.toIso8601String().substring(0, 10),
+      };
+
+      try {
+        await _client.from('part_movements').insert(insertMap);
+      } catch (_) {
+        // Graceful fallback if new columns not yet migrated
+        var fallbackNote = note?.trim() ?? '';
+        if (distributor?.trim().isNotEmpty == true) {
+          fallbackNote = '[Distributor: ${distributor!.trim()}] $fallbackNote'.trim();
+        }
+        if (paymentType == 'hutang') {
+          fallbackNote = '[HUTANG] $fallbackNote'.trim();
+        }
+        await _client.from('part_movements').insert({
+          'part_id': partId,
+          'direction': 'in',
+          'qty': qty,
+          'ref_type': 'pembelian',
+          'note': fallbackNote.isEmpty ? null : fallbackNote,
+        });
+      }
+
+      if (updateCostPrice && purchasePrice != null && purchasePrice > 0) {
+        await _client.from('parts').update({'cost_price': purchasePrice}).eq('id', partId);
+      }
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    try {
+      await _client
+          .from('part_movements')
+          .update({
+            'debt_status': 'lunas',
+            'paid_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', movementId);
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<PartMovement>> getOutstandingDebts() async {
+    try {
+      final res = await _client
+          .from('part_movements')
+          .select('*, profiles:created_by(full_name)')
+          .eq('payment_type', 'hutang')
+          .eq('debt_status', 'belum_lunas')
+          .order('created_at', ascending: false);
+      return (res as List).map((m) => PartMovement.fromMap(m)).toList();
+    } catch (_) {
+      return [];
     }
   }
 

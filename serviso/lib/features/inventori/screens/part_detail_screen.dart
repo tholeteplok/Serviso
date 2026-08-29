@@ -170,7 +170,7 @@ class PartDetailScreen extends ConsumerWidget {
                   Expanded(
                     child: FilledButton.tonal(
                       onPressed: () =>
-                          showStockInDialog(context, ref, partId),
+                          showStockInDialog(context, ref, partId, initialPart: part),
                       child: const Text('Stok Masuk'),
                     ),
                   ),
@@ -351,10 +351,51 @@ class _MovementRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _refLabel(movement),
-                style: textTheme.bodyMedium,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      _refLabel(movement),
+                      style: textTheme.bodyMedium,
+                    ),
+                  ),
+                  if (movement.isDebt) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: movement.isUnpaidDebt
+                            ? AppColors.action.withValues(alpha: 0.15)
+                            : AppColors.teal.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        movement.isUnpaidDebt ? 'Hutang' : 'Lunas',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: movement.isUnpaidDebt
+                              ? AppColors.action
+                              : AppColors.teal,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
+              if (movement.distributor != null &&
+                  movement.distributor!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Distributor: ${movement.distributor}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              ],
               const SizedBox(height: 2),
               Text(
                 '${movement.actorName ?? '—'} • ${timeId(movement.createdAt)}',

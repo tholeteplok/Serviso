@@ -91,3 +91,43 @@ class DashboardSummary {
     required this.last7Days,
   });
 }
+
+class OwnerFinancialSummary {
+  final double totalRevenue;
+  final double totalCogs;
+  final double totalUnpaidDebt;
+
+  const OwnerFinancialSummary({
+    required this.totalRevenue,
+    required this.totalCogs,
+    required this.totalUnpaidDebt,
+  });
+
+  double get netProfit => totalRevenue - totalCogs;
+}
+
+class DistributorDebtItem {
+  final String movementId;
+  final String partId;
+  final String partName;
+  final String distributor;
+  final double qty;
+  final double purchasePrice;
+  final double totalDebt;
+  final DateTime createdAt;
+  final DateTime? dueDate;
+  final String debtStatus;
+
+  const DistributorDebtItem({
+    required this.movementId,
+    required this.partId,
+    required this.partName,
+    required this.distributor,
+    required this.qty,
+    required this.purchasePrice,
+    required this.totalDebt,
+    required this.createdAt,
+    this.dueDate,
+    required this.debtStatus,
+  });
+}
