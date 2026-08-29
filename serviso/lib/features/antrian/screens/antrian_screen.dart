@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_search_bar.dart';
+import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_switch.dart';
 import '../../workorders/controllers/work_order_providers.dart';
 import '../../workorders/models/work_order.dart';
 import '../../workorders/widgets/wo_card.dart';
@@ -26,6 +29,7 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
     WoStatus.selesai,
   ];
 
+  WoStatus _selectedStatus = WoStatus.menunggu;
   bool _searching = false;
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -58,7 +62,6 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
     final board = ref.watch(boardControllerProvider);
     final onlyToday = ref.watch(todayFilterProvider);
 
@@ -96,108 +99,108 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
             status: visible.where((o) => o.status == status).toList(),
         };
 
-        return DefaultTabController(
-          length: _columns.length,
-          child: Scaffold(
-            appBar: AppBar(
-              title: _searching
-                  ? SearchBar(
-                      controller: _searchController,
-                      hintText: 'Cari plat, WO, pelanggan...',
-                      hintStyle: WidgetStateProperty.all(
-                        textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                      ),
-                      leading: const Icon(Icons.search, size: 20),
-                      trailing: [
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 20),
-                          tooltip: 'Tutup',
-                          onPressed: _closeSearch,
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value.trim()),
-                      autoFocus: true,
-                    )
-                  : const Text('Antrian'),
-              bottom: TabBar(
-                isScrollable: false,
-                indicatorColor: AppColors.primary,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.inkMuted,
-                tabs: [
-                  for (final status in _columns)
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(status.label),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: status.bgColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${grouped[status]?.length ?? 0}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: status.accentColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+        final segmentItems = [
+          NeoSegmentItem<WoStatus>(
+            value: WoStatus.menunggu,
+            label: 'Menunggu',
+            count: grouped[WoStatus.menunggu]?.length ?? 0,
+            badgeColor: AppColors.statusWaiting,
+            activeColor: AppColors.pastelYellow,
+          ),
+          NeoSegmentItem<WoStatus>(
+            value: WoStatus.dikerjakan,
+            label: 'Dikerjakan',
+            count: grouped[WoStatus.dikerjakan]?.length ?? 0,
+            badgeColor: AppColors.statusProgress,
+            activeColor: AppColors.pastelMint,
+          ),
+          NeoSegmentItem<WoStatus>(
+            value: WoStatus.selesai,
+            label: 'Selesai',
+            count: grouped[WoStatus.selesai]?.length ?? 0,
+            badgeColor: AppColors.statusDone,
+            activeColor: AppColors.pastelMint,
+          ),
+        ];
+
+        return Scaffold(
+          appBar: AppBar(
+            title: _searching
+                ? NeoSearchBar(
+                    controller: _searchController,
+                    hintText: 'Cari plat, WO, pelanggan...',
+                    onClear: _closeSearch,
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value.trim()),
+                  )
+                : const Text('Antrian'),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: NeoSegmentControl<WoStatus>(
+                  selectedValue: _selectedStatus,
+                  onValueChanged: (val) =>
+                      setState(() => _selectedStatus = val),
+                  items: segmentItems,
+                ),
               ),
-              actions: [
-                if (!_searching) ...[
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    tooltip: 'Cari work order',
-                    onPressed: _openSearch,
-                  ),
-                  Row(
+            ),
+            actions: [
+              if (!_searching) ...[
+                IconButton(
+                  icon: Icon(AppIcons.search),
+                  tooltip: 'Cari work order',
+                  onPressed: _openSearch,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('Hari ini'),
-                      Switch(
+                      Text(
+                        'Hari ini',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              onlyToday ? FontWeight.bold : FontWeight.w500,
+                          color: AppColors.ink900,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      NeoSwitch(
                         value: !onlyToday,
                         onChanged: (_) => ref
                             .read(todayFilterProvider.notifier)
                             .state = !onlyToday,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        width: 48,
+                        height: 26,
                       ),
-                      const Text('Semua'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Semua',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              !onlyToday ? FontWeight.bold : FontWeight.w500,
+                          color: AppColors.ink900,
+                        ),
+                      ),
                     ],
                   ),
-                ],
+                ),
               ],
-            ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () => context.push(AppRoutes.woBaru),
-              icon: const Icon(Icons.add),
-              label: const Text('WO Baru'),
-            ),
-            body: TabBarView(
-              children: [
-                for (final status in _columns)
-                  _StatusListTab(
-                    status: status,
-                    orders: grouped[status]!,
-                    onRefresh: () =>
-                        ref.refresh(boardControllerProvider.future),
-                  ),
-              ],
-            ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => context.push(AppRoutes.woBaru),
+            icon: Icon(AppIcons.add),
+            label: const Text('WO Baru'),
+          ),
+          body: _StatusListTab(
+            status: _selectedStatus,
+            orders: grouped[_selectedStatus] ?? [],
+            onRefresh: () => ref.refresh(boardControllerProvider.future),
           ),
         );
       },

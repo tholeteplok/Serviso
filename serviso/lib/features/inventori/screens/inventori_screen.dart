@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/stock_indicator_card.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../controllers/part_list_controller.dart';
 import '../controllers/part_providers.dart';
 import '../models/part.dart';
@@ -43,7 +45,6 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
     final state = ref.watch(partListControllerProvider);
     final lowStockOnly = ref.watch(partLowStockFilterProvider);
 
@@ -55,34 +56,19 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                 preferredSize: const Size.fromHeight(60),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: SearchBar(
+                  child: NeoSearchBar(
                     controller: _searchController,
                     hintText: 'Cari nama atau kode',
-                    hintStyle: WidgetStateProperty.all(
-                      textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                    ),
-                    leading: const Icon(Icons.search),
-                    trailing: [
-                      IconButton(
-                        icon: const Icon(Icons.qr_code_scanner_outlined),
-                        tooltip: 'Scan Barcode',
-                        onPressed: () async {
-                          final code = await showBarcodeScanner(context);
-                          if (code != null && code.isNotEmpty) {
-                            _searchController.text = code;
-                            ref.read(partSearchProvider.notifier).state = code;
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Tutup pencarian',
-                        onPressed: _closeSearch,
-                      ),
-                    ],
+                    onScanTap: () async {
+                      final code = await showBarcodeScanner(context);
+                      if (code != null && code.isNotEmpty) {
+                        _searchController.text = code;
+                        ref.read(partSearchProvider.notifier).state = code;
+                      }
+                    },
+                    onClear: _closeSearch,
                     onChanged: (value) =>
                         ref.read(partSearchProvider.notifier).state = value,
-                    autoFocus: true,
                   ),
                 ),
               )
@@ -90,7 +76,10 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
         actions: [
           if (!_searching) ...[
             IconButton(
-              icon: const Icon(Icons.qr_code_scanner_outlined),
+              icon: Icon(
+                PhosphorIcons.barcode(PhosphorIconsStyle.bold),
+                size: 22,
+              ),
               tooltip: 'Scan Barcode',
               onPressed: () async {
                 final code = await showBarcodeScanner(context);
@@ -102,7 +91,7 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.search),
+              icon: Icon(AppIcons.search),
               tooltip: 'Cari suku cadang',
               onPressed: _openSearch,
             ),
@@ -111,7 +100,7 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showPartForm(context, ref, null),
-        icon: const Icon(Icons.add_rounded),
+        icon: Icon(AppIcons.add),
         label: const Text('Tambah'),
       ),
       body: Column(

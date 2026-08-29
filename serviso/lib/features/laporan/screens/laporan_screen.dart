@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/report_controllers.dart';
@@ -44,54 +46,18 @@ class LaporanScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             // Segmented Period Selector
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppColors.line.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: LaporanPeriod.values.map((p) {
-                  final isSelected = p == period;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        ref.read(laporanPeriodProvider.notifier).state = p;
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.surface
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: isSelected
-                              ? const [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Text(
-                          p.label,
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.inkMuted,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+            NeoSegmentControl<LaporanPeriod>(
+              selectedValue: period,
+              onValueChanged: (p) {
+                ref.read(laporanPeriodProvider.notifier).state = p;
+              },
+              activeColor: AppColors.pastelMint,
+              items: LaporanPeriod.values
+                  .map((p) => NeoSegmentItem<LaporanPeriod>(
+                        value: p,
+                        label: p.label,
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 16),
 
@@ -143,55 +109,64 @@ class LaporanScreen extends ConsumerWidget {
                       ownerFinancialAsync.when(
                         data: (fin) => Column(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildMetricCard(
-                                    context,
-                                    title: 'Total Omset',
-                                    value: rupiah(fin.totalRevenue),
-                                    icon: Icons.payments_outlined,
-                                    color: AppColors.primary,
+                            IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    child: _buildMetricCard(
+                                      context,
+                                      title: 'Total Omset',
+                                      value: rupiah(fin.totalRevenue),
+                                      subtitle: 'Pendapatan kotor',
+                                      icon: AppIcons.wallet,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildMetricCard(
-                                    context,
-                                    title: 'Untung Bersih',
-                                    value: rupiah(fin.netProfit),
-                                    subtitle: 'Omzet - Modal Part',
-                                    icon: Icons.trending_up_rounded,
-                                    color: AppColors.teal,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildMetricCard(
+                                      context,
+                                      title: 'Untung Bersih',
+                                      value: rupiah(fin.netProfit),
+                                      subtitle: 'Omzet - Modal Part',
+                                      icon: AppIcons.report,
+                                      color: AppColors.teal,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildMetricCard(
-                                    context,
-                                    title: 'Modal Part (HPP)',
-                                    value: rupiah(fin.totalCogs),
-                                    icon: Icons.shopping_bag_outlined,
-                                    color: AppColors.inkMuted,
+                            IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    child: _buildMetricCard(
+                                      context,
+                                      title: 'Modal Part (HPP)',
+                                      value: rupiah(fin.totalCogs),
+                                      subtitle: 'Modal pokok barang',
+                                      icon: AppIcons.part,
+                                      color: AppColors.inkMuted,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildMetricCard(
-                                    context,
-                                    title: 'Hutang Distributor',
-                                    value: rupiah(fin.totalUnpaidDebt),
-                                    icon: Icons.receipt_long_outlined,
-                                    color: fin.totalUnpaidDebt > 0
-                                        ? AppColors.action
-                                        : AppColors.teal,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildMetricCard(
+                                      context,
+                                      title: 'Hutang Distributor',
+                                      value: rupiah(fin.totalUnpaidDebt),
+                                      subtitle: 'Tagihan belum lunas',
+                                      icon: AppIcons.receipt,
+                                      color: fin.totalUnpaidDebt > 0
+                                          ? AppColors.action
+                                          : AppColors.teal,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -208,7 +183,8 @@ class LaporanScreen extends ConsumerWidget {
                                 context,
                                 title: 'Total Omset',
                                 value: rupiah(totalRevenue),
-                                icon: Icons.payments_outlined,
+                                subtitle: 'Pendapatan kotor',
+                                icon: AppIcons.wallet,
                                 color: AppColors.primary,
                               ),
                             ),
@@ -224,7 +200,8 @@ class LaporanScreen extends ConsumerWidget {
                               context,
                               title: 'Total Omset',
                               value: rupiah(totalRevenue),
-                              icon: Icons.payments_outlined,
+                              subtitle: 'Pendapatan kotor',
+                              icon: AppIcons.wallet,
                               color: AppColors.primary,
                             ),
                           ),
@@ -233,28 +210,33 @@ class LaporanScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                     ],
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildMetricCard(
-                            context,
-                            title: 'WO Selesai',
-                            value: '$totalWo WO',
-                            icon: Icons.task_alt_rounded,
-                            color: AppColors.teal,
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              title: 'WO Selesai',
+                              value: '$totalWo WO',
+                              subtitle: 'Pekerjaan tuntas',
+                              icon: AppIcons.checkCircle,
+                              color: AppColors.teal,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildMetricCard(
-                            context,
-                            title: 'Part Terjual',
-                            value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
-                            icon: Icons.settings_input_component_outlined,
-                            color: AppColors.ink,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              title: 'Part Terjual',
+                              value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
+                              subtitle: 'Item suku cadang',
+                              icon: AppIcons.inventory,
+                              color: AppColors.ink,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -612,6 +594,7 @@ class LaporanScreen extends ConsumerWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   title,

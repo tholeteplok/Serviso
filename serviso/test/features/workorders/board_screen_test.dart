@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/neo_switch.dart';
 import 'package:serviso/features/antrian/screens/antrian_screen.dart';
 import 'package:serviso/features/workorders/controllers/work_order_providers.dart';
 import 'package:serviso/features/workorders/data/fakes.dart';
@@ -90,7 +91,7 @@ void main() {
       expect(find.text('Hari ini'), findsOneWidget);
       expect(find.text('Semua'), findsOneWidget);
 
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.byType(NeoSwitch));
       await tester.pumpAndSettle();
 
       expect(find.text('Hari ini'), findsOneWidget);
