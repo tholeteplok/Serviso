@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_form_controller.dart';
 import '../controllers/part_list_controller.dart';
@@ -164,9 +166,9 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nama',
-                  prefixIcon: Icon(Icons.label_outline),
+                  prefixIcon: Icon(AppIcons.tag),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
@@ -181,10 +183,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                 controller: _codeController,
                 decoration: InputDecoration(
                   labelText: 'Kode',
-                  prefixIcon: const Icon(Icons.tag_outlined),
+                  prefixIcon: Icon(AppIcons.tag),
                   helperText: 'Saran kode otomatis, atau scan barcode',
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.qr_code_scanner_outlined),
+                    icon: Icon(AppIcons.barcode),
                     tooltip: 'Scan Barcode',
                     onPressed: () async {
                       final code = await showBarcodeScanner(context);
@@ -203,7 +205,7 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                 controller: _unitController,
                 width: double.infinity,
                 label: const Text('Unit'),
-                leadingIcon: const Icon(Icons.straighten_outlined),
+                leadingIcon: Icon(AppIcons.tag),
                 enableFilter: true,
                 requestFocusOnTap: true,
                 initialSelection: widget.initial?.unit ?? 'pcs',
@@ -215,9 +217,9 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _minStockController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Batas Stok Menipis',
-                  prefixIcon: Icon(Icons.warning_outlined),
+                  prefixIcon: Icon(AppIcons.warning),
                 ),
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
@@ -233,9 +235,9 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
               if (isAdmin) ...[
                 TextFormField(
                   controller: _costController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Modal Beli (Rp)',
-                    prefixIcon: Icon(Icons.shopping_cart_outlined),
+                    prefixIcon: Icon(AppIcons.cart),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -252,9 +254,9 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _sellController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Harga Jual (Rp)',
-                    prefixIcon: Icon(Icons.sell_outlined),
+                    prefixIcon: Icon(AppIcons.money),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -290,15 +292,22 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.line),
+                    border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.borderStrong,
+                        offset: Offset(0, 2),
+                        blurRadius: 0,
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(
-                            Icons.inventory_2_outlined,
+                          Icon(
+                            AppIcons.inventory,
                             size: 20,
                             color: AppColors.primary,
                           ),
@@ -314,10 +323,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _initialStockController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Jumlah Stok Awal (Qty)',
                           hintText: 'Misal: 10 (kosongkan jika belum ada)',
-                          prefixIcon: Icon(Icons.add_shopping_cart_rounded),
+                          prefixIcon: Icon(AppIcons.cart),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -335,10 +344,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _distributorController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Distributor / Pemasok (opsional)',
                           hintText: 'Misal: PT Astra Otoparts',
-                          prefixIcon: Icon(Icons.local_shipping_outlined),
+                          prefixIcon: Icon(AppIcons.truck),
                         ),
                         textInputAction: TextInputAction.next,
                       ),
@@ -350,23 +359,23 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(
+                      NeoSegmentControl<String>(
+                        selectedValue: _paymentType,
+                        onValueChanged: (val) => setState(() => _paymentType = val),
+                        items: [
+                          NeoSegmentItem<String>(
                             value: 'tunai',
-                            label: Text('Tunai / Cash'),
-                            icon: Icon(Icons.money_rounded),
+                            label: 'Tunai',
+                            activeColor: AppColors.pastelMint,
+                            icon: Icon(AppIcons.wallet, size: 16),
                           ),
-                          ButtonSegment(
+                          NeoSegmentItem<String>(
                             value: 'hutang',
-                            label: Text('Hutang (Tempo)'),
-                            icon: Icon(Icons.receipt_long_outlined),
+                            label: 'Hutang',
+                            activeColor: AppColors.pastelYellow,
+                            icon: Icon(AppIcons.receipt, size: 16),
                           ),
                         ],
-                        selected: {_paymentType},
-                        onSelectionChanged: (selected) {
-                          setState(() => _paymentType = selected.first);
-                        },
                       ),
                       if (_paymentType == 'hutang') ...[
                         const SizedBox(height: 12),
@@ -386,20 +395,20 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                               setState(() => _dueDate = picked);
                             }
                           },
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.line),
-                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.calendar_month_outlined,
+                                Icon(
+                                  AppIcons.calendar,
                                   color: AppColors.primary,
                                   size: 20,
                                 ),
@@ -410,9 +419,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                                     style: textTheme.bodyMedium,
                                   ),
                                 ),
-                                const Icon(
-                                  Icons.arrow_drop_down,
+                                Icon(
+                                  AppIcons.caretDown,
                                   color: AppColors.inkMuted,
+                                  size: 16,
                                 ),
                               ],
                             ),
@@ -426,9 +436,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: FilledButton.icon(
+                  icon: Icon(AppIcons.check, size: 18),
                   onPressed: saving ? null : _submit,
-                  child: saving
+                  label: saving
                       ? const SizedBox(
                           width: 18,
                           height: 18,

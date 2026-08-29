@@ -109,7 +109,7 @@ Future<void> showStockInDialog(
                         ),
                         NeoSegmentItem<String>(
                           value: 'hutang',
-                          label: 'Hutang (Tempo)',
+                          label: 'Hutang',
                           activeColor: AppColors.pastelYellow,
                           icon: Icon(AppIcons.receipt, size: 16),
                         ),
