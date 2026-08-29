@@ -6,25 +6,25 @@ import 'package:serviso/core/widgets/status_chip.dart';
 
 void main() {
   group('pemetaan warna WoStatus', () {
-    test('menunggu netral abu', () {
-      expect(WoStatus.menunggu.accentColor, AppColors.inkMuted);
+    test('menunggu oranye', () {
+      expect(WoStatus.menunggu.accentColor, AppColors.statusWaiting);
     });
 
-    test('dikerjakan teal', () {
-      expect(WoStatus.dikerjakan.accentColor, AppColors.teal);
+    test('dikerjakan biru', () {
+      expect(WoStatus.dikerjakan.accentColor, AppColors.statusProgress);
     });
 
-    test('selesai plum', () {
-      expect(WoStatus.selesai.accentColor, AppColors.primary);
+    test('selesai hijau', () {
+      expect(WoStatus.selesai.accentColor, AppColors.statusDone);
     });
 
     test('dibatalkan koral', () {
-      expect(WoStatus.dibatalkan.accentColor, AppColors.action);
+      expect(WoStatus.dibatalkan.accentColor, AppColors.statusCancelled);
     });
 
-    test('bg tint 12 persen dari warna aksen', () {
+    test('bg solid status color', () {
       for (final status in WoStatus.values) {
-        expect(status.bgColor, status.accentColor.withValues(alpha: 0.12));
+        expect(status.bgColor, status.accentColor);
       }
     });
   });

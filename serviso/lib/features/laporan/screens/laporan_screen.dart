@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/report_controllers.dart';
@@ -464,138 +465,128 @@ class LaporanScreen extends ConsumerWidget {
     final isPastDue = debt.dueDate != null &&
         debt.dueDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)));
 
-    return Card(
-      elevation: 0,
+    return NeoCard(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isPastDue
-              ? AppColors.action.withValues(alpha: 0.5)
-              : AppColors.line,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isPastDue
-                    ? AppColors.action.withValues(alpha: 0.12)
-                    : AppColors.inkMuted.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.local_shipping_outlined,
-                color: isPastDue ? AppColors.action : AppColors.ink,
-                size: 20,
-              ),
+      borderColor: isPastDue ? AppColors.statusCancelled : AppColors.borderStrong,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isPastDue
+                  ? AppColors.action.withValues(alpha: 0.12)
+                  : AppColors.inkMuted.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    debt.distributor,
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    ' •  pcs',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.inkMuted,
-                    ),
-                  ),
-                  if (debt.dueDate != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      'Jatuh Tempo: ',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: isPastDue ? AppColors.action : AppColors.inkMuted,
-                        fontWeight:
-                            isPastDue ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+            child: Icon(
+              Icons.local_shipping_outlined,
+              color: isPastDue ? AppColors.action : AppColors.ink,
+              size: 20,
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  rupiah(debt.totalDebt),
-                  style: AppTypography.mono(
+                  debt.distributor,
+                  style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.action,
-                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 6),
-                FilledButton.tonal(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                const SizedBox(height: 2),
+                Text(
+                  '${debt.partName} • ${debt.qty} pcs',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+                if (debt.dueDate != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Jatuh Tempo: ${dateShortId(debt.dueDate!)}',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: isPastDue ? AppColors.action : AppColors.inkMuted,
+                      fontWeight:
+                          isPastDue ? FontWeight.bold : FontWeight.normal,
                     ),
-                    visualDensity: VisualDensity.compact,
                   ),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Pelunasan Hutang'),
-                        content: Text(
-                          'Konfirmasi pelunasan hutang ke "${debt.distributor}" sebesar ${rupiah(debt.totalDebt)}?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Batal'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Ya, Lunasi'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      try {
-                        await ref
-                            .read(reportRepositoryProvider)
-                            .markDebtPaid(debt.movementId);
-                        ref.invalidate(distributorDebtsProvider);
-                        ref.invalidate(ownerFinancialSummaryProvider);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Hutang distributor berhasil dilunasi'),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(e.toString())),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  child: const Text('Lunasi'),
-                ),
+                ],
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                rupiah(debt.totalDebt),
+                style: AppTypography.mono(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.action,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 6),
+              FilledButton.tonal(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Pelunasan Hutang'),
+                      content: Text(
+                        'Konfirmasi pelunasan hutang ke "${debt.distributor}" sebesar ${rupiah(debt.totalDebt)}?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Batal'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: const Text('Ya, Lunasi'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    try {
+                      await ref
+                          .read(reportRepositoryProvider)
+                          .markDebtPaid(debt.movementId);
+                      ref.invalidate(distributorDebtsProvider);
+                      ref.invalidate(ownerFinancialSummaryProvider);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Hutang distributor berhasil dilunasi'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    }
+                  }
+                },
+                child: const Text('Lunasi'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -608,60 +599,52 @@ class LaporanScreen extends ConsumerWidget {
     required IconData icon,
     required Color color,
   }) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: color.withValues(alpha: 0.12),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    return NeoCard(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color.withValues(alpha: 0.12),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.textTheme().bodySmall?.copyWith(
+                        color: AppColors.inkMuted,
+                        fontSize: 12,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.mono(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 1),
                   Text(
-                    title,
-                    style: AppTypography.textTheme().bodySmall?.copyWith(
+                    subtitle,
+                    style: AppTypography.textTheme().labelSmall?.copyWith(
                           color: AppColors.inkMuted,
-                          fontSize: 12,
+                          fontSize: 10,
                         ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.mono(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      subtitle,
-                      style: AppTypography.textTheme().labelSmall?.copyWith(
-                            color: AppColors.inkMuted,
-                            fontSize: 10,
-                          ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

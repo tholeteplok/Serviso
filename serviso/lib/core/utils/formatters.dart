@@ -19,6 +19,11 @@ String dateTimeId(DateTime value) {
   return DateFormat('d MMM yyyy, HH.mm', 'id_ID').format(value);
 }
 
+String dateShortId(DateTime value) {
+  _ensureIdLocale();
+  return DateFormat('d MMM yyyy', 'id_ID').format(value);
+}
+
 String timeId(DateTime value) {
   _ensureIdLocale();
   return DateFormat('HH.mm', 'id_ID').format(value);

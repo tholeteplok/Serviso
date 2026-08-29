@@ -4,6 +4,7 @@ import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../models/work_order.dart';
 
@@ -20,14 +21,11 @@ class WoCard extends StatelessWidget {
         ? order.assignedName!.trim()[0].toUpperCase()
         : null;
 
-    return Card(
+    return NeoCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -102,8 +100,6 @@ class WoCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

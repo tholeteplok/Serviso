@@ -6,9 +6,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../features/auth/controllers/session_controller.dart';
 import '../../../features/laporan/controllers/report_controllers.dart';
@@ -126,13 +128,15 @@ class BerandaScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.accentPrimary,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.borderStrong, width: 1.5),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1F512D6D),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.shadowHard,
+            offset: Offset(3, 3),
+            blurRadius: 0,
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -143,15 +147,15 @@ class BerandaScreen extends ConsumerWidget {
             children: [
               const Icon(
                 Icons.account_balance_wallet_outlined,
-                color: Colors.white70,
+                color: Colors.white,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 'Pendapatan Hari Ini',
                 style: AppTypography.textTheme().bodyMedium?.copyWith(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
               ),
             ],
@@ -179,59 +183,48 @@ class BerandaScreen extends ConsumerWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return NeoCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.textTheme().bodyMedium?.copyWith(
-                          color: AppColors.inkMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  Icon(icon, color: color, size: 20),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    value,
-                    style: AppTypography.chakra(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
+              Text(
+                title,
+                style: AppTypography.textTheme().bodyMedium?.copyWith(
+                      color: AppColors.inkMuted,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    unit,
-                    style: AppTypography.textTheme().bodySmall?.copyWith(
-                          color: AppColors.inkMuted,
-                        ),
-                  ),
-                ],
+              ),
+              Icon(icon, color: color, size: 20),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: AppTypography.chakra(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: AppTypography.textTheme().bodySmall?.copyWith(
+                      color: AppColors.inkMuted,
+                    ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

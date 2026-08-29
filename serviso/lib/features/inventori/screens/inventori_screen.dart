@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/stock_indicator_card.dart';
 import '../controllers/part_list_controller.dart';
 import '../controllers/part_providers.dart';
 import '../models/part.dart';
@@ -202,81 +202,17 @@ class _PartCard extends StatelessWidget {
 
   final Part part;
 
-  static String _formatStockQty(double value) {
-    return value.truncateToDouble() == value
-        ? value.toInt().toString()
-        : value.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
-    final hasAlert = part.isLowStock || part.isOutOfStock;
-
-    Widget? trailingWidget;
-    if (part.isOutOfStock) {
-      trailingWidget = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.tintAction,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          'Stok Habis',
-          style: textTheme.labelSmall?.copyWith(color: AppColors.action),
-        ),
-      );
-    } else if (part.isLowStock) {
-      trailingWidget = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.tintAction,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          'Stok Menipis',
-          style: textTheme.labelSmall?.copyWith(color: AppColors.action),
-        ),
-      );
-    } else {
-      trailingWidget = const Icon(Icons.chevron_right);
-    }
-
-    return Card(
-      child: ListTile(
-        onTap: () => context.push('/inventori/${part.id}'),
-        leading: CircleAvatar(
-          backgroundColor: AppColors.tintPrimary,
-          child: Icon(
-            Icons.inventory_2_outlined,
-            color: hasAlert ? AppColors.action : AppColors.primary,
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(child: Text(part.name)),
-            if (part.code != null)
-              Text(
-                part.code!,
-                style: AppTypography.mono(
-                  fontSize: 12,
-                  color: AppColors.inkMuted,
-                ),
-              ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 2),
-            Text(
-              'Stok: ${_formatStockQty(part.stockQty)} ${part.unit ?? 'pcs'} • ${rupiah(part.sellPrice)}',
-              style: textTheme.bodySmall,
-            ),
-          ],
-        ),
-        trailing: trailingWidget,
-      ),
+    return StockIndicatorCard(
+      name: part.name,
+      code: part.code,
+      stockQty: part.stockQty,
+      minStock: part.minStock,
+      unit: part.unit ?? 'pcs',
+      sellPrice: part.sellPrice,
+      costPrice: part.costPrice,
+      onTap: () => context.push('/inventori/${part.id}'),
     );
   }
 }

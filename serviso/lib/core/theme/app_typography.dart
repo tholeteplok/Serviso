@@ -30,12 +30,25 @@ abstract final class AppTypography {
         letterSpacing: letterSpacing,
       );
 
+  static TextStyle inter({
+    double? fontSize,
+    FontWeight fontWeight = FontWeight.w400,
+    Color color = AppColors.ink,
+    double letterSpacing = 0,
+  }) =>
+      GoogleFonts.inter(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+      );
+
   static TextTheme textTheme({
     Color ink = AppColors.ink,
     Color inkMuted = AppColors.inkMuted,
   }) {
     final base =
-        GoogleFonts.plusJakartaSansTextTheme().apply(
+        GoogleFonts.interTextTheme().apply(
       bodyColor: ink,
       displayColor: ink,
     );
