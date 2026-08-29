@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
@@ -56,9 +58,9 @@ Future<void> showStockInDialog(
                     // Jumlah / Qty
                     TextFormField(
                       controller: qtyController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Jumlah Masuk',
-                        prefixIcon: Icon(Icons.numbers_outlined),
+                        prefixIcon: Icon(AppIcons.tag),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -79,9 +81,9 @@ Future<void> showStockInDialog(
                     // Distributor / Pemasok
                     TextFormField(
                       controller: distributorController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Distributor / Pemasok (opsional)',
-                        prefixIcon: Icon(Icons.local_shipping_outlined),
+                        prefixIcon: Icon(AppIcons.truck),
                       ),
                       textInputAction: TextInputAction.next,
                     ),
@@ -95,23 +97,23 @@ Future<void> showStockInDialog(
                       ),
                     ),
                     const SizedBox(height: 6),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
+                    NeoSegmentControl<String>(
+                      selectedValue: paymentType,
+                      onValueChanged: (val) => setState(() => paymentType = val),
+                      items: [
+                        NeoSegmentItem<String>(
                           value: 'tunai',
-                          label: Text('Tunai'),
-                          icon: Icon(Icons.payments_outlined),
+                          label: 'Tunai',
+                          activeColor: AppColors.pastelMint,
+                          icon: Icon(AppIcons.wallet, size: 16),
                         ),
-                        ButtonSegment(
+                        NeoSegmentItem<String>(
                           value: 'hutang',
-                          label: Text('Hutang (Tempo)'),
-                          icon: Icon(Icons.receipt_long_outlined),
+                          label: 'Hutang (Tempo)',
+                          activeColor: AppColors.pastelYellow,
+                          icon: Icon(AppIcons.receipt, size: 16),
                         ),
                       ],
-                      selected: {paymentType},
-                      onSelectionChanged: (set) {
-                        setState(() => paymentType = set.first);
-                      },
                     ),
 
                     // Jika Hutang: Picker Jatuh Tempo
@@ -131,20 +133,20 @@ Future<void> showStockInDialog(
                             setState(() => dueDate = picked);
                           }
                         },
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.line),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.calendar_month_outlined,
+                              Icon(
+                                AppIcons.calendar,
                                 color: AppColors.primary,
                                 size: 20,
                               ),
@@ -155,9 +157,10 @@ Future<void> showStockInDialog(
                                   style: textTheme.bodyMedium,
                                 ),
                               ),
-                              const Icon(
-                                Icons.arrow_drop_down,
+                              Icon(
+                                AppIcons.caretDown,
                                 color: AppColors.inkMuted,
+                                size: 16,
                               ),
                             ],
                           ),
@@ -180,10 +183,10 @@ Future<void> showStockInDialog(
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: priceController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Harga Beli Satuan (Modal)',
                           prefixText: 'Rp ',
-                          prefixIcon: Icon(Icons.price_change_outlined),
+                          prefixIcon: Icon(AppIcons.wallet),
                         ),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
@@ -235,9 +238,9 @@ Future<void> showStockInDialog(
                     // Catatan
                     TextFormField(
                       controller: noteController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Catatan tambahan (opsional)',
-                        prefixIcon: Icon(Icons.notes_outlined),
+                        prefixIcon: Icon(AppIcons.notepad),
                       ),
                       textInputAction: TextInputAction.done,
                     ),
@@ -250,7 +253,8 @@ Future<void> showStockInDialog(
                 onPressed: saving ? null : () => Navigator.of(context).pop(),
                 child: const Text('Batal'),
               ),
-              FilledButton(
+              FilledButton.icon(
+                icon: Icon(AppIcons.check, size: 18),
                 onPressed: saving
                     ? null
                     : () async {
@@ -292,7 +296,7 @@ Future<void> showStockInDialog(
                           );
                         }
                       },
-                child: saving
+                label: saving
                     ? const SizedBox(
                         width: 18,
                         height: 18,

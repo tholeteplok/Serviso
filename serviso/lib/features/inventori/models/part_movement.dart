@@ -42,6 +42,26 @@ class PartMovement {
   factory PartMovement.fromMap(Map<String, dynamic> map) {
     final profiles = map['profiles'];
     final actorName = profiles is Map ? (profiles['full_name'] as String?) : null;
+    final note = map['note'] as String?;
+
+    String paymentType = (map['payment_type'] as String?) ?? 'tunai';
+    String debtStatus = (map['debt_status'] as String?) ?? 'lunas';
+    String? distributor = map['distributor'] as String?;
+
+    // Resilient fallback parsing if columns are unmigrated or data was saved in fallback note
+    if (paymentType == 'tunai' && note != null && note.contains('[HUTANG]')) {
+      paymentType = 'hutang';
+      debtStatus = note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas';
+    }
+    if ((distributor == null || distributor.isEmpty) &&
+        note != null &&
+        note.contains('[Distributor:')) {
+      final match = RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+      if (match != null) {
+        distributor = match.group(1)?.trim();
+      }
+    }
+
     return PartMovement(
       id: map['id'] as String,
       partId: map['part_id'] as String,
@@ -49,14 +69,14 @@ class PartMovement {
       qty: parseNumeric(map['qty']),
       refType: _refFromString(map['ref_type'] as String?),
       refId: map['ref_id'] as String?,
-      note: map['note'] as String?,
+      note: note,
       actorName: actorName,
-      distributor: map['distributor'] as String?,
+      distributor: distributor,
       purchasePrice: map['purchase_price'] != null
           ? parseNumeric(map['purchase_price'])
           : null,
-      paymentType: (map['payment_type'] as String?) ?? 'tunai',
-      debtStatus: (map['debt_status'] as String?) ?? 'lunas',
+      paymentType: paymentType,
+      debtStatus: debtStatus,
       dueDate: map['due_date'] != null
           ? DateTime.tryParse(map['due_date'].toString())
           : null,

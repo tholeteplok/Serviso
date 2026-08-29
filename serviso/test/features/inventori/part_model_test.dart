@@ -175,5 +175,37 @@ void main() {
       });
       expect(formatSigned(m.signedQuantity), '+3');
     });
+
+    test('fallback note dengan [HUTANG] & [Distributor: x] ter-parse otomatis sebagai hutang', () {
+      final m = PartMovement.fromMap({
+        'id': 'fallback-1',
+        'part_id': 'p',
+        'direction': 'in',
+        'qty': '10',
+        'ref_type': 'pembelian',
+        'note': '[HUTANG] [Distributor: panca mandiri]',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(m.isDebt, isTrue);
+      expect(m.isUnpaidDebt, isTrue);
+      expect(m.distributor, 'panca mandiri');
+      expect(m.paymentType, 'hutang');
+      expect(m.debtStatus, 'belum_lunas');
+    });
+
+    test('fallback note dengan [HUTANG] [LUNAS] ter-parse sebagai hutang lunas', () {
+      final m = PartMovement.fromMap({
+        'id': 'fallback-2',
+        'part_id': 'p',
+        'direction': 'in',
+        'qty': '5',
+        'ref_type': 'pembelian',
+        'note': '[HUTANG] [Distributor: panca mandiri] [LUNAS]',
+        'created_at': '2025-01-02T03:04:05.000Z',
+      });
+      expect(m.isDebt, isTrue);
+      expect(m.isUnpaidDebt, isFalse);
+      expect(m.debtStatus, 'lunas');
+    });
   });
 }

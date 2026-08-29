@@ -78,5 +78,7 @@ abstract final class AppIcons {
   static final IconData arrowRight = PhosphorIcons.arrowRight(PhosphorIconsStyle.bold);
   static final IconData prohibit = PhosphorIcons.prohibit(PhosphorIconsStyle.bold);
   static final IconData checkFat = PhosphorIcons.checkFat(PhosphorIconsStyle.bold);
+  static final IconData calendar = PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold);
+  static final IconData calendarFill = PhosphorIcons.calendarBlank(PhosphorIconsStyle.fill);
 }
 

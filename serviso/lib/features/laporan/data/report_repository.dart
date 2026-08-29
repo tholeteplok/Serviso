@@ -195,16 +195,40 @@ class SupabaseReportRepository implements ReportRepository {
       try {
         final debtsRes = await _client
             .from('part_movements')
-            .select('qty, purchase_price')
-            .eq('payment_type', 'hutang')
-            .eq('debt_status', 'belum_lunas');
+            .select('qty, purchase_price, payment_type, debt_status, note, parts(cost_price)')
+            .or('payment_type.eq.hutang,note.ilike.%[HUTANG]%');
         for (final d in debtsRes as List) {
-          final q = (d['qty'] as num?)?.toDouble() ?? 0.0;
-          final p = (d['purchase_price'] as num?)?.toDouble() ?? 0.0;
-          totalUnpaid += q * p;
+          final note = (d['note'] as String?) ?? '';
+          final payType = (d['payment_type'] as String?) ??
+              (note.contains('[HUTANG]') ? 'hutang' : 'tunai');
+          final dStatus = (d['debt_status'] as String?) ??
+              (note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas');
+          if (payType == 'hutang' && dStatus == 'belum_lunas') {
+            final q = (d['qty'] as num?)?.toDouble() ?? 0.0;
+            final partMap = d['parts'] as Map?;
+            final costFallback =
+                (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+            final p = (d['purchase_price'] as num?)?.toDouble() ?? costFallback;
+            totalUnpaid += q * p;
+          }
         }
       } catch (_) {
-        // Safe fallback
+        // Fallback if columns don't exist yet on Supabase
+        try {
+          final fallbackRes = await _client
+              .from('part_movements')
+              .select('qty, note, parts(cost_price)')
+              .ilike('note', '%[HUTANG]%');
+          for (final d in fallbackRes as List) {
+            final note = (d['note'] as String?) ?? '';
+            if (note.contains('[HUTANG]') && !note.contains('[LUNAS]')) {
+              final q = (d['qty'] as num?)?.toDouble() ?? 0.0;
+              final partMap = d['parts'] as Map?;
+              final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+              totalUnpaid += q * cost;
+            }
+          }
+        } catch (_) {}
       }
 
       return OwnerFinancialSummary(
@@ -222,46 +246,131 @@ class SupabaseReportRepository implements ReportRepository {
     try {
       final res = await _client
           .from('part_movements')
-          .select('id, part_id, qty, purchase_price, distributor, created_at, due_date, debt_status, parts(name)')
-          .eq('payment_type', 'hutang')
-          .eq('debt_status', 'belum_lunas')
+          .select('id, part_id, qty, purchase_price, distributor, created_at, due_date, debt_status, note, parts(name, cost_price)')
+          .or('payment_type.eq.hutang,note.ilike.%[HUTANG]%')
           .order('created_at', ascending: false);
 
-      return (res as List).map((m) {
-        final partMap = m['parts'] as Map?;
-        final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
-        final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
-        final price = (m['purchase_price'] as num?)?.toDouble() ?? 0.0;
-        return DistributorDebtItem(
-          movementId: m['id'] as String,
-          partId: m['part_id'] as String,
-          partName: pName,
-          distributor: (m['distributor'] as String?) ?? 'Distributor Umum',
-          qty: qty,
-          purchasePrice: price,
-          totalDebt: qty * price,
-          createdAt: DateTime.parse(m['created_at'].toString()),
-          dueDate: m['due_date'] != null ? DateTime.tryParse(m['due_date'].toString()) : null,
-          debtStatus: (m['debt_status'] as String?) ?? 'belum_lunas',
-        );
-      }).toList();
+      final list = <DistributorDebtItem>[];
+      for (final m in res as List) {
+        final note = (m['note'] as String?) ?? '';
+        final payType = (m['payment_type'] as String?) ??
+            (note.contains('[HUTANG]') ? 'hutang' : 'tunai');
+        final dStatus = (m['debt_status'] as String?) ??
+            (note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas');
+
+        if (payType == 'hutang' && dStatus == 'belum_lunas') {
+          final partMap = m['parts'] as Map?;
+          final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
+          final costFallback =
+              (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+          final price =
+              (m['purchase_price'] as num?)?.toDouble() ?? costFallback;
+
+          var dist = m['distributor'] as String?;
+          if ((dist == null || dist.isEmpty) && note.contains('[Distributor:')) {
+            final match =
+                RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+            if (match != null) dist = match.group(1)?.trim();
+          }
+
+          list.add(DistributorDebtItem(
+            movementId: m['id'] as String,
+            partId: m['part_id'] as String,
+            partName: pName,
+            distributor: (dist != null && dist.isNotEmpty)
+                ? dist
+                : 'Distributor Umum',
+            qty: qty,
+            purchasePrice: price,
+            totalDebt: qty * price,
+            createdAt: DateTime.parse(m['created_at'].toString()),
+            dueDate: m['due_date'] != null
+                ? DateTime.tryParse(m['due_date'].toString())
+                : null,
+            debtStatus: dStatus,
+          ));
+        }
+      }
+      return list;
     } catch (_) {
-      return [];
+      // Fallback query if columns don't exist yet on Supabase:
+      try {
+        final fallbackRes = await _client
+            .from('part_movements')
+            .select('id, part_id, qty, created_at, note, parts(name, cost_price)')
+            .ilike('note', '%[HUTANG]%')
+            .order('created_at', ascending: false);
+
+        final list = <DistributorDebtItem>[];
+        for (final m in fallbackRes as List) {
+          final note = (m['note'] as String?) ?? '';
+          if (note.contains('[HUTANG]') && !note.contains('[LUNAS]')) {
+            final partMap = m['parts'] as Map?;
+            final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
+            final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+            final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+
+            String dist = 'Distributor Umum';
+            if (note.contains('[Distributor:')) {
+              final match =
+                  RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+              if (match != null) dist = match.group(1)?.trim() ?? dist;
+            }
+
+            list.add(DistributorDebtItem(
+              movementId: m['id'] as String,
+              partId: m['part_id'] as String,
+              partName: pName,
+              distributor: dist,
+              qty: qty,
+              purchasePrice: cost,
+              totalDebt: qty * cost,
+              createdAt: DateTime.parse(m['created_at'].toString()),
+              dueDate: null,
+              debtStatus: 'belum_lunas',
+            ));
+          }
+        }
+        return list;
+      } catch (_) {
+        return [];
+      }
     }
   }
 
   @override
   Future<void> markDebtPaid(String movementId) async {
     try {
-      await _client
-          .from('part_movements')
-          .update({
-            'debt_status': 'lunas',
-            'paid_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', movementId);
-    } catch (e) {
-      throw RepositoryException(mapRepositoryError(e));
+      // 1. Try stored procedure if migration 0007 applied
+      await _client.rpc('mark_debt_paid', params: {'p_movement_id': movementId});
+    } catch (_) {
+      try {
+        // 2. Try direct column update
+        await _client
+            .from('part_movements')
+            .update({
+              'debt_status': 'lunas',
+              'paid_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', movementId);
+      } catch (_) {
+        // 3. Fallback: append [LUNAS] to note so it won't be counted as unpaid debt
+        try {
+          final row = await _client
+              .from('part_movements')
+              .select('note')
+              .eq('id', movementId)
+              .maybeSingle();
+          final currentNote = (row?['note'] as String?) ?? '';
+          await _client
+              .from('part_movements')
+              .update({'note': '$currentNote [LUNAS]'.trim()})
+              .eq('id', movementId);
+        } catch (e) {
+          throw RepositoryException(mapRepositoryError(e));
+        }
+      }
     }
   }
 }
