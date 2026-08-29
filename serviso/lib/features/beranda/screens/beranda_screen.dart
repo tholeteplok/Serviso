@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
@@ -30,7 +31,7 @@ class BerandaScreen extends ConsumerWidget {
         title: const Text('Serviso'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
+            icon: Icon(AppIcons.user),
             tooltip: 'Profil',
             onPressed: () => context.push(AppRoutes.profil),
           ),
@@ -89,7 +90,7 @@ class BerandaScreen extends ConsumerWidget {
                           title: 'WO Aktif',
                           value: '${summary.activeWoCount}',
                           unit: 'antrian',
-                          icon: Icons.receipt_long_outlined,
+                          icon: AppIcons.queue,
                           color: AppColors.teal,
                           onTap: () => context.go('/antrian'),
                         ),
@@ -101,7 +102,7 @@ class BerandaScreen extends ConsumerWidget {
                           title: 'Stok Menipis',
                           value: '${summary.lowStockCount}',
                           unit: 'suku cadang',
-                          icon: Icons.warning_amber_rounded,
+                          icon: AppIcons.warning,
                           color: summary.lowStockCount > 0
                               ? AppColors.action
                               : AppColors.inkMuted,
@@ -127,23 +128,26 @@ class BerandaScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.accentPrimary,
         borderRadius: AppRadius.card,
-        border: Border(
-          top: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
-          left: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
-          right: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
-          bottom: BorderSide(color: AppColors.accentPrimaryBorder, width: 4.0),
-        ),
+        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.borderStrong,
+            offset: Offset(0, 3.5),
+            blurRadius: 0,
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.account_balance_wallet_outlined,
+              Icon(
+                AppIcons.wallet,
                 color: Colors.white,
                 size: 20,
               ),
@@ -320,21 +324,21 @@ class BerandaScreen extends ConsumerWidget {
         children: [
           _buildActionButton(
             context,
-            icon: Icons.add_task_rounded,
+            icon: AppIcons.add,
             label: 'WO Baru',
             color: AppColors.primary,
             onTap: () => context.push(AppRoutes.woBaru),
           ),
           _buildActionButton(
             context,
-            icon: Icons.person_add_outlined,
+            icon: AppIcons.user,
             label: 'Pelanggan',
             color: AppColors.teal,
             onTap: () => context.push(AppRoutes.pelanggan),
           ),
           _buildActionButton(
             context,
-            icon: Icons.inventory_2_outlined,
+            icon: AppIcons.inventory,
             label: 'Inventori',
             color: AppColors.ink,
             onTap: () => context.go('/inventori'),

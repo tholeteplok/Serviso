@@ -4,8 +4,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
-/// Centralized Stock Card with 4px thick bottom status border indicator
-/// and bold IBM Plex Mono stock focal point, as defined in docs/design (1).md §6.4.
+/// Centralized Stock Card with solid 1.5px black border,
+/// 3.5px hard pop shadow, and bold IBM Plex Mono stock focal point.
 class StockIndicatorCard extends StatelessWidget {
   const StockIndicatorCard({
     super.key,
@@ -36,20 +36,16 @@ class StockIndicatorCard extends StatelessWidget {
 
     // Determine status color indicator:
     // Red = Empty (0), Orange/Yellow = Low stock (<= minStock), Green = Safe
-    final Color bottomBorderColor;
     final Color indicatorColor;
     final String statusText;
     if (stockQty <= 0) {
       indicatorColor = AppColors.pastelPink;
-      bottomBorderColor = AppColors.statusCancelledBorder;
       statusText = 'Stok Habis';
     } else if (stockQty <= minStock) {
       indicatorColor = AppColors.pastelYellow;
-      bottomBorderColor = AppColors.statusWaitingBorder;
       statusText = 'Stok Menipis';
     } else {
       indicatorColor = AppColors.pastelMint;
-      bottomBorderColor = AppColors.statusDoneBorder;
       statusText = 'Stok Aman';
     }
 
@@ -57,11 +53,11 @@ class StockIndicatorCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderHairline, width: 1.0),
-        boxShadow: [
+        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        boxShadow: const [
           BoxShadow(
-            color: bottomBorderColor,
-            offset: const Offset(0, 4.0),
+            color: AppColors.borderStrong,
+            offset: Offset(0, 3.5),
             blurRadius: 0,
             spreadRadius: 0,
           ),
@@ -92,7 +88,7 @@ class StockIndicatorCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           if (code != null && code!.isNotEmpty) ...[
@@ -103,10 +99,10 @@ class StockIndicatorCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.pastelCream,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: AppColors.borderHairline,
-                                  width: 1,
+                                  color: AppColors.borderStrong,
+                                  width: 1.0,
                                 ),
                               ),
                               child: Text(
@@ -114,7 +110,7 @@ class StockIndicatorCard extends StatelessWidget {
                                 style: AppTypography.mono(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.ink900,
                                 ),
                               ),
                             ),
@@ -123,14 +119,14 @@ class StockIndicatorCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
-                              vertical: 2,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color: indicatorColor,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: bottomBorderColor,
-                                width: 1,
+                                color: AppColors.borderStrong,
+                                width: 1.5,
                               ),
                             ),
                             child: Text(
@@ -146,7 +142,7 @@ class StockIndicatorCard extends StatelessWidget {
                         ],
                       ),
                       if (distributor != null && distributor!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           'Distributor: ',
                           style: textTheme.labelSmall?.copyWith(

@@ -13,12 +13,12 @@ class NeoCard extends StatefulWidget {
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
-    this.borderColor = AppColors.borderHairline,
-    this.borderWidth = 1.0,
+    this.borderColor = AppColors.borderStrong,
+    this.borderWidth = 1.5,
     this.borderRadius = AppRadius.card,
-    this.showHardShadow = false,
-    this.shadowOffset = const Offset(3, 3),
-    this.shadowColor = AppColors.shadowHard,
+    this.showHardShadow = true,
+    this.shadowOffset = const Offset(0, 3),
+    this.shadowColor = AppColors.borderStrong,
     this.onTap,
   });
 
@@ -46,9 +46,11 @@ class _NeoCardState extends State<NeoCard> {
     final currentOffset = widget.showHardShadow
         ? (_isPressed ? Offset.zero : widget.shadowOffset)
         : Offset.zero;
+    final translateY = widget.onTap != null && _isPressed ? 2.0 : 0.0;
 
     Widget container = AnimatedContainer(
       duration: const Duration(milliseconds: 90),
+      transform: Matrix4.translationValues(0, translateY, 0),
       margin: widget.margin,
       padding: widget.padding,
       decoration: BoxDecoration(

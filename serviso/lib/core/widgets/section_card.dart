@@ -23,7 +23,15 @@ class SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderHairline, width: 1.0),
+        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.borderStrong,
+            offset: Offset(0, 3),
+            blurRadius: 0,
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

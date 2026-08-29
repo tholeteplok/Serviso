@@ -54,7 +54,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(color: AppColors.borderHairline, width: 1.0),
+          side: BorderSide(color: AppColors.borderStrong, width: 1.5),
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -69,7 +69,7 @@ abstract final class AppTheme {
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
-          side: const BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
+          side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
           shape: const RoundedRectangleBorder(
             borderRadius: AppRadius.button,
           ),
@@ -83,7 +83,7 @@ abstract final class AppTheme {
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
-          side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
+          side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
           shape: const RoundedRectangleBorder(
             borderRadius: AppRadius.button,
           ),
@@ -103,13 +103,13 @@ abstract final class AppTheme {
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.accentPrimary,
         foregroundColor: Colors.white,
-        elevation: 3,
-        focusElevation: 4,
-        hoverElevation: 4,
-        highlightElevation: 4,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
+          side: BorderSide(color: AppColors.borderStrong, width: 1.5),
         ),
       ),
       inputDecorationTheme: InputDecorationThemeData(
@@ -119,10 +119,10 @@ abstract final class AppTheme {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        border: inputBorder(AppColors.borderHairline),
-        enabledBorder: inputBorder(AppColors.borderHairline),
-        focusedBorder: inputBorder(AppColors.ink900, 2.0),
-        errorBorder: inputBorder(AppColors.action),
+        border: inputBorder(AppColors.borderStrong, 1.5),
+        enabledBorder: inputBorder(AppColors.borderStrong, 1.5),
+        focusedBorder: inputBorder(AppColors.borderStrong, 2.0),
+        errorBorder: inputBorder(AppColors.action, 1.5),
         focusedErrorBorder: inputBorder(AppColors.action, 2.0),
       ),
       chipTheme: ChipThemeData(

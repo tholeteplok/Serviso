@@ -83,11 +83,15 @@ abstract final class AppColors {
   static const teal = statusDoneBorder;
   static const tealDim = pastelMint;
 
+  // Bottom Navigation Pill Bar (Reference Style)
+  static const navBarBg = Color(0xFFB7E1D0); // Pastel Mint container
+  static const navBarActive = Color(0xFFFFE59A); // Pastel Yellow active box
+
   static const canvas = bgBase;
   static const surface = bgSurface;
   static const ink = ink900;
   static const inkMuted = textSecondary;
-  static const line = borderHairline;
+  static const line = borderStrong;
 
   static Color tintOf(Color base) => base.withValues(alpha: 0.12);
 

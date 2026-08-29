@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/offline_banner.dart';
+import '../theme/app_icons.dart';
+import '../widgets/pastel_pop_bottom_bar.dart';
 
 import '../../features/antrian/screens/antrian_screen.dart';
 import '../../features/workorders/screens/wo_detail_screen.dart';
@@ -244,9 +246,9 @@ class HomeShell extends ConsumerWidget {
             Expanded(child: navigationShell),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: (index) {
+        bottomNavigationBar: PastelPopBottomBar(
+          currentIndex: navigationShell.currentIndex,
+          onTap: (index) {
             if (index == 0) {
               ref.invalidate(dashboardSummaryProvider);
             } else if (index == 3) {
@@ -258,25 +260,25 @@ class HomeShell extends ConsumerWidget {
               initialLocation: index == navigationShell.currentIndex,
             );
           },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
+          items: [
+            PastelPopBottomBarItem(
+              icon: AppIcons.home,
+              selectedIcon: AppIcons.homeFill,
               label: 'Beranda',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded),
+            PastelPopBottomBarItem(
+              icon: AppIcons.queue,
+              selectedIcon: AppIcons.queueFill,
               label: 'Antrian',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.inventory_2_outlined),
-              selectedIcon: Icon(Icons.inventory_2_rounded),
+            PastelPopBottomBarItem(
+              icon: AppIcons.inventory,
+              selectedIcon: AppIcons.inventoryFill,
               label: 'Inventori',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(Icons.insights_rounded),
+            PastelPopBottomBarItem(
+              icon: AppIcons.report,
+              selectedIcon: AppIcons.reportFill,
               label: 'Laporan',
             ),
           ],

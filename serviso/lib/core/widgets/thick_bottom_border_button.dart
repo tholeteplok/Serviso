@@ -13,9 +13,9 @@ enum ThickButtonVariant {
   mint,
 }
 
-/// A tactile button with a thick bottom-border (2.5–3x thicker than top/sides)
-/// that simulates a 3D physical keypress without blurry drop shadows.
-/// Based on docs/design (1).md §5 & §6.2.
+/// A tactile Neo-Brutalist button with solid 1.5px black border,
+/// pastel/dark fill, and solid black hard pop shadow.
+/// Sesuai referensi gambar *Order Tracker* dan *Stay Healthy*.
 class ThickBottomBorderButton extends StatefulWidget {
   const ThickBottomBorderButton({
     super.key,
@@ -50,51 +50,37 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
     final isEnabled = widget.onPressed != null && !widget.isLoading;
 
     Color bg;
-    Color bottomBorderColor;
-    Color topSideBorderColor;
     Color fg;
 
     switch (widget.variant) {
       case ThickButtonVariant.primary:
-        bg = isEnabled ? AppColors.accentPrimary : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? AppColors.accentPrimaryBorder : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? AppColors.accentPrimaryBorder : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.accentPrimary : AppColors.borderSubtle;
         fg = Colors.white;
         break;
       case ThickButtonVariant.secondary:
-        bg = isEnabled ? const Color(0xFFF3F3F3) : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? const Color(0xFFD8D0C7) : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? const Color(0xFFE5E0DA) : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.bgSurface : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.warning:
-        bg = isEnabled ? AppColors.pastelYellow : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? AppColors.statusWaitingBorder : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? AppColors.statusWaitingBorder.withValues(alpha: 0.5) : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.pastelYellow : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.danger:
-        bg = isEnabled ? AppColors.pastelPink : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? AppColors.statusCancelledBorder : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? AppColors.statusCancelledBorder.withValues(alpha: 0.5) : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.pastelPink : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.info:
-        bg = isEnabled ? AppColors.pastelBlue : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? AppColors.statusProgressBorder : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? AppColors.statusProgressBorder.withValues(alpha: 0.5) : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.pastelBlue : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.mint:
-        bg = isEnabled ? AppColors.pastelMint : AppColors.borderHairline;
-        bottomBorderColor = isEnabled ? AppColors.statusDoneBorder : AppColors.borderHairline;
-        topSideBorderColor = isEnabled ? AppColors.statusDoneBorder.withValues(alpha: 0.5) : AppColors.borderHairline;
+        bg = isEnabled ? AppColors.pastelMint : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
     }
 
-    final double bottomWidth = isEnabled && !_isPressed ? 3.5 : 1.0;
-    final double translateY = isEnabled && _isPressed ? 2.0 : 0.0;
+    final double shadowDistance = isEnabled && !_isPressed ? 3.5 : 1.0;
+    final double translateY = isEnabled && _isPressed ? 2.5 : 0.0;
     final radius = widget.borderRadius ?? (widget.isFullWidth ? AppRadius.card : AppRadius.pill);
 
     Widget content = widget.isLoading
@@ -131,7 +117,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
       onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
       onTap: isEnabled ? widget.onPressed : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
+        duration: const Duration(milliseconds: 70),
         curve: Curves.easeOut,
         transform: Matrix4.translationValues(0, translateY, 0),
         width: widget.isFullWidth ? double.infinity : null,
@@ -140,13 +126,13 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
           color: bg,
           borderRadius: radius,
           border: Border.all(
-            color: topSideBorderColor,
+            color: AppColors.borderStrong,
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: bottomBorderColor,
-              offset: Offset(0, bottomWidth),
+              color: AppColors.borderStrong,
+              offset: Offset(0, shadowDistance),
               blurRadius: 0,
               spreadRadius: 0,
             ),
