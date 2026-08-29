@@ -21,9 +21,9 @@ class SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.bgSurface,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        border: Border.all(color: AppColors.borderHairline, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

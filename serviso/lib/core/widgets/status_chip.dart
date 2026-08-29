@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/wo_status.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
@@ -18,7 +17,7 @@ class StatusChip extends StatelessWidget {
         color: status.bgColor,
         borderRadius: AppRadius.pill,
         border: Border.all(
-          color: AppColors.borderStrong,
+          color: status.borderBottomColor,
           width: 1.5,
         ),
       ),

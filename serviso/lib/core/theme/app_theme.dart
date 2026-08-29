@@ -29,7 +29,7 @@ abstract final class AppTheme {
     );
     final textTheme = AppTypography.textTheme();
 
-    OutlineInputBorder inputBorder(Color color, [double width = 1.5]) =>
+    OutlineInputBorder inputBorder(Color color, [double width = 1.0]) =>
         OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(color: color, width: width),
@@ -38,27 +38,27 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.canvas,
+      scaffoldBackgroundColor: AppColors.bgBase,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.canvas,
-        foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.bgBase,
+        foregroundColor: AppColors.ink900,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: AppTypography.chakra(fontSize: 20),
       ),
       cardTheme: const CardThemeData(
-        color: AppColors.surface,
+        color: AppColors.bgSurface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(color: AppColors.borderStrong, width: 1.5),
+          side: BorderSide(color: AppColors.borderHairline, width: 1.0),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: AppColors.borderSubtle,
+        color: AppColors.borderHairline,
         thickness: 1,
         space: 1,
       ),
@@ -69,7 +69,7 @@ abstract final class AppTheme {
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
-          side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
+          side: const BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
           shape: const RoundedRectangleBorder(
             borderRadius: AppRadius.button,
           ),
@@ -79,11 +79,11 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.ink,
+          foregroundColor: AppColors.ink900,
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
-          side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
+          side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
           shape: const RoundedRectangleBorder(
             borderRadius: AppRadius.button,
           ),
@@ -93,7 +93,7 @@ abstract final class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.ink,
+          foregroundColor: AppColors.ink900,
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -109,19 +109,19 @@ abstract final class AppTheme {
         highlightElevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(color: AppColors.borderStrong, width: 1.5),
+          side: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
         ),
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.bgSurface,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
-        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
-        border: inputBorder(AppColors.borderSubtle),
-        enabledBorder: inputBorder(AppColors.borderSubtle),
-        focusedBorder: inputBorder(AppColors.borderStrong, 2.0),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        border: inputBorder(AppColors.borderHairline),
+        enabledBorder: inputBorder(AppColors.borderHairline),
+        focusedBorder: inputBorder(AppColors.ink900, 2.0),
         errorBorder: inputBorder(AppColors.action),
         focusedErrorBorder: inputBorder(AppColors.action, 2.0),
       ),

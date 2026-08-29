@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -13,8 +13,8 @@ class NeoCard extends StatefulWidget {
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
-    this.borderColor = AppColors.borderStrong,
-    this.borderWidth = 1.5,
+    this.borderColor = AppColors.borderHairline,
+    this.borderWidth = 1.0,
     this.borderRadius = AppRadius.card,
     this.showHardShadow = false,
     this.shadowOffset = const Offset(3, 3),

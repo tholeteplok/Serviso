@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
-import 'neo_card.dart';
 
-/// Centralized Stock Card with 4px left status border indicator
-/// and bold IBM Plex Mono stock focal point, as defined in docs/design.md.
+/// Centralized Stock Card with 4px thick bottom status border indicator
+/// and bold IBM Plex Mono stock focal point, as defined in docs/design (1).md §6.4.
 class StockIndicatorCard extends StatelessWidget {
   const StockIndicatorCard({
     super.key,
@@ -36,163 +35,175 @@ class StockIndicatorCard extends StatelessWidget {
     final textTheme = AppTypography.textTheme();
 
     // Determine status color indicator:
-    // Red = Empty (0), Orange = Low stock (<= minStock), Green = Safe
+    // Red = Empty (0), Orange/Yellow = Low stock (<= minStock), Green = Safe
+    final Color bottomBorderColor;
     final Color indicatorColor;
     final String statusText;
     if (stockQty <= 0) {
-      indicatorColor = AppColors.statusCancelled;
+      indicatorColor = AppColors.pastelPink;
+      bottomBorderColor = AppColors.statusCancelledBorder;
       statusText = 'Stok Habis';
     } else if (stockQty <= minStock) {
-      indicatorColor = AppColors.statusWaiting;
+      indicatorColor = AppColors.pastelYellow;
+      bottomBorderColor = AppColors.statusWaitingBorder;
       statusText = 'Stok Menipis';
     } else {
-      indicatorColor = AppColors.statusDone;
+      indicatorColor = AppColors.pastelMint;
+      bottomBorderColor = AppColors.statusDoneBorder;
       statusText = 'Stok Aman';
     }
 
-    return NeoCard(
-      onTap: onTap,
-      padding: EdgeInsets.zero,
-      child: ClipRRect(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
         borderRadius: AppRadius.card,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 4px thick left border status accent
-              Container(
-                width: 5,
-                color: indicatorColor,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
+        border: Border.all(color: AppColors.borderHairline, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: bottomBorderColor,
+            offset: const Offset(0, 4.0),
+            blurRadius: 0,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadius.card,
+        child: InkWell(
+          borderRadius: AppRadius.card,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                // Item Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Item Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              name,
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                if (code != null && code!.isNotEmpty) ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.borderSubtle,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      code!,
-                                      style: AppTypography.mono(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: indicatorColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    statusText.toUpperCase(),
-                                    style: TextStyle(
-                                      color: indicatorColor == AppColors.statusWaiting
-                                          ? AppColors.borderStrong
-                                          : indicatorColor,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (distributor != null && distributor!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Distributor: ',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
+                      Text(
+                        name,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.ink900,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 12),
-
-                      // Large bold IBM Plex Mono stock focal point
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                stockQty.toStringAsFixed(
-                                  stockQty.truncateToDouble() == stockQty ? 0 : 1,
+                          if (code != null && code!.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.pastelCream,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: AppColors.borderHairline,
+                                  width: 1,
                                 ),
+                              ),
+                              child: Text(
+                                code!,
                                 style: AppTypography.mono(
-                                  fontSize: 22,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: indicatorColor == AppColors.statusCancelled
-                                      ? AppColors.statusCancelled
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                unit,
-                                style: AppTypography.inter(
-                                  fontSize: 12,
                                   color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ],
-                          ),
-                          Text(
-                            'Min:  ',
-                            style: AppTypography.mono(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: indicatorColor,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: bottomBorderColor,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: const TextStyle(
+                                color: AppColors.ink900,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      if (distributor != null && distributor!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Distributor: ',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+
+                // Large bold IBM Plex Mono stock focal point
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          stockQty.toStringAsFixed(
+                            stockQty.truncateToDouble() == stockQty ? 0 : 1,
+                          ),
+                          style: AppTypography.mono(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: stockQty <= 0
+                                ? AppColors.statusCancelledBorder
+                                : AppColors.ink900,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          unit,
+                          style: AppTypography.inter(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Min:  ',
+                      style: AppTypography.mono(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

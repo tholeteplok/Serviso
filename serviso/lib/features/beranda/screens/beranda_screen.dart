@@ -127,18 +127,15 @@ class BerandaScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.accentPrimary,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderStrong, width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowHard,
-            offset: Offset(3, 3),
-            blurRadius: 0,
-            spreadRadius: 0,
-          ),
-        ],
+        border: Border(
+          top: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
+          left: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
+          right: BorderSide(color: AppColors.accentPrimaryBorder, width: 1.5),
+          bottom: BorderSide(color: AppColors.accentPrimaryBorder, width: 4.0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

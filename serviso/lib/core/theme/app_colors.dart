@@ -2,80 +2,96 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
-  // 2.1 Base Tokens (Soft UI + Neo-Brutalism)
+  // 2.1 Base Tokens (Soft Pastel UI)
   // ---------------------------------------------------------------------------
-  /// Canvas background for main screens (#F7F8FA)
-  static const bgBase = Color(0xFFF7F8FA);
+  /// Canvas background for main screens (#FDF7F2 - warm cream)
+  static const bgBase = Color(0xFFFDF7F2);
 
   /// Card, sheet, modal background (#FFFFFF)
   static const bgSurface = Color(0xFFFFFFFF);
 
-  /// Solid thick border characteristic of neo-brutalism (#1E2327)
-  static const borderStrong = Color(0xFF1E2327);
+  /// Primary dark ink (#111111 - studio brand contrast)
+  static const ink900 = Color(0xFF111111);
 
-  /// Primary text color (#1E2327)
-  static const textPrimary = Color(0xFF1E2327);
+  /// Secondary text color, subtitles, captions (#8A8A8A)
+  static const textSecondary = Color(0xFF8A8A8A);
 
-  /// Secondary text color, subtitles, captions (#6B7280)
-  static const textSecondary = Color(0xFF6B7280);
-
-  /// Subtle section dividers (#E5E7EB)
-  static const borderSubtle = Color(0xFFE5E7EB);
+  /// Subtle hairline divider & passive card outline (#ECE6DF)
+  static const borderHairline = Color(0xFFECE6DF);
 
   // ---------------------------------------------------------------------------
-  // 2.2 Functional Status Tokens (1:1 with Kanban & operational signals)
+  // 2.2 Pastel Palette
   // ---------------------------------------------------------------------------
-  /// Waiting / Menunggu (#FFB020 - Orange)
-  static const statusWaiting = Color(0xFFFFB020);
-
-  /// In progress / Dikerjakan (#3B82F6 - Blue)
-  static const statusProgress = Color(0xFF3B82F6);
-
-  /// Done / Selesai / Lunas (#22C55E - Mint Green)
-  static const statusDone = Color(0xFF22C55E);
-
-  /// Cancelled / Dibatalkan / Critical Alert (#EF4444 - Coral Red)
-  static const statusCancelled = Color(0xFFEF4444);
+  static const pastelCream = Color(0xFFFFF3EF);
+  static const pastelYellow = Color(0xFFFFE59A);
+  static const pastelPink = Color(0xFFFFB5C1);
+  static const pastelMint = Color(0xFFB7E1D0);
+  static const pastelBlue = Color(0xFFA9D3FF);
 
   // ---------------------------------------------------------------------------
-  // 2.3 Accents
+  // 2.3 Functional Status Tokens (Fill Pastel + Darker Shade for Bottom Border)
   // ---------------------------------------------------------------------------
-  /// Primary CTA button, active navigation (#22C55E)
-  static const accentPrimary = Color(0xFF22C55E);
+  /// Waiting / Menunggu (Yellow Pastel)
+  static const statusWaiting = Color(0xFFFFE59A);
+  static const statusWaitingBorder = Color(0xFFE0B94D);
 
-  /// Highlights, notifications, badges (#FFB020)
-  static const accentSecondary = Color(0xFFFFB020);
+  /// In progress / Dikerjakan (Blue Pastel)
+  static const statusProgress = Color(0xFFA9D3FF);
+  static const statusProgressBorder = Color(0xFF5B9AE8);
+
+  /// Done / Selesai / Lunas (Mint Pastel)
+  static const statusDone = Color(0xFFB7E1D0);
+  static const statusDoneBorder = Color(0xFF5FB98C);
+
+  /// Cancelled / Dibatalkan / Critical Alert (Pink Pastel)
+  static const statusCancelled = Color(0xFFFFB5C1);
+  static const statusCancelledBorder = Color(0xFFE8748A);
 
   // ---------------------------------------------------------------------------
-  // 2.4 Dark Surface (Headers / Navigation)
+  // 2.4 Accents (Primary Dark Ink + Secondary Pastel Yellow)
   // ---------------------------------------------------------------------------
-  static const surfaceDark = Color(0xFF1E2327);
-  static const textOnDark = Color(0xFFF7F8FA);
+  /// Primary CTA button, active navigation (#111111 with #000000 bottom border)
+  static const accentPrimary = Color(0xFF111111);
+  static const accentPrimaryBorder = Color(0xFF000000);
+
+  /// Highlights, secondary buttons, badges (#FFE59A)
+  static const accentSecondary = Color(0xFFFFE59A);
+  static const accentSecondaryBorder = Color(0xFFE0B94D);
+
+  /// Optional Solid Mint accent (#3FBE85)
+  static const accentMint = Color(0xFF3FBE85);
+  static const accentMintBorder = Color(0xFF2E9966);
 
   // ---------------------------------------------------------------------------
-  // Neo-Brutalism Hard Shadow
+  // Dark Surface (Headers / Navigation)
   // ---------------------------------------------------------------------------
-  static const shadowHard = Color(0xE61E2327); // rgba(30, 35, 39, 0.9)
+  static const surfaceDark = Color(0xFF111111);
+  static const textOnDark = Color(0xFFFDF7F2);
 
   // ---------------------------------------------------------------------------
   // Backwards-Compatibility Aliases (smooth migration across codebase)
   // ---------------------------------------------------------------------------
+  static const borderStrong = ink900;
+  static const textPrimary = ink900;
+  static const borderSubtle = borderHairline;
+  static const shadowHard = accentPrimaryBorder;
+
   static const primary = accentPrimary;
-  static const primaryDim = Color(0xFFDCFCE7);
-  static const action = statusCancelled;
-  static const actionDim = Color(0xFFFEE2E2);
-  static const teal = statusDone;
-  static const tealDim = Color(0xFFDCFCE7);
+  static const primaryDim = pastelMint;
+  static const action = statusCancelledBorder;
+  static const actionDim = pastelPink;
+  static const teal = statusDoneBorder;
+  static const tealDim = pastelMint;
 
   static const canvas = bgBase;
   static const surface = bgSurface;
-  static const ink = textPrimary;
+  static const ink = ink900;
   static const inkMuted = textSecondary;
-  static const line = borderStrong;
+  static const line = borderHairline;
 
   static Color tintOf(Color base) => base.withValues(alpha: 0.12);
 
-  static const tintPrimary = Color(0x1F22C55E);
-  static const tintTeal = Color(0x1F22C55E);
-  static const tintAction = Color(0x1FEF4444);
+  static const tintPrimary = Color(0x1F111111);
+  static const tintTeal = Color(0x1F5FB98C);
+  static const tintAction = Color(0x1FE8748A);
 }

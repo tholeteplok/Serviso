@@ -21,10 +21,12 @@ extension WoStatusX on WoStatus {
 
   Color get bgColor => accentColor;
 
-  Color get textColor => switch (this) {
-        WoStatus.menunggu => AppColors.borderStrong,
-        WoStatus.dikerjakan => Colors.white,
-        WoStatus.selesai => Colors.white,
-        WoStatus.dibatalkan => Colors.white,
+  Color get borderBottomColor => switch (this) {
+        WoStatus.menunggu => AppColors.statusWaitingBorder,
+        WoStatus.dikerjakan => AppColors.statusProgressBorder,
+        WoStatus.selesai => AppColors.statusDoneBorder,
+        WoStatus.dibatalkan => AppColors.statusCancelledBorder,
       };
+
+  Color get textColor => AppColors.ink900;
 }

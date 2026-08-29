@@ -27,6 +27,13 @@ void main() {
         expect(status.bgColor, status.accentColor);
       }
     });
+
+    test('borderBottomColor shade gelap dari status', () {
+      expect(WoStatus.menunggu.borderBottomColor, AppColors.statusWaitingBorder);
+      expect(WoStatus.dikerjakan.borderBottomColor, AppColors.statusProgressBorder);
+      expect(WoStatus.selesai.borderBottomColor, AppColors.statusDoneBorder);
+      expect(WoStatus.dibatalkan.borderBottomColor, AppColors.statusCancelledBorder);
+    });
   });
 
   testWidgets('menampilkan label status', (tester) async {
