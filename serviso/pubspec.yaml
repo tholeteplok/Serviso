@@ -66,9 +66,9 @@ flutter:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: false
-  image_path: "assets/icon.png"
+  image_path: "assets/app_launcher.png"
   adaptive_icon_background: "#512D6D"
-  adaptive_icon_foreground: "assets/icon.png"
+  adaptive_icon_foreground: "assets/app_launcher.png"
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

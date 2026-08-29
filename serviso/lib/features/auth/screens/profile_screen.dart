@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/app_brand_icon.dart';
 import '../../../core/widgets/section_card.dart';
 import '../controllers/session_controller.dart';
 import '../data/auth_repository.dart';
@@ -291,6 +292,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     label: const Text('Keluar'),
                   ),
                 ),
+                const SizedBox(height: 24),
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppBrandIcon(
+                        size: 26,
+                        iconSize: 16,
+                        borderWidth: 1,
+                        shadowOffset: 1.5,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Serviso • Versi 1.0.0',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.inkMuted,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
               ],
             ),
     );

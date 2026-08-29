@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/app_brand_icon.dart';
 import '../controllers/session_controller.dart';
 import '../data/auth_repository.dart';
 
@@ -64,7 +66,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.line),
+                border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.borderStrong,
+                    offset: Offset(0, 4),
+                    blurRadius: 0,
+                  ),
+                ],
               ),
               child: Form(
                 key: _formKey,
@@ -72,6 +81,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const AppBrandIcon(
+                      size: 60,
+                      iconSize: 36,
+                      shadowOffset: 2.5,
+                    ),
+                    const SizedBox(height: 14),
                     Text(
                       'SERVISO',
                       style: AppTypography.chakra(
@@ -91,9 +106,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       key: const Key('username'),
                       controller: _usernameController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Username atau Email',
-                        prefixIcon: Icon(Icons.person_outline),
+                        prefixIcon: Icon(AppIcons.user),
                       ),
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
@@ -108,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       obscureText: _obscure,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        prefixIcon: Icon(AppIcons.shieldCheck),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscure
@@ -135,9 +150,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(
+                      child: FilledButton.icon(
+                        icon: Icon(AppIcons.check, size: 18),
                         onPressed: _loading ? null : _submit,
-                        child: _loading
+                        label: _loading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
