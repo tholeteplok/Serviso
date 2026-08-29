@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -41,6 +42,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
   late final TextEditingController _costController;
   late final TextEditingController _sellController;
   late final TextEditingController _unitController;
+  late final TextEditingController _initialStockController;
+  late final TextEditingController _distributorController;
+  var _paymentType = 'tunai';
+  late DateTime _dueDate;
 
   static const List<String> _unitOptions = [
     'pcs',
@@ -70,6 +75,9 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
       text: initial != null ? initial.sellPrice.toString() : '',
     );
     _unitController = TextEditingController(text: initial?.unit ?? 'pcs');
+    _initialStockController = TextEditingController();
+    _distributorController = TextEditingController();
+    _dueDate = DateTime.now().add(const Duration(days: 14));
   }
 
   @override
@@ -80,6 +88,8 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
     _costController.dispose();
     _sellController.dispose();
     _unitController.dispose();
+    _initialStockController.dispose();
+    _distributorController.dispose();
     super.dispose();
   }
 
@@ -92,6 +102,17 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
         int.tryParse(_minStockController.text.trim()) ?? 0;
     final cost = isAdmin ? double.tryParse(_costController.text) : null;
     final sell = isAdmin ? double.tryParse(_sellController.text) : null;
+
+    final isEdit = widget.initial != null;
+    final initialStock = !isEdit
+        ? (double.tryParse(_initialStockController.text.trim()) ?? 0.0)
+        : 0.0;
+    final rawDistributor = !isEdit ? _distributorController.text.trim() : null;
+    final distributor =
+        rawDistributor?.isEmpty == true ? null : rawDistributor;
+    final paymentType = !isEdit ? _paymentType : 'tunai';
+    final dueDate = (!isEdit && paymentType == 'hutang') ? _dueDate : null;
+
     try {
       await controller.submit(
         name: _nameController.text,
@@ -100,6 +121,10 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
         minStock: minStock < 0 ? 0 : minStock,
         costPrice: cost,
         sellPrice: sell,
+        initialStock: initialStock,
+        distributor: distributor,
+        paymentType: paymentType,
+        dueDate: dueDate,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -255,6 +280,146 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                     'Harga diatur oleh pemilik. Suku cadang ditambahkan '
                     'tanpa harga.',
                     style: textTheme.bodySmall,
+                  ),
+                ),
+              ],
+              if (!isEdit) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.inventory_2_outlined,
+                            size: 20,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Pengadaan Stok Awal (Opsional)',
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _initialStockController,
+                        decoration: const InputDecoration(
+                          labelText: 'Jumlah Stok Awal (Qty)',
+                          hintText: 'Misal: 10 (kosongkan jika belum ada)',
+                          prefixIcon: Icon(Icons.add_shopping_cart_rounded),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          final parsed = double.tryParse(value.trim());
+                          if (parsed == null || parsed < 0) {
+                            return 'Masukkan jumlah stok yang valid (>= 0)';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _distributorController,
+                        decoration: const InputDecoration(
+                          labelText: 'Distributor / Pemasok (opsional)',
+                          hintText: 'Misal: PT Astra Otoparts',
+                          prefixIcon: Icon(Icons.local_shipping_outlined),
+                        ),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Metode Pembayaran',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppColors.inkMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'tunai',
+                            label: Text('Tunai / Cash'),
+                            icon: Icon(Icons.money_rounded),
+                          ),
+                          ButtonSegment(
+                            value: 'hutang',
+                            label: Text('Hutang (Tempo)'),
+                            icon: Icon(Icons.receipt_long_outlined),
+                          ),
+                        ],
+                        selected: {_paymentType},
+                        onSelectionChanged: (selected) {
+                          setState(() => _paymentType = selected.first);
+                        },
+                      ),
+                      if (_paymentType == 'hutang') ...[
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _dueDate,
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 30),
+                              ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                            );
+                            if (picked != null) {
+                              setState(() => _dueDate = picked);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.line),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_month_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Jatuh Tempo: ${DateFormat('dd/MM/yyyy').format(_dueDate)}',
+                                    style: textTheme.bodyMedium,
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: AppColors.inkMuted,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],

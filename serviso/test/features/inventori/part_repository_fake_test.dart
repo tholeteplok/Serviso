@@ -148,5 +148,73 @@ void main() {
       final remainingDebts = await repo.getOutstandingDebts();
       expect(remainingDebts, isEmpty);
     });
+
+    test('createPart dengan initialStock dan distributor otomatis mencatat stok awal dan mutasi', () async {
+      final repo = FakePartRepository();
+      final created = await repo.createPart(
+        PartInput(
+          name: 'Oli Mesin Matic',
+          code: 'OL-001',
+          initialStock: 15,
+          distributor: 'Distributor A',
+          costPrice: 50000,
+          paymentType: 'hutang',
+        ),
+      );
+
+      // Verify stock
+      expect(created.stockQty, 15);
+
+      // Verify movements
+      final movements = await repo.movements(created.id);
+      expect(movements.length, 1);
+      expect(movements.first.distributor, 'Distributor A');
+      expect(movements.first.qty, 15);
+      expect(movements.first.purchasePrice, 50000);
+      expect(movements.first.paymentType, 'hutang');
+      expect(movements.first.debtStatus, 'belum_lunas');
+    });
+
+    test('part yang sama dapat dibeli dari 2 distributor berbeda', () async {
+      final repo = FakePartRepository();
+      // Pembelian 1: Distributor A (10 pcs, tunai)
+      final part = await repo.createPart(
+        PartInput(
+          name: 'Oli MPX 2',
+          code: 'MPX2',
+          initialStock: 10,
+          distributor: 'Distributor A',
+          costPrice: 48000,
+          paymentType: 'tunai',
+        ),
+      );
+
+      // Pembelian 2: Distributor B (20 pcs, hutang)
+      await repo.stockIn(
+        part.id,
+        20,
+        distributor: 'Distributor B',
+        purchasePrice: 47000,
+        paymentType: 'hutang',
+      );
+
+      // Total stok = 10 + 20 = 30
+      final updated = await repo.getById(part.id);
+      expect(updated!.stockQty, 30);
+
+      // Movements memiliki 2 entri dengan distributor berbeda
+      final movements = await repo.movements(part.id);
+      expect(movements.length, 2);
+      expect(movements[0].distributor, 'Distributor B');
+      expect(movements[0].qty, 20);
+      expect(movements[1].distributor, 'Distributor A');
+      expect(movements[1].qty, 10);
+
+      // Hutang hanya mencatat pembelian dari Distributor B
+      final debts = await repo.getOutstandingDebts();
+      expect(debts.length, 1);
+      expect(debts.first.distributor, 'Distributor B');
+      expect(debts.first.totalPurchaseAmount, 940000);
+    });
   });
 }

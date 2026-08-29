@@ -99,7 +99,22 @@ class SupabasePartRepository implements PartRepository {
           .insert(input.toMap())
           .select()
           .single();
-      return Part.fromMap(data);
+      final part = Part.fromMap(data);
+      if (input.initialStock > 0) {
+        await stockIn(
+          part.id,
+          input.initialStock,
+          note: 'Stok awal',
+          distributor: input.distributor,
+          purchasePrice: input.costPrice,
+          paymentType: input.paymentType,
+          dueDate: input.dueDate,
+          updateCostPrice: false,
+        );
+        final refreshed = await getById(part.id);
+        return refreshed ?? part;
+      }
+      return part;
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }

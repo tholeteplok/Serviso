@@ -87,6 +87,10 @@ class PartInput {
     this.minStock = 0,
     this.costPrice,
     this.sellPrice,
+    this.initialStock = 0,
+    this.distributor,
+    this.paymentType = 'tunai',
+    this.dueDate,
   });
 
   final String? id;
@@ -96,6 +100,10 @@ class PartInput {
   final int minStock;
   final double? costPrice;
   final double? sellPrice;
+  final double initialStock;
+  final String? distributor;
+  final String paymentType;
+  final DateTime? dueDate;
 
   Map<String, dynamic> toMap({bool includeId = false}) {
     final map = <String, dynamic>{

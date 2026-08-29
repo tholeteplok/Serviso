@@ -17,6 +17,10 @@ class PartFormController
     required int minStock,
     double? costPrice,
     double? sellPrice,
+    double initialStock = 0,
+    String? distributor,
+    String paymentType = 'tunai',
+    DateTime? dueDate,
   }) async {
     final repo = ref.read(partRepositoryProvider);
     final input = PartInput(
@@ -27,6 +31,10 @@ class PartFormController
       minStock: minStock,
       costPrice: costPrice,
       sellPrice: sellPrice,
+      initialStock: initialStock,
+      distributor: distributor,
+      paymentType: paymentType,
+      dueDate: dueDate,
     );
     state = const AsyncLoading();
     try {
@@ -37,6 +45,10 @@ class PartFormController
       }
       ref.invalidate(partListControllerProvider);
       ref.invalidate(dashboardSummaryProvider);
+      if (initialStock > 0) {
+        ref.invalidate(distributorDebtsProvider);
+        ref.invalidate(ownerFinancialSummaryProvider);
+      }
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

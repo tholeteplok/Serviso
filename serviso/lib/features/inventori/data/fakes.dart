@@ -66,6 +66,18 @@ class FakePartRepository implements PartRepository {
       createdAt: DateTime.now(),
     );
     _parts.add(part);
+    if (input.initialStock > 0) {
+      await stockIn(
+        part.id,
+        input.initialStock,
+        note: 'Stok awal',
+        distributor: input.distributor,
+        purchasePrice: input.costPrice,
+        paymentType: input.paymentType,
+        dueDate: input.dueDate,
+        updateCostPrice: false,
+      );
+    }
     return _withStock(part).copyWith();
   }
 
