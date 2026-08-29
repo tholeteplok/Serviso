@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_icons.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
@@ -84,8 +85,8 @@ class NeoStepper extends StatelessWidget {
                   width: 1.5,
                 ),
               ),
-              child: const Icon(
-                Icons.remove,
+              child: Icon(
+                AppIcons.minus,
                 size: 18,
                 color: AppColors.ink900,
               ),
@@ -133,8 +134,8 @@ class NeoStepper extends StatelessWidget {
                   width: 1.5,
                 ),
               ),
-              child: const Icon(
-                Icons.add,
+              child: Icon(
+                AppIcons.add,
                 size: 18,
                 color: AppColors.ink900,
               ),

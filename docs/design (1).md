@@ -47,8 +47,10 @@ Palet dasar bersifat **pastel/soft** (untuk background, card, ilustrasi); warna 
 | `status.progress` (Dikerjakan) | `#A9D3FF` | `#5B9AE8` | Badge & kolom kanban |
 | `status.done` (Selesai) | `#B7E1D0` | `#5FB98C` | Badge, konfirmasi pembayaran sukses |
 | `status.cancelled` (Dibatalkan) | `#FFB5C1` | `#E8748A` | Badge, alert stok kritis |
-| `accent.primary` | `#111111` (fill gelap, khas tombol utama brand) | `#000000` sedikit lebih gelap / atau varian mint solid `#3FBE85` | Tombol CTA utama, active nav |
+| `accent.primary` | `#3FBE85` (solid mint — warna aksi utama, dipakai berulang di semua tombol CTA) | `#2E9966` | Tombol CTA utama, active nav |
 | `accent.secondary` | `#FFE59A` | `#E0B94D` | Tombol sekunder, highlight |
+
+> `ink.900` (`#111111`) tetap dipakai sebagai warna **identitas/branding** (judul Chakra Petch, ikon brand, teks utama) — bukan warna tombol aksi, agar perannya tidak tumpang tindih dengan `accent.primary` yang harus selalu terbaca sebagai "tombol yang bisa ditekan".
 
 > Warna status tetap 1:1 dengan alur Kanban (`Menunggu ➔ Dikerjakan ➔ Selesai ➔ Dibatalkan`), hanya dilembutkan ke pastel agar selaras dengan background hangat — kontras tetap dijaga lewat border bawah gelap & label teks pada badge.
 
@@ -101,7 +103,9 @@ border-radius: full (pill) atau 14–16px untuk tombol persegi
 - **State hover:** fill sedikit lebih terang, border bawah tetap tebal.
 - **State disabled:** fill & border bawah diturunkan opacity ke ~40%, tanpa efek tekan.
 
-**Card** (Work Order, item stok, invoice row) tetap pakai border tipis merata (`1px solid border.hairline`) + radius besar — **tanpa** border tebal di semua sisi seperti neo-brutalism penuh; ketebalan border khusus disimpan untuk elemen interaktif (tombol) agar hierarki "mana yang bisa ditekan" jelas.
+**Card** (item stok, invoice row, elemen list pasif lainnya) memakai border tipis merata (`1px solid border.hairline`) + radius besar — **tanpa** border tebal di semua sisi seperti neo-brutalism penuh; ketebalan border khusus disimpan untuk elemen interaktif (tombol) agar hierarki "mana yang bisa ditekan" jelas.
+
+**Pengecualian disengaja — Card Work Order di papan Kanban:** tetap memakai border 1.5px tegas (bukan hairline 1px), lihat §6.1. Alasannya kontekstual, bukan inkonsistensi: papan Kanban adalah tampilan *scanning cepat* saat antrian padat, dan card-nya bisa di-drag antar kolom — border lebih tebal membantu mata memisahkan batas antar-card serta memperjelas target drop-zone. Card list lain (stok, invoice) dibaca sekuensial satu-satu sehingga hairline tipis sudah cukup.
 
 Divider antar section: `1px solid #ECE6DF`.
 
@@ -118,7 +122,7 @@ Mengikuti matriks varian ala referensi (with background / with stroke × primary
 
 | Varian | Fill | Border bawah | Ikon | Konteks |
 |---|---|---|---|---|
-| **Primary** (with background) | `#111111` atau mint solid `#3FBE85` | shade lebih gelap 35% | opsional kiri/kanan | Simpan, Bayar, Konfirmasi |
+| **Primary** (with background) | `#3FBE85` (solid mint) | `#2E9966` | opsional kiri/kanan | Simpan, Bayar, Konfirmasi |
 | **Warning** | `#FFE59A` | `#E0B94D` | ⚠/★ | Peringatan stok, konfirmasi berisiko rendah |
 | **Danger** | `#FFB5C1` (fill) / merah solid untuk aksi destruktif final | `#E8748A` | 🗑 | Batalkan Work Order, hapus item |
 | **Info** | `#A9D3FF` | `#5B9AE8` | ℹ | Notifikasi, tips |
@@ -230,8 +234,8 @@ class AppColors {
   static const statusCancelledBorder = Color(0xFFE8748A);
 
   // Accent
-  static const accentPrimary = Color(0xFF111111);
-  static const accentPrimaryBorder = Color(0xFF000000);
+  static const accentPrimary = Color(0xFF3FBE85);
+  static const accentPrimaryBorder = Color(0xFF2E9966);
   static const accentSecondary = Color(0xFFFFE59A);
   static const accentSecondaryBorder = Color(0xFFE0B94D);
 }

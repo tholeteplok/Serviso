@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/section_card.dart';
@@ -134,16 +135,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Center(
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.tintPrimary,
+                      color: AppColors.pastelMint,
                       borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.borderStrong,
+                          offset: Offset(0, 2),
+                          blurRadius: 0,
+                        ),
+                      ],
                     ),
                     child: Text(
                       userRoleLabel[profile.role] ?? 'Kasir',
                       style: textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.ink900,
                       ),
                     ),
                   ),
@@ -153,9 +162,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   title: 'Data akun',
                   trailing: _editing
                       ? null
-                      : TextButton(
+                      : TextButton.icon(
                           onPressed: () => setState(() => _editing = true),
-                          child: const Text('Ubah'),
+                          icon: Icon(AppIcons.edit, size: 16),
+                          label: const Text('Ubah'),
                         ),
                   child: Column(
                     children: [
@@ -240,7 +250,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.manage_accounts_outlined),
+                          leading: Icon(AppIcons.usersThree),
                           title: const Text('Kelola Pengguna'),
                           subtitle: const Text('Tambah kasir/admin & reset password'),
                           trailing: const Icon(Icons.chevron_right),
@@ -249,7 +259,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const Divider(height: 1, color: AppColors.line),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.history_edu_outlined),
+                          leading: Icon(AppIcons.clipboardList),
                           title: const Text('Audit Log Sistem'),
                           subtitle: const Text('Riwayat aktivitas & transaksi'),
                           trailing: const Icon(Icons.chevron_right),
@@ -258,7 +268,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const Divider(height: 1, color: AppColors.line),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.store_outlined),
+                          leading: Icon(AppIcons.storefront),
                           title: const Text('Pengaturan Toko'),
                           subtitle: const Text('Nama, alamat, telepon'),
                           trailing: const Icon(Icons.chevron_right),
@@ -271,13 +281,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
+                    icon: Icon(AppIcons.prohibit),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.action,
                       side: const BorderSide(color: AppColors.action),
                     ),
                     onPressed: _confirmLogout,
-                    child: const Text('Keluar'),
+                    label: const Text('Keluar'),
                   ),
                 ),
               ],

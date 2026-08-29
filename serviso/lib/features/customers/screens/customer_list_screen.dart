@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_search_bar.dart';
 import '../controllers/customer_list_controller.dart';
 import '../controllers/customer_providers.dart';
 import '../screens/customer_form_sheet.dart';
@@ -44,31 +47,19 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _searching
-            ? null
-            : const Text('Pelanggan'),
+        title: _searching ? null : const Text('Pelanggan'),
         bottom: _searching
             ? PreferredSize(
-                preferredSize: const Size.fromHeight(60),
+                preferredSize: const Size.fromHeight(64),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: SearchBar(
+                  child: NeoSearchBar(
                     controller: _searchController,
                     hintText: 'Cari nama atau telepon',
-                    hintStyle: WidgetStateProperty.all(
-                      textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                    ),
-                    leading: const Icon(Icons.search),
-                    trailing: [
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Tutup pencarian',
-                        onPressed: _closeSearch,
-                      ),
-                    ],
+                    autofocus: true,
                     onChanged: (value) =>
                         ref.read(customerSearchProvider.notifier).state = value,
-                    autoFocus: true,
+                    onClear: _closeSearch,
                   ),
                 ),
               )
@@ -76,7 +67,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         actions: [
           if (!_searching)
             IconButton(
-              icon: const Icon(Icons.search),
+              icon: Icon(AppIcons.search),
               tooltip: 'Cari pelanggan',
               onPressed: _openSearch,
             ),
@@ -84,7 +75,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showCustomerForm(context, ref, null),
-        icon: const Icon(Icons.person_add_outlined),
+        icon: Icon(AppIcons.addPerson),
         label: const Text('Tambah'),
       ),
       body: state.when(
@@ -126,7 +117,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   child: ListTile(
                     onTap: () => context.push('/pelanggan/${customer.id}'),
                     leading: CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColors.pastelMint,
                       child: Text(
                         customer.name.isNotEmpty
                             ? customer.name[0].toUpperCase()

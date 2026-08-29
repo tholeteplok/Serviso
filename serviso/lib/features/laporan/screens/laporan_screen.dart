@@ -355,7 +355,7 @@ class LaporanScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   Text(
-                                    ' pcs terjual',
+                                    '${part.qtyOut.toInt()} pcs terjual',
                                     style: textTheme.bodySmall?.copyWith(
                                       color: AppColors.inkMuted,
                                     ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../features/auth/models/profile.dart';
@@ -21,7 +22,7 @@ class UserManagementScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddUserDialog(context, ref),
-        icon: const Icon(Icons.person_add_outlined),
+        icon: Icon(AppIcons.addPerson),
         label: const Text('Tambah User'),
       ),
       body: RefreshIndicator(
@@ -59,7 +60,7 @@ class UserManagementScreen extends ConsumerWidget {
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
+        side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -75,8 +76,8 @@ class UserManagementScreen extends ConsumerWidget {
                       : AppColors.line,
                   child: Icon(
                     isAdmin
-                        ? Icons.admin_panel_settings_outlined
-                        : Icons.person_outline,
+                        ? AppIcons.shieldCheck
+                        : AppIcons.user,
                     color: user.isActive ? AppColors.primary : AppColors.inkMuted,
                   ),
                 ),
@@ -110,6 +111,12 @@ class UserManagementScreen extends ConsumerWidget {
                         ? AppColors.primary.withValues(alpha: 0.12)
                         : AppColors.teal.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isAdmin
+                          ? AppColors.primary.withValues(alpha: 0.5)
+                          : AppColors.teal.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     isAdmin ? 'Admin' : 'Kasir',
@@ -131,8 +138,8 @@ class UserManagementScreen extends ConsumerWidget {
                   children: [
                     Icon(
                       user.isActive
-                          ? Icons.check_circle_outline
-                          : Icons.cancel_outlined,
+                          ? AppIcons.checkCircle
+                          : AppIcons.prohibit,
                       size: 16,
                       color: user.isActive ? AppColors.teal : AppColors.action,
                     ),
@@ -158,8 +165,8 @@ class UserManagementScreen extends ConsumerWidget {
                       tooltip: user.isActive ? 'Nonaktifkan' : 'Aktifkan',
                       icon: Icon(
                         user.isActive
-                            ? Icons.block_outlined
-                            : Icons.task_alt_outlined,
+                            ? AppIcons.prohibit
+                            : AppIcons.checkCircle,
                         color:
                             user.isActive ? AppColors.action : AppColors.teal,
                       ),
@@ -187,6 +194,7 @@ class UserManagementScreen extends ConsumerWidget {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: AppColors.borderStrong, width: 1.5),
       ),
       builder: (context) {
         return StatefulBuilder(

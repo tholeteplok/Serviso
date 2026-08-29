@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -98,8 +99,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                 ),
                 data: (logs) {
                   if (logs.isEmpty) {
-                    return const EmptyState(
-                      icon: Icons.history_edu_outlined,
+                    return EmptyState(
+                      icon: AppIcons.clipboardList,
                       title: 'Belum Ada Log Audit',
                       message:
                           'Aktivitas CRUD dan autentikasi akan tercatat otomatis di sini.',
@@ -120,7 +121,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                         margin: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppColors.line),
+                          side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
@@ -153,9 +154,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                                     const Spacer(),
                                     Icon(
                                       isExpanded
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
+                                          ? AppIcons.caretUp
+                                          : AppIcons.caretDown,
                                       color: AppColors.inkMuted,
+                                      size: 16,
                                     ),
                                   ],
                                 ),
@@ -245,6 +247,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: fg.withValues(alpha: 0.5), width: 1),
       ),
       child: Text(
         action.toUpperCase(),

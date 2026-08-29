@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/section_card.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../data/settings_repository.dart';
 import '../models/app_settings.dart';
@@ -110,21 +112,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Nama toko'),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _addressController,
-            decoration: const InputDecoration(labelText: 'Alamat'),
-            maxLines: 2,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _phoneController,
-            decoration: const InputDecoration(labelText: 'Telepon'),
-            keyboardType: TextInputType.phone,
+          SectionCard(
+            title: 'Informasi Bengkel',
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nama toko'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: const InputDecoration(labelText: 'Alamat'),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(labelText: 'Telepon'),
+                  keyboardType: TextInputType.phone,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           if (_error != null)
@@ -137,9 +146,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
+            child: FilledButton.icon(
+              icon: Icon(AppIcons.check, size: 18),
               onPressed: _saving ? null : _save,
-              child: _saving
+              label: _saving
                   ? const SizedBox(
                       height: 18,
                       width: 18,
@@ -148,7 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: AppColors.surface,
                       ),
                     )
-                  : const Text('Simpan'),
+                  : const Text('Simpan Pengaturan'),
             ),
           ),
         ],

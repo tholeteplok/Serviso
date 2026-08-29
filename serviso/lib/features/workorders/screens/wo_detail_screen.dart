@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/wo_status.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
@@ -543,7 +544,7 @@ class _DetailBody extends StatelessWidget {
                     border: Border.all(
                       color:
                           order.isPaid ? AppColors.teal : AppColors.action,
-                      width: 1,
+                      width: 1.5,
                     ),
                   ),
                   child: Text(
@@ -657,7 +658,7 @@ class _DetailBody extends StatelessWidget {
                       if (canEditItems) ...[
                         TextButton.icon(
                           onPressed: onAddJasa,
-                          icon: const Icon(Icons.add, size: 16),
+                          icon: Icon(AppIcons.add, size: 16),
                           label: const Text('Jasa'),
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
@@ -667,7 +668,7 @@ class _DetailBody extends StatelessWidget {
                         const SizedBox(width: 4),
                         TextButton.icon(
                           onPressed: onAddPart,
-                          icon: const Icon(Icons.add, size: 16),
+                          icon: Icon(AppIcons.add, size: 16),
                           label: const Text('Part'),
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
@@ -742,8 +743,8 @@ class _ItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
     final icon = item.kind == WoItemKind.part
-        ? Icons.build_outlined
-        : Icons.handyman_outlined;
+        ? AppIcons.part
+        : AppIcons.wrench;
     final title = item.kind == WoItemKind.part
         ? (item.partName ?? item.description ?? 'Part')
         : (item.description ?? 'Jasa');
@@ -758,27 +759,31 @@ class _ItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: textTheme.bodyMedium),
+                const SizedBox(height: 2),
                 Text(
-                  '${item.qty} x ${rupiah(item.unitPrice)}',
-                  style:
-                      textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
+                  item.kind == WoItemKind.part
+                      ? '${item.qty.toStringAsFixed(0)}x · ${rupiah(item.unitPrice)}'
+                      : rupiah(item.unitPrice),
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: AppColors.inkMuted),
                 ),
               ],
             ),
           ),
           Text(
             rupiah(item.lineTotal),
-            style: AppTypography.mono(fontSize: 13),
+            style: AppTypography.mono(fontWeight: FontWeight.w600),
           ),
-          if (canDelete && onDelete != null) ...[
-            const SizedBox(width: 6),
+          if (canDelete) ...[
+            const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  size: 18, color: AppColors.action),
               onPressed: onDelete,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              tooltip: 'Hapus item',
+              icon: Icon(
+                AppIcons.trash,
+                size: 18,
+                color: AppColors.action,
+              ),
+              visualDensity: VisualDensity.compact,
             ),
           ],
         ],
@@ -791,8 +796,8 @@ class _EditableField extends StatefulWidget {
   const _EditableField({
     required this.initial,
     required this.readOnly,
+    required this.maxLines,
     required this.onSaved,
-    this.maxLines = 1,
   });
 
   final String initial;
@@ -812,30 +817,27 @@ class _EditableFieldState extends State<_EditableField> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initial);
-    _focus = FocusNode()..addListener(_onFocusChange);
+    _focus = FocusNode();
+    _focus.addListener(() {
+      if (!_focus.hasFocus) {
+        _submit();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(covariant _EditableField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initial != widget.initial &&
-        _controller.text != widget.initial) {
+    if (oldWidget.initial != widget.initial && !_focus.hasFocus) {
       _controller.text = widget.initial;
     }
   }
 
   @override
   void dispose() {
-    _focus.removeListener(_onFocusChange);
-    _focus.dispose();
     _controller.dispose();
+    _focus.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (!_focus.hasFocus) {
-      _submit();
-    }
   }
 
   Future<void> _submit() async {
@@ -855,7 +857,7 @@ class _EditableFieldState extends State<_EditableField> {
         hintText: widget.readOnly ? 'Tidak tersedia' : 'Isi di sini',
         suffixIcon: widget.readOnly
             ? null
-            : const Icon(Icons.edit_outlined, size: 16),
+            : Icon(AppIcons.edit, size: 16),
       ),
       style: widget.readOnly
           ? textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted)
@@ -915,7 +917,7 @@ class _ActionButtons extends StatelessWidget {
           if (!isPaid)
             FilledButton.icon(
               onPressed: onPay,
-              icon: const Icon(Icons.payments_outlined),
+              icon: Icon(AppIcons.wallet),
               label: const Text('Pembayaran'),
             )
           else
@@ -924,13 +926,13 @@ class _ActionButtons extends StatelessWidget {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                 Navigator.of(context).pop();
               },
-              icon: const Icon(Icons.check),
+              icon: Icon(AppIcons.check),
               label: const Text('Selesai'),
             ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onReceipt,
-            icon: const Icon(Icons.receipt_long_outlined),
+            icon: Icon(AppIcons.receipt),
             label: const Text('Struk'),
           ),
         ],
@@ -938,7 +940,7 @@ class _ActionButtons extends StatelessWidget {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onCancel,
-            icon: const Icon(Icons.cancel_outlined),
+            icon: Icon(AppIcons.prohibit),
             label: Text(status == WoStatus.selesai
                 ? 'Batalkan (kembalikan stok)'
                 : 'Batalkan'),
@@ -1021,9 +1023,9 @@ class _DetailPartPickerSheetState
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Cari nama atau kode part...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(AppIcons.search),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  icon: Icon(AppIcons.barcode),
                   tooltip: 'Scan Barcode',
                   onPressed: () async {
                     final nav = Navigator.of(context);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -33,7 +34,7 @@ class PartDetailScreen extends ConsumerWidget {
         actions: [
           if (isAdmin) ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: Icon(AppIcons.edit),
               tooltip: 'Ubah suku cadang',
               onPressed: () {
                 final currentPart = state.valueOrNull?.part;
@@ -50,7 +51,7 @@ class PartDetailScreen extends ConsumerWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: Icon(AppIcons.trash),
               tooltip: 'Hapus suku cadang',
               onPressed: () => _confirmDelete(context, ref),
             ),
@@ -82,21 +83,7 @@ class PartDetailScreen extends ConsumerWidget {
                         color: AppColors.inkMuted,
                       ),
                     ),
-                    const SizedBox(width: 8),
                   ],
-                  if (isAdmin)
-                    TextButton.icon(
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Ubah'),
-                      onPressed: () => showPartForm(
-                        context,
-                        ref,
-                        part,
-                        onSaved: () => ref
-                            .read(partDetailControllerProvider(partId).notifier)
-                            .reload(),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -111,8 +98,18 @@ class PartDetailScreen extends ConsumerWidget {
                   border: Border.all(
                     color: (part.isLowStock || part.isOutOfStock)
                         ? AppColors.action
-                        : AppColors.line,
+                        : AppColors.borderHairline,
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (part.isLowStock || part.isOutOfStock)
+                          ? AppColors.action.withValues(alpha: 0.25)
+                          : AppColors.borderHairline,
+                      offset: const Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -142,21 +139,21 @@ class PartDetailScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _InfoRow(
-                      icon: Icons.shopping_cart_outlined,
+                      icon: AppIcons.cart,
                       label: 'Modal Beli',
                       value: rupiah(part.costPrice),
                       mono: true,
                     ),
                     const Divider(height: 12),
                     _InfoRow(
-                      icon: Icons.sell_outlined,
+                      icon: AppIcons.tag,
                       label: 'Harga Jual',
                       value: rupiah(part.sellPrice),
                       mono: true,
                     ),
                     const Divider(height: 12),
                     _InfoRow(
-                      icon: Icons.warning_outlined,
+                      icon: AppIcons.warning,
                       label: 'Batas Stok Menipis',
                       value: '${part.minStock} ${part.unit ?? 'pcs'}',
                       mono: true,
@@ -168,16 +165,18 @@ class PartDetailScreen extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton.tonal(
+                    child: FilledButton.icon(
+                      icon: Icon(AppIcons.add, size: 18),
                       onPressed: () =>
                           showStockInDialog(context, ref, partId, initialPart: part),
-                      child: const Text('Stok Masuk'),
+                      label: const Text('Stok Masuk'),
                     ),
                   ),
                   if (isAdmin) ...[
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton.tonal(
+                      child: FilledButton.icon(
+                        icon: Icon(AppIcons.edit, size: 18),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.tintAction,
                           foregroundColor: AppColors.action,
@@ -187,7 +186,7 @@ class PartDetailScreen extends ConsumerWidget {
                           ref,
                           part,
                         ),
-                        child: const Text('Koreksi Stok'),
+                        label: const Text('Koreksi Stok'),
                       ),
                     ),
                   ],
@@ -340,8 +339,8 @@ class _MovementRow extends StatelessWidget {
           ),
           child: Icon(
             isIn
-                ? Icons.add
-                : (isAdjust ? Icons.edit_note : Icons.remove),
+                ? AppIcons.add
+                : (isAdjust ? AppIcons.edit : AppIcons.minus),
             color: color,
             size: 20,
           ),

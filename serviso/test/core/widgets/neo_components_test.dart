@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:serviso/core/theme/app_icons.dart';
 import 'package:serviso/core/widgets/neo_search_bar.dart';
 import 'package:serviso/core/widgets/neo_segment_control.dart';
 import 'package:serviso/core/widgets/neo_stepper.dart';
@@ -108,12 +109,12 @@ void main() {
       expect(find.text('2'), findsOneWidget);
 
       // Tap increment [+]
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(AppIcons.add));
       await tester.pumpAndSettle();
       expect(count, 3);
 
       // Tap decrement [-]
-      await tester.tap(find.byIcon(Icons.remove));
+      await tester.tap(find.byIcon(AppIcons.minus));
       await tester.pumpAndSettle();
       expect(count, 2);
     });

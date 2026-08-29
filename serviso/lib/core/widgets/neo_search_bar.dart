@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../theme/app_colors.dart';
@@ -16,6 +16,7 @@ class NeoSearchBar extends StatelessWidget {
     this.onClear,
     this.hintText = 'Cari nama atau kode...',
     this.focusNode,
+    this.autofocus = false,
   });
 
   final TextEditingController? controller;
@@ -24,6 +25,7 @@ class NeoSearchBar extends StatelessWidget {
   final VoidCallback? onClear;
   final String hintText;
   final FocusNode? focusNode;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +61,7 @@ class NeoSearchBar extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               onChanged: onChanged,
+              autofocus: autofocus,
               style: const TextStyle(
                 color: AppColors.ink900,
                 fontSize: 14,
@@ -92,17 +95,25 @@ class NeoSearchBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          if (onClear != null && controller != null && controller!.text.isNotEmpty)
-            IconButton(
-              icon: Icon(
-                PhosphorIcons.x(PhosphorIconsStyle.bold),
-                color: AppColors.ink900,
-                size: 18,
-              ),
-              tooltip: 'Hapus',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: onClear,
+          // Use ValueListenableBuilder so this rebuilds reactively
+          // whenever controller text changes (StatelessWidget wouldn't).
+          if (onClear != null && controller != null)
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller!,
+              builder: (_, value, _) {
+                if (value.text.isEmpty) return const SizedBox.shrink();
+                return IconButton(
+                  icon: Icon(
+                    PhosphorIcons.x(PhosphorIconsStyle.bold),
+                    color: AppColors.ink900,
+                    size: 18,
+                  ),
+                  tooltip: 'Hapus',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: onClear,
+                );
+              },
             ),
         ],
       ),

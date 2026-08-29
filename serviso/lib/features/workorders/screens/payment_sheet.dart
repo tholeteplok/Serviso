@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../controllers/wo_detail_controller.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
@@ -114,21 +115,18 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
           const SizedBox(height: 8),
           Text('Metode pembayaran', style: textTheme.labelMedium),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: PaymentMethod.values.map((m) {
-              final selected = _method == m;
-              return ChoiceChip(
-                label: Text(m.label),
-                selected: selected,
-                onSelected: (_) => setState(() => _method = m),
-                selectedColor: AppColors.tintPrimary,
-                labelStyle: textTheme.labelMedium?.copyWith(
-                  color: selected ? AppColors.primary : AppColors.inkMuted,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-            }).toList(),
+          NeoSegmentControl<PaymentMethod>(
+            items: PaymentMethod.values
+                .map(
+                  (m) => NeoSegmentItem<PaymentMethod>(
+                    value: m,
+                    label: m.label,
+                    activeColor: AppColors.pastelMint,
+                  ),
+                )
+                .toList(),
+            selectedValue: _method,
+            onValueChanged: (m) => setState(() => _method = m),
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Centralized icon registry using Phosphor Icons (Bold for passive, Fill for active/accent)
@@ -53,4 +53,30 @@ abstract final class AppIcons {
   static final IconData userFill = PhosphorIcons.user(PhosphorIconsStyle.fill);
   static final IconData warning = PhosphorIcons.warning(PhosphorIconsStyle.bold);
   static final IconData clock = PhosphorIcons.clock(PhosphorIconsStyle.bold);
+
+  // ---------------------------------------------------------------------------
+  // Additional Icons (added for full-coverage pop-brutalism audit)
+  // ---------------------------------------------------------------------------
+  static final IconData minus = PhosphorIcons.minus(PhosphorIconsStyle.bold);
+  static final IconData addPerson = PhosphorIcons.userPlus(PhosphorIconsStyle.bold);
+  static final IconData cart = PhosphorIcons.shoppingCart(PhosphorIconsStyle.bold);
+  static final IconData tag = PhosphorIcons.tag(PhosphorIconsStyle.bold);
+  static final IconData caretUp = PhosphorIcons.caretUp(PhosphorIconsStyle.bold);
+  static final IconData caretDown = PhosphorIcons.caretDown(PhosphorIconsStyle.bold);
+  static final IconData truck = PhosphorIcons.truck(PhosphorIconsStyle.bold);
+  static final IconData phone = PhosphorIcons.phone(PhosphorIconsStyle.bold);
+  static final IconData mapPin = PhosphorIcons.mapPin(PhosphorIconsStyle.bold);
+  static final IconData notepad = PhosphorIcons.notepad(PhosphorIconsStyle.bold);
+  static final IconData usersThree = PhosphorIcons.usersThree(PhosphorIconsStyle.bold);
+  static final IconData storefront = PhosphorIcons.storefront(PhosphorIconsStyle.bold);
+  static final IconData shieldCheck = PhosphorIcons.shieldCheck(PhosphorIconsStyle.bold);
+  static final IconData clipboardList = PhosphorIcons.clipboardText(PhosphorIconsStyle.bold);
+  static final IconData userCircle = PhosphorIcons.userCircle(PhosphorIconsStyle.bold);
+  static final IconData barcode = PhosphorIcons.barcode(PhosphorIconsStyle.bold);
+  static final IconData speedometer = PhosphorIcons.gauge(PhosphorIconsStyle.bold);
+  static final IconData alertCircle = PhosphorIcons.warningCircle(PhosphorIconsStyle.bold);
+  static final IconData arrowRight = PhosphorIcons.arrowRight(PhosphorIconsStyle.bold);
+  static final IconData prohibit = PhosphorIcons.prohibit(PhosphorIconsStyle.bold);
+  static final IconData checkFat = PhosphorIcons.checkFat(PhosphorIconsStyle.bold);
 }
+

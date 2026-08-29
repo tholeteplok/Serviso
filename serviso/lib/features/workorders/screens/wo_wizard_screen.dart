@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
+import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../auth/models/profile.dart';
 import '../../customers/controllers/customer_providers.dart';
@@ -521,12 +523,9 @@ class _StepVehicle extends StatelessWidget {
           style: textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        NeoSearchBar(
           controller: searchController,
-          decoration: const InputDecoration(
-            labelText: 'Cari plat atau nama pelanggan',
-            prefixIcon: Icon(Icons.search),
-          ),
+          hintText: 'Cari plat atau nama pelanggan',
           onChanged: onSearch,
         ),
         const SizedBox(height: 12),
@@ -547,7 +546,7 @@ class _StepVehicle extends StatelessWidget {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: onCreateNew,
-          icon: const Icon(Icons.add),
+          icon: Icon(AppIcons.add),
           label: const Text('Buat pelanggan & kendaraan baru'),
         ),
         if (selected != null) ...[
@@ -606,9 +605,9 @@ class _StepDetail extends StatelessWidget {
         const SizedBox(height: 12),
         TextFormField(
           controller: complaintController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Keluhan',
-            prefixIcon: Icon(Icons.report_problem_outlined),
+            prefixIcon: Icon(AppIcons.alertCircle),
           ),
           maxLines: 3,
           validator: WoValidators.validateComplaint,
@@ -616,9 +615,9 @@ class _StepDetail extends StatelessWidget {
         const SizedBox(height: 12),
         TextFormField(
           controller: odometerController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Odometer masuk (KM, opsional)',
-            prefixIcon: Icon(Icons.speed_outlined),
+            prefixIcon: Icon(AppIcons.speedometer),
           ),
           keyboardType: TextInputType.number,
         ),
@@ -629,9 +628,9 @@ class _StepDetail extends StatelessWidget {
           data: (technicians) => DropdownButtonFormField<Profile?>(
             // ignore: deprecated_member_use
             value: technician,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Teknisi (opsional)',
-              prefixIcon: Icon(Icons.person_outline),
+              prefixIcon: Icon(AppIcons.user),
             ),
             items: [
               const DropdownMenuItem<Profile?>(
@@ -689,7 +688,7 @@ class _StepItems extends ConsumerWidget {
                 onAddJasa();
                 onItemsChanged();
               },
-              icon: const Icon(Icons.add),
+              icon: Icon(AppIcons.add),
               label: const Text('Tambah jasa'),
             ),
           ],
@@ -727,7 +726,7 @@ class _StepItems extends ConsumerWidget {
                   ),
                   IconButton(
                     onPressed: () => onRemoveJasa(i),
-                    icon: const Icon(Icons.delete_outline, color: AppColors.action),
+                    icon: Icon(AppIcons.trash, color: AppColors.action),
                   ),
                 ],
               ),
@@ -739,7 +738,7 @@ class _StepItems extends ConsumerWidget {
             Expanded(child: Text('Part', style: textTheme.titleMedium)),
             IconButton(
               tooltip: 'Scan Barcode Part',
-              icon: const Icon(Icons.qr_code_scanner_outlined, color: AppColors.primary),
+              icon: Icon(AppIcons.barcode, color: AppColors.primary),
               onPressed: () async {
                 final code = await showBarcodeScanner(context);
                 if (code != null && code.isNotEmpty) {
@@ -767,7 +766,7 @@ class _StepItems extends ConsumerWidget {
                 );
                 onItemsChanged();
               },
-              icon: const Icon(Icons.add),
+              icon: Icon(AppIcons.add),
               label: const Text('Pilih part'),
             ),
           ],
@@ -811,7 +810,7 @@ class _PartLineTile extends StatelessWidget {
                 Expanded(child: Text(line.part.name, style: textTheme.titleMedium)),
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline, color: AppColors.action),
+                  icon: Icon(AppIcons.trash, color: AppColors.action),
                 ),
               ],
             ),
@@ -942,9 +941,9 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
               controller: _controller,
               decoration: InputDecoration(
                 labelText: 'Cari nama atau kode',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(AppIcons.search),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  icon: Icon(AppIcons.barcode),
                   tooltip: 'Scan Barcode',
                   onPressed: () async {
                     final nav = Navigator.of(context);
@@ -992,7 +991,7 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
                       subtitle: Text(
                         'Stok: ${p.stockQty.toStringAsFixed(0)} · ${rupiah(p.sellPrice)}',
                       ),
-                      trailing: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                      trailing: Icon(AppIcons.add, color: AppColors.primary),
                       onTap: () {
                         widget.onAddPart(p);
                         Navigator.of(context).pop();
