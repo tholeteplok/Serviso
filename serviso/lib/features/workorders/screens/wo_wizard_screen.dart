@@ -9,6 +9,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/plate_chip.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/models/profile.dart';
 import '../../customers/controllers/customer_providers.dart';
 import '../../customers/controllers/validators.dart';
@@ -544,10 +545,12 @@ class _StepVehicle extends StatelessWidget {
         const SizedBox(height: 16),
         const Divider(),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        ThickBottomBorderButton(
+          variant: ThickButtonVariant.secondary,
+          icon: Icon(AppIcons.add, size: 16),
           onPressed: onCreateNew,
-          icon: Icon(AppIcons.add),
-          label: const Text('Buat pelanggan & kendaraan baru'),
+          isFullWidth: true,
+          child: const Text('Buat pelanggan & kendaraan baru'),
         ),
         if (selected != null) ...[
           const SizedBox(height: 20),
@@ -683,13 +686,14 @@ class _StepItems extends ConsumerWidget {
         Row(
           children: [
             Expanded(child: Text('Jasa', style: textTheme.titleMedium)),
-            TextButton.icon(
+            ThickBottomBorderButton(
+              variant: ThickButtonVariant.secondary,
+              icon: Icon(AppIcons.add, size: 16),
               onPressed: () {
                 onAddJasa();
                 onItemsChanged();
               },
-              icon: Icon(AppIcons.add),
-              label: const Text('Tambah jasa'),
+              child: const Text('Tambah jasa'),
             ),
           ],
         ),
@@ -736,9 +740,8 @@ class _StepItems extends ConsumerWidget {
         Row(
           children: [
             Expanded(child: Text('Part', style: textTheme.titleMedium)),
-            IconButton(
-              tooltip: 'Scan Barcode Part',
-              icon: Icon(AppIcons.barcode, color: AppColors.primary),
+            ThickBottomBorderButton(
+              variant: ThickButtonVariant.secondary,
               onPressed: () async {
                 final code = await showBarcodeScanner(context);
                 if (code != null && code.isNotEmpty) {
@@ -753,8 +756,12 @@ class _StepItems extends ConsumerWidget {
                   }
                 }
               },
+              child: Icon(AppIcons.barcode, size: 18),
             ),
-            TextButton.icon(
+            const SizedBox(width: 8),
+            ThickBottomBorderButton(
+              variant: ThickButtonVariant.secondary,
+              icon: Icon(AppIcons.add, size: 16),
               onPressed: () async {
                 await showModalBottomSheet<void>(
                   context: context,
@@ -766,8 +773,7 @@ class _StepItems extends ConsumerWidget {
                 );
                 onItemsChanged();
               },
-              icon: Icon(AppIcons.add),
-              label: const Text('Pilih part'),
+              child: const Text('Pilih part'),
             ),
           ],
         ),
