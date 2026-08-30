@@ -644,56 +644,68 @@ class LaporanScreen extends ConsumerWidget {
     return NeoCard(
       onTap: onTap,
       padding: const EdgeInsets.all(14),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: color.withValues(alpha: 0.12),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
+          // Baris 1: icon & judul + chevron
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.textTheme().bodySmall?.copyWith(
                         color: AppColors.inkMuted,
                         fontSize: 12,
+                        height: 1.1,
                       ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.mono(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: AppColors.inkMuted,
                 ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    subtitle,
-                    style: AppTypography.textTheme().labelSmall?.copyWith(
-                          color: AppColors.inkMuted,
-                          fontSize: 10,
-                        ),
-                  ),
-                ],
               ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Baris 2: nominal — full width, auto-shrink agar tidak terpotong
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppTypography.mono(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.ink,
+              ),
             ),
           ),
-          if (onTap != null) ...[
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppColors.inkMuted,
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            // Baris 3: keterangan tambahan
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.textTheme().labelSmall?.copyWith(
+                    color: AppColors.inkMuted,
+                    fontSize: 10,
+                    height: 1.2,
+                  ),
             ),
           ],
         ],
