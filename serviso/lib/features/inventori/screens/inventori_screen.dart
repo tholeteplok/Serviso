@@ -10,10 +10,10 @@ import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/stock_indicator_card.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/router/app_router.dart';
 import '../controllers/part_list_controller.dart';
 import '../controllers/part_providers.dart';
 import '../models/part.dart';
-import 'part_form_sheet.dart';
 
 class InventoriScreen extends ConsumerStatefulWidget {
   const InventoriScreen({super.key});
@@ -99,7 +99,7 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showPartForm(context, ref, null),
+        onPressed: () => context.push(AppRoutes.inventoriTambah),
         icon: Icon(AppIcons.add),
         label: const Text('Tambah'),
       ),
@@ -150,7 +150,7 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                       message:
                           'Tambahkan suku cadang untuk mencatat stok bengkel.',
                       actionLabel: 'Tambah Suku Cadang',
-                      onAction: () => showPartForm(context, ref, null),
+                      onAction: () => context.push(AppRoutes.inventoriTambah),
                     ),
                   );
                 }

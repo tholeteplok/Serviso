@@ -14,7 +14,6 @@ import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
 import '../models/part_movement.dart';
 import 'adjust_stock_dialog.dart';
-import 'part_form_sheet.dart';
 import 'stock_in_dialog.dart';
 
 class PartDetailScreen extends ConsumerWidget {
@@ -39,14 +38,7 @@ class PartDetailScreen extends ConsumerWidget {
               onPressed: () {
                 final currentPart = state.valueOrNull?.part;
                 if (currentPart != null) {
-                  showPartForm(
-                    context,
-                    ref,
-                    currentPart,
-                    onSaved: () => ref
-                        .read(partDetailControllerProvider(partId).notifier)
-                        .reload(),
-                  );
+                  context.push('/inventori/$partId/edit', extra: currentPart);
                 }
               },
             ),

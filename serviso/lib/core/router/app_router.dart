@@ -19,8 +19,10 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/profile_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/beranda/screens/beranda_screen.dart';
+import '../../features/inventori/models/part.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
 import '../../features/inventori/screens/part_detail_screen.dart';
+import '../../features/inventori/screens/part_form_screen.dart';
 import '../../features/laporan/controllers/report_controllers.dart';
 import '../../features/laporan/screens/details/debt_detail_screen.dart';
 import '../../features/laporan/screens/details/hpp_detail_screen.dart';
@@ -55,6 +57,8 @@ abstract final class AppRoutes {
   static const pelanggan = '/pelanggan';
   static const pelangganDetail = '/pelanggan/:id';
   static const woBaru = '/antrian/baru';
+  static const inventoriTambah = '/inventori/tambah';
+  static const inventoriEdit = '/inventori/:id/edit';
 }
 
 String? authGuardRedirect({
@@ -205,6 +209,17 @@ final List<RouteBase> _appRoutes = [
       path: '${AppRoutes.antrian}/:id',
       builder: (context, state) =>
           WoDetailScreen(workOrderId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: AppRoutes.inventoriTambah,
+      builder: (context, state) => const PartFormScreen(),
+    ),
+    GoRoute(
+      path: '/inventori/:id/edit',
+      builder: (context, state) => PartFormScreen(
+        partId: state.pathParameters['id'],
+        initial: state.extra is Part ? state.extra as Part : null,
+      ),
     ),
     GoRoute(
       path: '${AppRoutes.inventori}/:id',
