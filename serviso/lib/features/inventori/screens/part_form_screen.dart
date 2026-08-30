@@ -8,6 +8,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_stepper.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
@@ -33,12 +34,12 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
   late final TextEditingController _costController;
   late final TextEditingController _sellController;
   late final TextEditingController _unitController;
-  late final TextEditingController _quantityController;
   late final TextEditingController _distributorController;
   var _paymentType = 'tunai';
   late DateTime _dueDate;
   bool _loadingPart = false;
   Part? _resolvedInitial;
+  num _quantity = 0;
 
   static const List<String> _unitOptions = [
     'pcs',
@@ -69,7 +70,6 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
       text: initial != null ? initial.sellPrice.toStringAsFixed(0) : '',
     );
     _unitController = TextEditingController(text: initial?.unit ?? 'pcs');
-    _quantityController = TextEditingController();
     _distributorController = TextEditingController();
     _dueDate = DateTime.now().add(const Duration(days: 14));
 
@@ -108,7 +108,6 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
     _costController.dispose();
     _sellController.dispose();
     _unitController.dispose();
-    _quantityController.dispose();
     _distributorController.dispose();
     super.dispose();
   }
@@ -127,9 +126,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
     final sell = isAdmin ? double.tryParse(_sellController.text) : null;
 
     final isEdit = _isEdit;
-    final initialStock = !isEdit
-        ? (double.tryParse(_quantityController.text.trim()) ?? 0.0)
-        : 0.0;
+    final initialStock = !isEdit ? _quantity.toDouble() : 0.0;
     final rawDistributor = !isEdit ? _distributorController.text.trim() : null;
     final distributor =
         rawDistributor?.isEmpty == true ? null : rawDistributor;
@@ -254,7 +251,9 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                       enableFilter: true,
                       requestFocusOnTap: true,
                       initialSelection: _effectiveInitial?.unit ?? 'pcs',
-                      onSelected: (_) {},
+                      onSelected: (val) {
+                        if (val != null) setState(() {});
+                      },
                       dropdownMenuEntries: _unitOptions
                           .map((u) => DropdownMenuEntry(value: u, label: u))
                           .toList(),
@@ -345,30 +344,47 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextFormField(
-                        controller: _quantityController,
-                        decoration: InputDecoration(
-                          labelText: 'Kuantitas *',
-                          hintText: 'Misal: 10 (isi 0 jika belum ada stok)',
-                          prefixIcon: Icon(AppIcons.inventory),
-                          suffixText: _unitController.text.isEmpty ? 'pcs' : _unitController.text,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        textInputAction: TextInputAction.next,
-                        onChanged: (_) => setState(() {}),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return null;
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null || parsed < 0) {
-                            return 'Masukkan jumlah stok yang valid (>= 0)';
-                          }
-                          return null;
-                        },
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Jumlah awal',
+                              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          NeoStepper(
+                            value: _quantity,
+                            min: 0,
+                            step: 1,
+                            unit: _unitController.text.isEmpty ? 'pcs' : _unitController.text,
+                            allowDecimals: true,
+                            onChanged: (v) => setState(() => _quantity = v),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Jumlah awal akan dicatat sebagai Stok Masuk. Kosongkan atau isi 0 jika belum ada stok fisik.',
-                        style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.canvas,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.borderHairline),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(AppIcons.inventory, size: 16, color: AppColors.inkMuted),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _quantity == 0
+                                    ? 'Kosongkan (0) jika belum ada stok fisik.'
+                                    : '${_quantity.toString().replaceAll(RegExp(r'\.0$'), '')} ${_unitController.text.isEmpty ? 'pcs' : _unitController.text} akan dicatat sebagai Stok Masuk.',
+                                style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
