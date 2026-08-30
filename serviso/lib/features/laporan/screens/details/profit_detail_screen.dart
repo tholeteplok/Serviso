@@ -20,13 +20,14 @@ final profitDetailPeriodProvider =
 
 ({DateTime start, DateTime end}) _profitRange(LaporanPeriod period) {
   final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
   switch (period) {
     case LaporanPeriod.days7:
-      return (start: now.subtract(const Duration(days: 6)), end: now);
+      return (start: today.subtract(const Duration(days: 6)), end: today);
     case LaporanPeriod.days30:
-      return (start: now.subtract(const Duration(days: 29)), end: now);
+      return (start: today.subtract(const Duration(days: 29)), end: today);
     case LaporanPeriod.thisMonth:
-      return (start: DateTime(now.year, now.month, 1), end: now);
+      return (start: DateTime(now.year, now.month, 1), end: today);
   }
 }
 
