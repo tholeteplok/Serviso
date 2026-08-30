@@ -163,6 +163,9 @@ class OmsetDetailScreen extends ConsumerWidget {
                     rows.isEmpty ? 0.0 : totalRevenue / rows.length;
                 final maxRow = rows.reduce(
                     (a, b) => a.revenue >= b.revenue ? a : b);
+                // Filter newest: tampilkan hari terbaru di atas
+                final displayRows = List<DailySummaryRow>.from(rows)
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -202,7 +205,7 @@ class OmsetDetailScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Grafik
+                    // Grafik (tetap kronologis agar tren mudah dibaca)
                     SectionCard(
                       title: 'Grafik Pendapatan Harian',
                       child: SizedBox(
@@ -273,14 +276,14 @@ class OmsetDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Rincian Harian',
+                      'Rincian Harian (Terbaru di atas)',
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
-                    ...rows.map((r) => NeoCard(
+                    ...displayRows.map((r) => NeoCard(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
                           onTap: () {

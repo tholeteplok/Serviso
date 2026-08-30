@@ -473,10 +473,12 @@ class SupabaseReportRepository implements ReportRepository {
       final startStr = start.toIso8601String().substring(0, 10);
       final endStr = end.toIso8601String().substring(0, 10);
       final monthStart = DateTime(start.year, start.month, 1);
+
+      // Primary: aggregate via part_movements (sumber v_top_parts)
       try {
         final res = await _client
             .from('part_movements')
-            .select('part_id, qty, sell_price, parts(name)')
+            .select('part_id, qty, parts(name, sell_price)')
             .eq('direction', 'out')
             .eq('ref_type', 'wo')
             .gte('created_at', '${startStr}T00:00:00')
@@ -486,9 +488,9 @@ class SupabaseReportRepository implements ReportRepository {
           final partId = m['part_id'] as String? ?? '';
           if (partId.isEmpty) continue;
           final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
-          final sellPrice = (m['sell_price'] as num?)?.toDouble() ?? 0.0;
           final partMap = m['parts'] as Map?;
           final name = (partMap?['name'] as String?) ?? 'Suku Cadang';
+          final sellPrice = (partMap?['sell_price'] as num?)?.toDouble() ?? 0.0;
           final existing = grouped[partId];
           if (existing == null) {
             grouped[partId] = PartSoldDetailRow(
@@ -504,6 +506,55 @@ class SupabaseReportRepository implements ReportRepository {
               name: name,
               qtyOut: existing.qtyOut + qty,
               revenue: existing.revenue + qty * sellPrice,
+              monthStart: monthStart,
+            );
+          }
+        }
+        if (grouped.isNotEmpty) {
+          final sorted = grouped.values.toList()
+            ..sort((a, b) => b.qtyOut.compareTo(a.qtyOut));
+          return sorted;
+        }
+        // Jika part_movements kosong tapi v_daily_summary ada (legacy), fallback ke wo_items
+      } catch (_) {
+        // lanjut ke fallback wo_items
+      }
+
+      // Fallback: agregasi via wo_items (konsisten dengan v_daily_summary parts_out_qty)
+      try {
+        final woRes = await _client
+            .from('wo_items')
+            .select('part_id, qty, unit_price, parts(name, sell_price), work_orders!inner(completed_at, status)')
+            .eq('kind', 'part')
+            .eq('work_orders.status', 'selesai')
+            .gte('work_orders.completed_at', '${startStr}T00:00:00')
+            .lte('work_orders.completed_at', '${endStr}T23:59:59');
+        final grouped = <String, PartSoldDetailRow>{};
+        for (final m in woRes as List) {
+          final partId = m['part_id'] as String? ?? '';
+          if (partId.isEmpty) continue;
+          final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+          final partMap = m['parts'] as Map?;
+          final name = (partMap?['name'] as String?) ?? 'Suku Cadang';
+          // prefer unit_price tercatat, fallback sell_price
+          final unitPrice = (m['unit_price'] as num?)?.toDouble() ??
+              (partMap?['sell_price'] as num?)?.toDouble() ??
+              0.0;
+          final existing = grouped[partId];
+          if (existing == null) {
+            grouped[partId] = PartSoldDetailRow(
+              partId: partId,
+              name: name,
+              qtyOut: qty,
+              revenue: qty * unitPrice,
+              monthStart: monthStart,
+            );
+          } else {
+            grouped[partId] = PartSoldDetailRow(
+              partId: partId,
+              name: name,
+              qtyOut: existing.qtyOut + qty,
+              revenue: existing.revenue + qty * unitPrice,
               monthStart: monthStart,
             );
           }

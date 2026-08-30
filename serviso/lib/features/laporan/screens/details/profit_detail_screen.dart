@@ -300,103 +300,107 @@ class ProfitDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Rincian Harian',
+                      'Rincian Harian (Terbaru di atas)',
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
-                    ...rows.map((r) {
-                      final margin =
-                          r.revenue == 0 ? 0.0 : r.profit / r.revenue * 100;
-                      final isPositive = r.profit >= 0;
-                      return NeoCard(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: (isPositive
-                                        ? AppColors.teal
-                                        : AppColors.action)
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(10),
+                    ...(() {
+                      final displayRows = List<ProfitBreakdownRow>.from(rows)
+                        ..sort((a, b) => b.date.compareTo(a.date));
+                      return displayRows.map((r) {
+                        final margin =
+                            r.revenue == 0 ? 0.0 : r.profit / r.revenue * 100;
+                        final isPositive = r.profit >= 0;
+                        return NeoCard(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: (isPositive
+                                          ? AppColors.teal
+                                          : AppColors.action)
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isPositive
+                                      ? Icons.trending_up_rounded
+                                      : Icons.trending_down_rounded,
+                                  size: 20,
+                                  color: isPositive
+                                      ? AppColors.teal
+                                      : AppColors.action,
+                                ),
                               ),
-                              child: Icon(
-                                isPositive
-                                    ? Icons.trending_up_rounded
-                                    : Icons.trending_down_rounded,
-                                size: 20,
-                                color: isPositive
-                                    ? AppColors.teal
-                                    : AppColors.action,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      dateShortId(r.date),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Omset ${rupiah(r.revenue)} • HPP ${rupiah(r.cogs)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: AppColors.inkMuted),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Margin ${margin.toStringAsFixed(1)}%',
+                                      style: AppTypography.mono(
+                                        fontSize: 11,
+                                        color: AppColors.inkMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    dateShortId(r.date),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                    rupiah(r.profit),
+                                    style: AppTypography.mono(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: isPositive
+                                          ? AppColors.teal
+                                          : AppColors.action,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Omset ${rupiah(r.revenue)} • HPP ${rupiah(r.cogs)}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(color: AppColors.inkMuted),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Margin ${margin.toStringAsFixed(1)}%',
+                                    '${margin.toStringAsFixed(1)}%',
                                     style: AppTypography.mono(
                                       fontSize: 11,
-                                      color: AppColors.inkMuted,
+                                      color: isPositive
+                                          ? AppColors.teal
+                                          : AppColors.action,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  rupiah(r.profit),
-                                  style: AppTypography.mono(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: isPositive
-                                        ? AppColors.teal
-                                        : AppColors.action,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${margin.toStringAsFixed(1)}%',
-                                  style: AppTypography.mono(
-                                    fontSize: 11,
-                                    color: isPositive
-                                        ? AppColors.teal
-                                        : AppColors.action,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                            ],
+                          ),
+                        );
+                      });
+                    }()),
                   ],
                 );
               },
