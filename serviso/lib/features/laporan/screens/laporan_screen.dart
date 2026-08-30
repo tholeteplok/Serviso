@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -11,6 +12,7 @@ import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/router/app_router.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/report_controllers.dart';
 import '../models/report_models.dart';
@@ -121,6 +123,9 @@ class LaporanScreen extends ConsumerWidget {
                                       subtitle: 'Pendapatan kotor',
                                       icon: AppIcons.wallet,
                                       color: AppColors.primary,
+                                      onTap: () => context.push(
+                                        AppRoutes.laporanOmset,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -132,6 +137,20 @@ class LaporanScreen extends ConsumerWidget {
                                       subtitle: 'Omzet - Modal Part',
                                       icon: AppIcons.report,
                                       color: AppColors.teal,
+                                      onTap: () {
+                                        if (!isAdmin) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Hanya pemilik dapat membuka rincian ini',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        context.push(AppRoutes.laporanLaba);
+                                      },
                                     ),
                                   ),
                                 ],
@@ -150,6 +169,20 @@ class LaporanScreen extends ConsumerWidget {
                                       subtitle: 'Modal pokok barang',
                                       icon: AppIcons.part,
                                       color: AppColors.inkMuted,
+                                      onTap: () {
+                                        if (!isAdmin) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Hanya pemilik dapat membuka rincian ini',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        context.push(AppRoutes.laporanHpp);
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -163,6 +196,20 @@ class LaporanScreen extends ConsumerWidget {
                                       color: fin.totalUnpaidDebt > 0
                                           ? AppColors.action
                                           : AppColors.teal,
+                                      onTap: () {
+                                        if (!isAdmin) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Hanya pemilik dapat membuka rincian ini',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        context.push(AppRoutes.laporanHutang);
+                                      },
                                     ),
                                   ),
                                 ],
@@ -186,6 +233,9 @@ class LaporanScreen extends ConsumerWidget {
                                 subtitle: 'Pendapatan kotor',
                                 icon: AppIcons.wallet,
                                 color: AppColors.primary,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanOmset,
+                                ),
                               ),
                             ),
                           ],
@@ -203,6 +253,9 @@ class LaporanScreen extends ConsumerWidget {
                               subtitle: 'Pendapatan kotor',
                               icon: AppIcons.wallet,
                               color: AppColors.primary,
+                              onTap: () => context.push(
+                                AppRoutes.laporanOmset,
+                              ),
                             ),
                           ),
                         ],
@@ -222,6 +275,9 @@ class LaporanScreen extends ConsumerWidget {
                               subtitle: 'Pekerjaan tuntas',
                               icon: AppIcons.checkCircle,
                               color: AppColors.teal,
+                              onTap: () => context.push(
+                                AppRoutes.laporanWoSelesai,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -233,6 +289,9 @@ class LaporanScreen extends ConsumerWidget {
                               subtitle: 'Item suku cadang',
                               icon: AppIcons.inventory,
                               color: AppColors.ink,
+                              onTap: () => context.push(
+                                AppRoutes.laporanPartTerjual,
+                              ),
                             ),
                           ),
                         ],
@@ -580,8 +639,10 @@ class LaporanScreen extends ConsumerWidget {
     String? subtitle,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
     return NeoCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
@@ -627,6 +688,14 @@ class LaporanScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (onTap != null) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.inkMuted,
+            ),
+          ],
         ],
       ),
     );

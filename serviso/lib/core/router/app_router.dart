@@ -22,6 +22,12 @@ import '../../features/beranda/screens/beranda_screen.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
 import '../../features/inventori/screens/part_detail_screen.dart';
 import '../../features/laporan/controllers/report_controllers.dart';
+import '../../features/laporan/screens/details/debt_detail_screen.dart';
+import '../../features/laporan/screens/details/hpp_detail_screen.dart';
+import '../../features/laporan/screens/details/omset_detail_screen.dart';
+import '../../features/laporan/screens/details/part_sold_detail_screen.dart';
+import '../../features/laporan/screens/details/profit_detail_screen.dart';
+import '../../features/laporan/screens/details/wo_done_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
@@ -35,6 +41,12 @@ abstract final class AppRoutes {
   static const antrian = '/antrian';
   static const inventori = '/inventori';
   static const laporan = '/laporan';
+  static const laporanOmset = '/laporan/omset';
+  static const laporanLaba = '/laporan/laba';
+  static const laporanHpp = '/laporan/hpp';
+  static const laporanHutang = '/laporan/hutang';
+  static const laporanWoSelesai = '/laporan/wo-selesai';
+  static const laporanPartTerjual = '/laporan/part-terjual';
   static const profil = '/profil';
   static const admin = '/admin';
   static const adminUsers = '/admin/users';
@@ -68,6 +80,12 @@ String? authGuardRedirect({
   }
   if (location.startsWith('/admin') && !isAdmin) {
     return AppRoutes.beranda;
+  }
+  final isLaporanOwnerOnly = location.startsWith(AppRoutes.laporanLaba) ||
+      location.startsWith(AppRoutes.laporanHpp) ||
+      location.startsWith(AppRoutes.laporanHutang);
+  if (isLaporanOwnerOnly && !isAdmin) {
+    return AppRoutes.laporan;
   }
   return null;
 }
@@ -105,6 +123,18 @@ class RouterNotifier extends ChangeNotifier {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           const SnackBar(
             content: Text('Hanya pemilik yang dapat membuka menu ini'),
+          ),
+        );
+      });
+    }
+    if (target == AppRoutes.laporan &&
+        (state.uri.path.startsWith(AppRoutes.laporanLaba) ||
+            state.uri.path.startsWith(AppRoutes.laporanHpp) ||
+            state.uri.path.startsWith(AppRoutes.laporanHutang))) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('Hanya pemilik dapat membuka rincian ini'),
           ),
         );
       });
@@ -181,6 +211,30 @@ final List<RouteBase> _appRoutes = [
       builder: (context, state) => PartDetailScreen(
         partId: state.pathParameters['id'] ?? '',
       ),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanOmset,
+      builder: (context, state) => const OmsetDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanWoSelesai,
+      builder: (context, state) => const WoDoneDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanPartTerjual,
+      builder: (context, state) => const PartSoldDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanLaba,
+      builder: (context, state) => const ProfitDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanHpp,
+      builder: (context, state) => const HppDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanHutang,
+      builder: (context, state) => const DebtDetailScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>

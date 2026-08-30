@@ -20,9 +20,29 @@ abstract class ReportRepository {
     required DateTime end,
   });
 
-  Future<List<DistributorDebtItem>> fetchDistributorDebts();
+  Future<List<DistributorDebtItem>> fetchDistributorDebts({String? status});
 
   Future<void> markDebtPaid(String movementId);
+
+  Future<List<ProfitBreakdownRow>> fetchProfitBreakdown({
+    required DateTime start,
+    required DateTime end,
+  });
+
+  Future<List<WoDoneRow>> fetchCompletedWorkOrders({
+    required DateTime start,
+    required DateTime end,
+  });
+
+  Future<List<PartSoldDetailRow>> fetchPartsSoldDetail({
+    required DateTime start,
+    required DateTime end,
+  });
+
+  Future<List<HppRow>> fetchHppDetail({
+    required DateTime start,
+    required DateTime end,
+  });
 }
 
 class SupabaseReportRepository implements ReportRepository {
@@ -242,7 +262,7 @@ class SupabaseReportRepository implements ReportRepository {
   }
 
   @override
-  Future<List<DistributorDebtItem>> fetchDistributorDebts() async {
+  Future<List<DistributorDebtItem>> fetchDistributorDebts({String? status}) async {
     try {
       final res = await _client
           .from('part_movements')
@@ -258,7 +278,10 @@ class SupabaseReportRepository implements ReportRepository {
         final dStatus = (m['debt_status'] as String?) ??
             (note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas');
 
-        if (payType == 'hutang' && dStatus == 'belum_lunas') {
+        if (status != null && dStatus != status) continue;
+        final isUnpaid = payType == 'hutang' && dStatus == 'belum_lunas';
+        final shouldInclude = status != null ? payType == 'hutang' : isUnpaid;
+        if (shouldInclude) {
           final partMap = m['parts'] as Map?;
           final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
           final costFallback =
@@ -305,7 +328,12 @@ class SupabaseReportRepository implements ReportRepository {
         final list = <DistributorDebtItem>[];
         for (final m in fallbackRes as List) {
           final note = (m['note'] as String?) ?? '';
-          if (note.contains('[HUTANG]') && !note.contains('[LUNAS]')) {
+          final matchesStatus = status == null
+              ? (note.contains('[HUTANG]') && !note.contains('[LUNAS]'))
+              : (status == 'lunas'
+                  ? note.contains('[LUNAS]')
+                  : note.contains('[HUTANG]') && !note.contains('[LUNAS]'));
+          if (matchesStatus) {
             final partMap = m['parts'] as Map?;
             final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
             final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
@@ -328,7 +356,7 @@ class SupabaseReportRepository implements ReportRepository {
               totalDebt: qty * cost,
               createdAt: DateTime.parse(m['created_at'].toString()),
               dueDate: null,
-              debtStatus: 'belum_lunas',
+              debtStatus: note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas',
             ));
           }
         }
@@ -336,6 +364,222 @@ class SupabaseReportRepository implements ReportRepository {
       } catch (_) {
         return [];
       }
+    }
+  }
+
+  @override
+  Future<List<ProfitBreakdownRow>> fetchProfitBreakdown({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+
+      final dailyRows = await fetchDailySummaries(start: start, end: end);
+      final revenueByDate = <String, double>{};
+      for (final r in dailyRows) {
+        final key = r.date.toIso8601String().substring(0, 10);
+        revenueByDate[key] = r.revenue;
+      }
+
+      final cogsByDate = <String, double>{};
+      try {
+        final cogsRes = await _client
+            .from('wo_items')
+            .select('qty, parts(cost_price), work_orders!inner(completed_at)')
+            .eq('kind', 'part')
+            .eq('work_orders.status', 'selesai')
+            .gte('work_orders.completed_at', '${startStr}T00:00:00')
+            .lte('work_orders.completed_at', '${endStr}T23:59:59');
+        for (final item in cogsRes as List) {
+          final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+          final partMap = item['parts'] as Map?;
+          final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+          final woMap = item['work_orders'] as Map?;
+          final completedAtStr = woMap?['completed_at'] as String?;
+          if (completedAtStr == null) continue;
+          final dateKey = completedAtStr.substring(0, 10);
+          cogsByDate[dateKey] = (cogsByDate[dateKey] ?? 0) + qty * cost;
+        }
+      } catch (_) {}
+
+      final days = end.difference(start).inDays;
+      final result = <ProfitBreakdownRow>[];
+      for (int i = 0; i <= days; i++) {
+        final d = DateTime(start.year, start.month, start.day)
+            .add(Duration(days: i));
+        final key = d.toIso8601String().substring(0, 10);
+        final rev = revenueByDate[key] ?? 0.0;
+        final cogs = cogsByDate[key] ?? 0.0;
+        result.add(ProfitBreakdownRow(date: d, revenue: rev, cogs: cogs));
+      }
+      return result;
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<WoDoneRow>> fetchCompletedWorkOrders({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+      final res = await _client
+          .from('work_orders')
+          .select(
+              'id, wo_number, paid_amount, completed_at, status, vehicles(plate_no, customers(name)), wo_items(id)')
+          .eq('status', 'selesai')
+          .gte('completed_at', '${startStr}T00:00:00')
+          .lte('completed_at', '${endStr}T23:59:59')
+          .order('completed_at', ascending: false);
+      final list = <WoDoneRow>[];
+      for (final m in res as List) {
+        final vehicles = m['vehicles'] as Map?;
+        String? plateNo;
+        String? custName;
+        if (vehicles != null) {
+          plateNo = vehicles['plate_no'] as String?;
+          final cust = vehicles['customers'];
+          if (cust is Map) custName = cust['name'] as String?;
+        }
+        final items = m['wo_items'] as List?;
+        list.add(WoDoneRow(
+          id: m['id'] as String,
+          woNumber: (m['wo_number'] as String?) ?? '',
+          plateNo: plateNo,
+          customerName: custName,
+          completedAt: DateTime.parse(m['completed_at'].toString()),
+          paidAmount: (m['paid_amount'] as num?)?.toDouble() ?? 0.0,
+          itemCount: items?.length ?? 0,
+          status: m['status'] as String?,
+        ));
+      }
+      return list;
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<PartSoldDetailRow>> fetchPartsSoldDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+      final monthStart = DateTime(start.year, start.month, 1);
+      try {
+        final res = await _client
+            .from('part_movements')
+            .select('part_id, qty, sell_price, parts(name)')
+            .eq('direction', 'out')
+            .eq('ref_type', 'wo')
+            .gte('created_at', '${startStr}T00:00:00')
+            .lte('created_at', '${endStr}T23:59:59');
+        final grouped = <String, PartSoldDetailRow>{};
+        for (final m in res as List) {
+          final partId = m['part_id'] as String? ?? '';
+          if (partId.isEmpty) continue;
+          final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+          final sellPrice = (m['sell_price'] as num?)?.toDouble() ?? 0.0;
+          final partMap = m['parts'] as Map?;
+          final name = (partMap?['name'] as String?) ?? 'Suku Cadang';
+          final existing = grouped[partId];
+          if (existing == null) {
+            grouped[partId] = PartSoldDetailRow(
+              partId: partId,
+              name: name,
+              qtyOut: qty,
+              revenue: qty * sellPrice,
+              monthStart: monthStart,
+            );
+          } else {
+            grouped[partId] = PartSoldDetailRow(
+              partId: partId,
+              name: name,
+              qtyOut: existing.qtyOut + qty,
+              revenue: existing.revenue + qty * sellPrice,
+              monthStart: monthStart,
+            );
+          }
+        }
+        final sorted = grouped.values.toList()
+          ..sort((a, b) => b.qtyOut.compareTo(a.qtyOut));
+        return sorted;
+      } catch (_) {
+        return [];
+      }
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<HppRow>> fetchHppDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+      try {
+        final res = await _client
+            .from('wo_items')
+            .select(
+                'qty, work_order_id, parts(cost_price), work_orders!inner(wo_number, completed_at, status)')
+            .eq('kind', 'part')
+            .eq('work_orders.status', 'selesai')
+            .gte('work_orders.completed_at', '${startStr}T00:00:00')
+            .lte('work_orders.completed_at', '${endStr}T23:59:59');
+        final grouped = <String, HppRow>{};
+        final itemCounts = <String, int>{};
+        for (final item in res as List) {
+          final woId = item['work_order_id'] as String? ?? '';
+          if (woId.isEmpty) continue;
+          final woMap = item['work_orders'] as Map?;
+          final woNumber = (woMap?['wo_number'] as String?) ?? '';
+          final completedAtStr = woMap?['completed_at'] as String?;
+          final completedAt = completedAtStr != null
+              ? DateTime.tryParse(completedAtStr) ?? start
+              : start;
+          final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+          final partMap = item['parts'] as Map?;
+          final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+          final cogs = qty * cost;
+          final existing = grouped[woId];
+          final count = (itemCounts[woId] ?? 0) + 1;
+          itemCounts[woId] = count;
+          if (existing == null) {
+            grouped[woId] = HppRow(
+              woId: woId,
+              woNumber: woNumber,
+              completedAt: completedAt,
+              totalCogs: cogs,
+              itemCount: count,
+            );
+          } else {
+            grouped[woId] = HppRow(
+              woId: woId,
+              woNumber: woNumber,
+              completedAt: completedAt,
+              totalCogs: existing.totalCogs + cogs,
+              itemCount: count,
+            );
+          }
+        }
+        final sorted = grouped.values.toList()
+          ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+        return sorted;
+      } catch (_) {
+        return [];
+      }
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
     }
   }
 
@@ -455,6 +699,10 @@ class FakeReportRepository implements ReportRepository {
 
   OwnerFinancialSummary? mockFinancialSummary;
   List<DistributorDebtItem>? mockDistributorDebts;
+  List<ProfitBreakdownRow>? mockProfitBreakdown;
+  List<WoDoneRow>? mockWoDoneRows;
+  List<PartSoldDetailRow>? mockPartSoldDetails;
+  List<HppRow>? mockHppRows;
 
   @override
   Future<OwnerFinancialSummary> fetchOwnerFinancialSummary({
@@ -470,7 +718,7 @@ class FakeReportRepository implements ReportRepository {
   }
 
   @override
-  Future<List<DistributorDebtItem>> fetchDistributorDebts() async {
+  Future<List<DistributorDebtItem>> fetchDistributorDebts({String? status}) async {
     mockDistributorDebts ??= [
       DistributorDebtItem(
         movementId: 'm-debt-1',
@@ -485,7 +733,11 @@ class FakeReportRepository implements ReportRepository {
         debtStatus: 'belum_lunas',
       ),
     ];
-    return List.from(mockDistributorDebts!);
+    var list = List<DistributorDebtItem>.from(mockDistributorDebts!);
+    if (status != null) {
+      list = list.where((d) => d.debtStatus == status).toList();
+    }
+    return list;
   }
 
   @override
@@ -505,5 +757,94 @@ class FakeReportRepository implements ReportRepository {
       ),
     ];
     mockDistributorDebts!.removeWhere((d) => d.movementId == movementId);
+  }
+
+  @override
+  Future<List<ProfitBreakdownRow>> fetchProfitBreakdown({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (mockProfitBreakdown != null) return List.from(mockProfitBreakdown!);
+    final days = end.difference(start).inDays + 1;
+    return List.generate(days, (i) {
+      final d = start.add(Duration(days: i));
+      final revenue = (i % 5 + 1) * 250000.0;
+      final cogs = (i % 3 + 1) * 90000.0;
+      return ProfitBreakdownRow(date: d, revenue: revenue, cogs: cogs);
+    });
+  }
+
+  @override
+  Future<List<WoDoneRow>> fetchCompletedWorkOrders({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (mockWoDoneRows != null) return List.from(mockWoDoneRows!);
+    final days = end.difference(start).inDays + 1;
+    final count = days.clamp(1, 5);
+    return List.generate(count, (i) {
+      final d = end.subtract(Duration(days: i));
+      return WoDoneRow(
+        id: 'wo-$i',
+        woNumber: 'WO-2026-${100 + i}',
+        plateNo: 'B ${1000 + i} XYZ',
+        customerName: 'Pelanggan ${i + 1}',
+        completedAt: d,
+        paidAmount: (i + 1) * 500000,
+        itemCount: (i % 3) + 1,
+        status: 'selesai',
+      );
+    });
+  }
+
+  @override
+  Future<List<PartSoldDetailRow>> fetchPartsSoldDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (mockPartSoldDetails != null) return List.from(mockPartSoldDetails!);
+    final monthStart = DateTime(start.year, start.month, 1);
+    return [
+      PartSoldDetailRow(
+        partId: 'p1',
+        name: 'Oli Mesin 1L',
+        qtyOut: 24,
+        revenue: 2400000,
+        monthStart: monthStart,
+      ),
+      PartSoldDetailRow(
+        partId: 'p2',
+        name: 'Filter Oli',
+        qtyOut: 15,
+        revenue: 750000,
+        monthStart: monthStart,
+      ),
+      PartSoldDetailRow(
+        partId: 'p3',
+        name: 'Kampas Rem Depan',
+        qtyOut: 8,
+        revenue: 1600000,
+        monthStart: monthStart,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<HppRow>> fetchHppDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (mockHppRows != null) return List.from(mockHppRows!);
+    final wos = await fetchCompletedWorkOrders(start: start, end: end);
+    return List.generate(wos.length, (i) {
+      final wo = wos[i];
+      return HppRow(
+        woId: wo.id,
+        woNumber: wo.woNumber,
+        completedAt: wo.completedAt,
+        totalCogs: (i + 1) * 90000,
+        itemCount: wo.itemCount,
+      );
+    });
   }
 }

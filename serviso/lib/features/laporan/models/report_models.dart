@@ -131,3 +131,180 @@ class DistributorDebtItem {
     required this.debtStatus,
   });
 }
+
+class ProfitBreakdownRow {
+  final DateTime date;
+  final double revenue;
+  final double cogs;
+  final double profit;
+
+  const ProfitBreakdownRow({
+    required this.date,
+    required this.revenue,
+    required this.cogs,
+    double? profit,
+  }) : profit = profit ?? (revenue - cogs);
+
+  factory ProfitBreakdownRow.fromMap(Map<String, dynamic> map) {
+    final rev = (map['revenue'] as num?)?.toDouble() ?? 0.0;
+    final c = (map['cogs'] as num?)?.toDouble() ?? 0.0;
+    return ProfitBreakdownRow(
+      date: DateTime.parse(map['date'].toString()),
+      revenue: rev,
+      cogs: c,
+      profit: (map['profit'] as num?)?.toDouble() ?? rev - c,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date.toIso8601String().substring(0, 10),
+      'revenue': revenue,
+      'cogs': cogs,
+      'profit': profit,
+    };
+  }
+}
+
+class WoDoneRow {
+  final String id;
+  final String woNumber;
+  final String? plateNo;
+  final String? customerName;
+  final DateTime completedAt;
+  final double paidAmount;
+  final int itemCount;
+  final String? status;
+
+  const WoDoneRow({
+    required this.id,
+    required this.woNumber,
+    this.plateNo,
+    this.customerName,
+    required this.completedAt,
+    required this.paidAmount,
+    this.itemCount = 0,
+    this.status,
+  });
+
+  factory WoDoneRow.fromMap(Map<String, dynamic> map) {
+    final vehicles = map['vehicles'] as Map?;
+    final plate = vehicles?['plate_no'] as String?;
+    String? custName;
+    if (vehicles != null) {
+      final cust = vehicles['customers'];
+      if (cust is Map) custName = cust['name'] as String?;
+    }
+    final woItems = map['wo_items'];
+    int count = 0;
+    if (woItems is List) count = woItems.length;
+    if (map['item_count'] != null) {
+      count = (map['item_count'] as num).toInt();
+    }
+    return WoDoneRow(
+      id: map['id'] as String? ?? '',
+      woNumber: map['wo_number'] as String? ?? '',
+      plateNo: plate ?? map['plate_no'] as String?,
+      customerName: custName ?? map['customer_name'] as String?,
+      completedAt: map['completed_at'] != null
+          ? DateTime.parse(map['completed_at'].toString())
+          : DateTime.parse(map['created_at'].toString()),
+      paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
+      itemCount: count,
+      status: map['status'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'wo_number': woNumber,
+      'plate_no': plateNo,
+      'customer_name': customerName,
+      'completed_at': completedAt.toIso8601String(),
+      'paid_amount': paidAmount,
+      'item_count': itemCount,
+      'status': status,
+    };
+  }
+}
+
+class PartSoldDetailRow {
+  final String partId;
+  final String name;
+  final double qtyOut;
+  final double revenue;
+  final DateTime monthStart;
+
+  const PartSoldDetailRow({
+    required this.partId,
+    required this.name,
+    required this.qtyOut,
+    required this.revenue,
+    required this.monthStart,
+  });
+
+  factory PartSoldDetailRow.fromMap(Map<String, dynamic> map) {
+    return PartSoldDetailRow(
+      partId: map['part_id'] as String? ?? '',
+      name: map['name'] as String? ?? 'Suku Cadang',
+      qtyOut: (map['qty_out'] as num?)?.toDouble() ?? 0.0,
+      revenue: (map['revenue'] as num?)?.toDouble() ?? 0.0,
+      monthStart: map['month_start'] != null
+          ? DateTime.parse(map['month_start'].toString())
+          : map['period_start'] != null
+              ? DateTime.parse(map['period_start'].toString())
+              : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'part_id': partId,
+      'name': name,
+      'qty_out': qtyOut,
+      'revenue': revenue,
+      'month_start': monthStart.toIso8601String().substring(0, 10),
+    };
+  }
+}
+
+class HppRow {
+  final String woId;
+  final String woNumber;
+  final DateTime completedAt;
+  final double totalCogs;
+  final int itemCount;
+
+  const HppRow({
+    required this.woId,
+    required this.woNumber,
+    required this.completedAt,
+    required this.totalCogs,
+    required this.itemCount,
+  });
+
+  factory HppRow.fromMap(Map<String, dynamic> map) {
+    return HppRow(
+      woId: map['wo_id'] as String? ?? map['work_order_id'] as String? ?? '',
+      woNumber: map['wo_number'] as String? ?? '',
+      completedAt: map['completed_at'] != null
+          ? DateTime.parse(map['completed_at'].toString())
+          : DateTime.now(),
+      totalCogs: (map['total_cogs'] as num?)?.toDouble() ??
+          (map['cogs'] as num?)?.toDouble() ??
+          0.0,
+      itemCount: (map['item_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'wo_id': woId,
+      'wo_number': woNumber,
+      'completed_at': completedAt.toIso8601String(),
+      'total_cogs': totalCogs,
+      'item_count': itemCount,
+    };
+  }
+}

@@ -98,3 +98,27 @@ final distributorDebtsProvider =
   final repo = ref.watch(reportRepositoryProvider);
   return repo.fetchDistributorDebts();
 });
+
+final profitBreakdownProvider = FutureProvider.family<
+    List<ProfitBreakdownRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchProfitBreakdown(start: range.start, end: range.end);
+});
+
+final woDoneDetailProvider = FutureProvider.family<
+    List<WoDoneRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchCompletedWorkOrders(start: range.start, end: range.end);
+});
+
+final partsSoldDetailProvider = FutureProvider.family<
+    List<PartSoldDetailRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchPartsSoldDetail(start: range.start, end: range.end);
+});
+
+final hppDetailProvider = FutureProvider.family<
+    List<HppRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchHppDetail(start: range.start, end: range.end);
+});
