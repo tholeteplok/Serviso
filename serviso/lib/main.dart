@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config/app_config.dart';
+import 'core/connectivity/offline_banner.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/config_error_screen.dart';
@@ -31,7 +32,12 @@ class ServisoApp extends ConsumerWidget {
       routerConfig: router,
       builder: (context, child) {
         if (!AppConfig.isConfigured) return const ConfigErrorScreen();
-        return child ?? const SizedBox.shrink();
+        return Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(child: child ?? const SizedBox.shrink()),
+          ],
+        );
       },
     );
   }

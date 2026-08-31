@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/connectivity/offline_banner.dart';
 import '../theme/app_icons.dart';
 import '../widgets/pastel_pop_bottom_bar.dart';
 
@@ -147,20 +146,6 @@ class RouterNotifier extends ChangeNotifier {
   }
 }
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.splash,
-  redirect: (context, state) {
-    final session = ProviderScope.containerOf(context).read(sessionProvider);
-    final isAdmin = ProviderScope.containerOf(context).read(isAdminProvider);
-    return authGuardRedirect(
-      session: session,
-      isAdmin: isAdmin,
-      location: state.uri.path,
-    );
-  },
-  routes: _appRoutes,
-);
-
 final List<RouteBase> _appRoutes = [
     GoRoute(
       path: AppRoutes.splash,
@@ -298,23 +283,20 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final canPop = GoRouter.of(context).canPop();
     final isHome = navigationShell.currentIndex == 0;
 
     return PopScope(
-      canPop: isHome,
+      canPop: isHome && !canPop,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && !isHome) {
-          ref.invalidate(dashboardSummaryProvider);
+        if (didPop) return;
+        if (canPop) return;
+        if (!isHome) {
           navigationShell.goBranch(0);
         }
       },
       child: Scaffold(
-        body: Column(
-          children: [
-            const OfflineBanner(),
-            Expanded(child: navigationShell),
-          ],
-        ),
+        body: navigationShell,
         bottomNavigationBar: PastelPopBottomBar(
           currentIndex: navigationShell.currentIndex,
           onTap: (index) {
