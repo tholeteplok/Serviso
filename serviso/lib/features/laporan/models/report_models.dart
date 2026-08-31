@@ -175,6 +175,7 @@ class WoDoneRow {
   final double paidAmount;
   final int itemCount;
   final String? status;
+  final String? payMethod;
 
   const WoDoneRow({
     required this.id,
@@ -185,6 +186,7 @@ class WoDoneRow {
     required this.paidAmount,
     this.itemCount = 0,
     this.status,
+    this.payMethod,
   });
 
   factory WoDoneRow.fromMap(Map<String, dynamic> map) {
@@ -212,6 +214,7 @@ class WoDoneRow {
       paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
       itemCount: count,
       status: map['status'] as String?,
+      payMethod: map['pay_method'] as String?,
     );
   }
 
@@ -225,6 +228,7 @@ class WoDoneRow {
       'paid_amount': paidAmount,
       'item_count': itemCount,
       'status': status,
+      'pay_method': payMethod,
     };
   }
 }

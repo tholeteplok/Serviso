@@ -17,6 +17,7 @@ import '../../settings/data/settings_repository.dart';
 import '../controllers/wo_detail_controller.dart';
 import '../controllers/work_order_providers.dart';
 import '../logic/wo_state_machine.dart';
+import '../models/payment.dart';
 import '../models/work_order.dart';
 import '../pdf/receipt_actions.dart';
 import '../screens/payment_sheet.dart';
@@ -556,6 +557,21 @@ class _DetailBody extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (order.isPaid && order.payMethod != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                    ),
+                    child: Text(
+                      order.payMethod!.label,
+                      style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
               ],
               const Spacer(),
               Text(
@@ -707,6 +723,33 @@ class _DetailBody extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (order.isPaid) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Dibayar', style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(rupiah(order.paidAmount), style: AppTypography.mono(fontWeight: FontWeight.w600)),
+                            if (order.payMethod != null)
+                              Text(order.payMethod!.label, style: textTheme.labelSmall?.copyWith(color: AppColors.inkMuted)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    if (order.paidAt != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Waktu Bayar', style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted)),
+                          Text(dateTimeId(order.paidAt!), style: textTheme.bodySmall),
+                        ],
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),

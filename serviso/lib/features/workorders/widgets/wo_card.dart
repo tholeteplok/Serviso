@@ -6,6 +6,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/plate_chip.dart';
+import '../models/payment.dart';
 import '../models/work_order.dart';
 
 class WoCard extends StatelessWidget {
@@ -70,24 +71,40 @@ class WoCard extends StatelessWidget {
               ),
               if (order.status == WoStatus.selesai) ...[
                 const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: order.isPaid
-                        ? AppColors.tintOf(AppColors.teal)
-                        : AppColors.tintOf(AppColors.inkMuted),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    order.paymentStatusLabel,
-                    style: textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: order.isPaid
-                          ? AppColors.teal
-                          : AppColors.inkMuted,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: order.isPaid
+                            ? AppColors.tintOf(AppColors.teal)
+                            : AppColors.tintOf(AppColors.inkMuted),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        order.paymentStatusLabel,
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: order.isPaid ? AppColors.teal : AppColors.inkMuted,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (order.isPaid && order.payMethod != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgSurface,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: AppColors.borderStrong, width: 1.2),
+                        ),
+                        child: Text(
+                          order.payMethod!.label,
+                          style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
               const SizedBox(height: 8),

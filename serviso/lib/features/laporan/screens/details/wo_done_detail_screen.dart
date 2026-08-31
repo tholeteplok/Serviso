@@ -293,7 +293,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${dateShortId(r.completedAt)} • ${r.itemCount} item',
+                                    '${dateShortId(r.completedAt)} • ${r.itemCount} item • ${_payMethodLabel(r.payMethod)}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall
@@ -313,7 +313,24 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _payMethodBg(r.payMethod),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppColors.borderStrong, width: 1),
+                                  ),
+                                  child: Text(
+                                    _payMethodLabel(r.payMethod),
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 10,
+                                          color: AppColors.ink,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
                                 const Icon(
                                   Icons.chevron_right_rounded,
                                   size: 18,
@@ -333,5 +350,31 @@ class WoDoneDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+String _payMethodLabel(String? value) {
+  switch (value) {
+    case 'transfer':
+      return 'Transfer';
+    case 'qris':
+      return 'QRIS';
+    case 'cash':
+      return 'Tunai';
+    default:
+      return 'Belum Bayar';
+  }
+}
+
+Color _payMethodBg(String? value) {
+  switch (value) {
+    case 'transfer':
+      return AppColors.pastelBlue;
+    case 'qris':
+      return AppColors.pastelYellow;
+    case 'cash':
+      return AppColors.pastelMint;
+    default:
+      return AppColors.borderHairline;
   }
 }

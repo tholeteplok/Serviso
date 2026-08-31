@@ -431,7 +431,7 @@ class SupabaseReportRepository implements ReportRepository {
       final res = await _client
           .from('work_orders')
           .select(
-              'id, wo_number, paid_amount, completed_at, status, vehicles(plate_no, customers(name)), wo_items(id)')
+              'id, wo_number, paid_amount, pay_method, completed_at, status, vehicles(plate_no, customers(name)), wo_items(id)')
           .eq('status', 'selesai')
           .gte('completed_at', '${startStr}T00:00:00')
           .lte('completed_at', '${endStr}T23:59:59')
@@ -456,6 +456,7 @@ class SupabaseReportRepository implements ReportRepository {
           paidAmount: (m['paid_amount'] as num?)?.toDouble() ?? 0.0,
           itemCount: items?.length ?? 0,
           status: m['status'] as String?,
+          payMethod: m['pay_method'] as String?,
         ));
       }
       return list;
@@ -833,6 +834,7 @@ class FakeReportRepository implements ReportRepository {
     if (mockWoDoneRows != null) return List.from(mockWoDoneRows!);
     final days = end.difference(start).inDays + 1;
     final count = days.clamp(1, 5);
+    const methods = ['cash', 'transfer', 'qris'];
     return List.generate(count, (i) {
       final d = end.subtract(Duration(days: i));
       return WoDoneRow(
@@ -844,6 +846,7 @@ class FakeReportRepository implements ReportRepository {
         paidAmount: (i + 1) * 500000,
         itemCount: (i % 3) + 1,
         status: 'selesai',
+        payMethod: methods[i % methods.length],
       );
     });
   }

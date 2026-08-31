@@ -65,6 +65,19 @@ String _csvEscape(String value) {
   return value;
 }
 
+String _payMethodLabel(String? value) {
+  switch (value) {
+    case 'transfer':
+      return 'Transfer';
+    case 'qris':
+      return 'QRIS';
+    case 'cash':
+      return 'Tunai';
+    default:
+      return 'Belum Bayar';
+  }
+}
+
 String _fileName(String prefix, DateTime date, String ext) {
   return 'laporan_${prefix}_${_dateOnly(date)}.$ext';
 }
@@ -373,6 +386,7 @@ Future<Uint8List> buildWoDonePdf({
               'Pelanggan',
               'Tgl Selesai',
               'Paid Amount',
+              'Metode',
               'Items',
             ],
             data: rows.asMap().entries.map((e) {
@@ -385,6 +399,7 @@ Future<Uint8List> buildWoDonePdf({
                 r.customerName ?? '-',
                 _dateOnly(r.completedAt),
                 _rupiah(r.paidAmount),
+                _payMethodLabel(r.payMethod),
                 r.itemCount.toString(),
               ];
             }).toList(),
@@ -400,13 +415,13 @@ Future<Uint8List> buildWoDonePdf({
 
 String buildWoDoneCsv(List<WoDoneRow> rows) {
   final sb = StringBuffer();
-  sb.writeln('No,WO Number,Plat,Pelanggan,Tgl Selesai,Paid Amount,Items');
+  sb.writeln('No,WO Number,Plat,Pelanggan,Tgl Selesai,Paid Amount,Metode,Items');
   for (var i = 0; i < rows.length; i++) {
     final r = rows[i];
     sb.writeln(
       '${i + 1},${_csvEscape(r.woNumber)},${_csvEscape(r.plateNo ?? '-')},'
       '${_csvEscape(r.customerName ?? '-')},${_dateOnly(r.completedAt)},'
-      '${r.paidAmount.toStringAsFixed(0)},${r.itemCount}',
+      '${r.paidAmount.toStringAsFixed(0)},${_csvEscape(_payMethodLabel(r.payMethod))},${r.itemCount}',
     );
   }
   return sb.toString();
