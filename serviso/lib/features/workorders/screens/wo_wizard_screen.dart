@@ -335,57 +335,107 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Work Order Baru'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: LinearProgressIndicator(
-            value: (_step + 1) / 3,
-            backgroundColor: AppColors.line,
-            color: AppColors.primary,
+    return PopScope(
+      canPop: !_creating,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Work Order Baru'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(4),
+            child: _creating
+                ? const LinearProgressIndicator(
+                    backgroundColor: AppColors.line,
+                    color: AppColors.teal,
+                  )
+                : LinearProgressIndicator(
+                    value: (_step + 1) / 3,
+                    backgroundColor: AppColors.line,
+                    color: AppColors.primary,
+                  ),
           ),
         ),
-      ),
-      body: IndexedStack(
-        index: _step,
-        children: [
-          Form(
-            key: _formKeys[0],
-            child: _StepVehicle(
-              searchController: _searchController,
-              results: _vehicleResults,
-              selected: _vehicle,
-              onSearch: _searchVehicles,
-              onSelect: _selectVehicle,
-              onCreateNew: _createCustomerAndVehicle,
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _step,
+              children: [
+                Form(
+                  key: _formKeys[0],
+                  child: _StepVehicle(
+                    searchController: _searchController,
+                    results: _vehicleResults,
+                    selected: _vehicle,
+                    onSearch: _searchVehicles,
+                    onSelect: _selectVehicle,
+                    onCreateNew: _createCustomerAndVehicle,
+                  ),
+                ),
+                Form(
+                  key: _formKeys[1],
+                  child: _StepDetail(
+                    complaintController: _complaintController,
+                    odometerController: _odometerController,
+                    technician: _technician,
+                    ref: ref,
+                    onTechnicianChanged: (p) => setState(() => _technician = p),
+                  ),
+                ),
+                Form(
+                  key: _formKeys[2],
+                  child: _StepItems(
+                    jasaDesc: _jasaDesc,
+                    jasaPrice: _jasaPrice,
+                    partLines: _partLines,
+                    onAddJasa: _addJasa,
+                    onRemoveJasa: _removeJasa,
+                    onAddPart: _addPart,
+                    onRemovePart: _removePart,
+                    onItemsChanged: () => setState(() {}),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Form(
-            key: _formKeys[1],
-            child: _StepDetail(
-              complaintController: _complaintController,
-              odometerController: _odometerController,
-              technician: _technician,
-              ref: ref,
-              onTechnicianChanged: (p) => setState(() => _technician = p),
-            ),
-          ),
-          Form(
-            key: _formKeys[2],
-            child: _StepItems(
-              jasaDesc: _jasaDesc,
-              jasaPrice: _jasaPrice,
-              partLines: _partLines,
-              onAddJasa: _addJasa,
-              onRemoveJasa: _removeJasa,
-              onAddPart: _addPart,
-              onRemovePart: _removePart,
-              onItemsChanged: () => setState(() {}),
-            ),
-          ),
-        ],
-      ),
+            if (_creating)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.32),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSurface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                        boxShadow: const [
+                          BoxShadow(color: AppColors.borderStrong, offset: Offset(0, 3), blurRadius: 0),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Membuat Work Order...',
+                            style: AppTypography.textTheme().titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Menyimpan kendaraan & item',
+                            style: AppTypography.textTheme().bodySmall?.copyWith(color: AppColors.inkMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       bottomNavigationBar: _BottomBar(
         step: _step,
         creating: _creating,
@@ -414,6 +464,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
             _submit();
           }
         },
+      ),
       ),
     );
   }
