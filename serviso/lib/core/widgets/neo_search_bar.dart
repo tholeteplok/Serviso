@@ -89,11 +89,10 @@ class NeoSearchBar extends StatelessWidget {
                 size: 22,
               ),
               tooltip: 'Scan Barcode',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: onScanTap,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
           ],
           // Use ValueListenableBuilder so this rebuilds reactively
           // whenever controller text changes (StatelessWidget wouldn't).
@@ -109,8 +108,7 @@ class NeoSearchBar extends StatelessWidget {
                     size: 18,
                   ),
                   tooltip: 'Hapus',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   onPressed: onClear,
                 );
               },

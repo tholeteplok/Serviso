@@ -13,8 +13,8 @@ abstract final class AppColors {
   /// Primary dark ink (#111111 - studio brand contrast)
   static const ink900 = Color(0xFF111111);
 
-  /// Secondary text color, subtitles, captions (#8A8A8A)
-  static const textSecondary = Color(0xFF8A8A8A);
+  /// Secondary text color, subtitles, captions (#6E6E6E) — WCAG AA 4.5:1
+  static const textSecondary = Color(0xFF6E6E6E);
 
   /// Subtle hairline divider & passive card outline (#ECE6DF)
   static const borderHairline = Color(0xFFECE6DF);

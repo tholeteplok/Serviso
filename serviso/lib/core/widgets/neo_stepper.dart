@@ -70,25 +70,30 @@ class NeoStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Decrement Button [-]
-          InkWell(
-            onTap: canDecrement ? _decrement : null,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: canDecrement ? AppColors.pastelYellow : AppColors.borderHairline,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.borderStrong,
-                  width: 1.5,
+          // Decrement Button [-] — 40dp for a11y
+          Semantics(
+            button: true,
+            enabled: canDecrement,
+            label: 'Kurangi',
+            child: InkWell(
+              onTap: canDecrement ? _decrement : null,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: canDecrement ? AppColors.pastelYellow : AppColors.borderHairline,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.borderStrong,
+                    width: 1.5,
+                  ),
                 ),
-              ),
-              child: Icon(
-                AppIcons.minus,
-                size: 18,
-                color: AppColors.ink900,
+                child: Icon(
+                  AppIcons.minus,
+                  size: 18,
+                  color: AppColors.ink900,
+                ),
               ),
             ),
           ),
@@ -119,25 +124,30 @@ class NeoStepper extends StatelessWidget {
               ],
             ),
           ),
-          // Increment Button [+]
-          InkWell(
-            onTap: canIncrement ? _increment : null,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: canIncrement ? AppColors.pastelYellow : AppColors.borderHairline,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.borderStrong,
-                  width: 1.5,
+          // Increment Button [+] — 40dp for a11y
+          Semantics(
+            button: true,
+            enabled: canIncrement,
+            label: 'Tambah',
+            child: InkWell(
+              onTap: canIncrement ? _increment : null,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: canIncrement ? AppColors.pastelYellow : AppColors.borderHairline,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.borderStrong,
+                    width: 1.5,
+                  ),
                 ),
-              ),
-              child: Icon(
-                AppIcons.add,
-                size: 18,
-                color: AppColors.ink900,
+                child: Icon(
+                  AppIcons.add,
+                  size: 18,
+                  color: AppColors.ink900,
+                ),
               ),
             ),
           ),

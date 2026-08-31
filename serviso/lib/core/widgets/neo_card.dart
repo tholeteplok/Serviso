@@ -75,12 +75,16 @@ class _NeoCardState extends State<NeoCard> {
     );
 
     if (widget.onTap != null) {
-      container = GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: container,
+      container = Semantics(
+        button: true,
+        enabled: true,
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: widget.onTap,
+          child: container,
+        ),
       );
     }
 

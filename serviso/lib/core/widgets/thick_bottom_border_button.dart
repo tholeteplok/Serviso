@@ -111,11 +111,14 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
             ],
           );
 
-    return GestureDetector(
-      onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
-      onTapUp: isEnabled ? (_) => setState(() => _isPressed = false) : null,
-      onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
-      onTap: isEnabled ? widget.onPressed : null,
+    return Semantics(
+      button: true,
+      enabled: isEnabled,
+      child: GestureDetector(
+        onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
+        onTapUp: isEnabled ? (_) => setState(() => _isPressed = false) : null,
+        onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
+        onTap: isEnabled ? widget.onPressed : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 70),
         curve: Curves.easeOut,
@@ -139,6 +142,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
           ],
         ),
         child: content,
+        ),
       ),
     );
   }
