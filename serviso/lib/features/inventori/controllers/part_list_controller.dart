@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/part_repository.dart';
@@ -37,12 +39,18 @@ class PartListController extends AsyncNotifier<PartListData> {
   bool _hasMore = true;
   final List<Part> _items = [];
 
+  Timer? _searchDebounce;
+
   @override
   Future<PartListData> build() async {
     _repo = ref.watch(partRepositoryProvider);
     _query = ref.read(partSearchProvider);
     _lowStockOnly = ref.read(partLowStockFilterProvider);
-    ref.listen(partSearchProvider, (_, next) => _runSearch(next));
+    ref.onDispose(() => _searchDebounce?.cancel());
+    ref.listen(partSearchProvider, (_, next) {
+      _searchDebounce?.cancel();
+      _searchDebounce = Timer(const Duration(milliseconds: 350), () => _runSearch(next));
+    });
     ref.listen(partLowStockFilterProvider, (_, next) => _runFilter(next));
 
     _items.clear();

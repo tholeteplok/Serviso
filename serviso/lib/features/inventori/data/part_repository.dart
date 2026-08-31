@@ -56,6 +56,38 @@ class SupabasePartRepository implements PartRepository {
     int offset = 0,
   }) async {
     try {
+      if (filterLowStock) {
+        final q = search?.trim();
+        // Jika filter low-stock tanpa search, pakai view akurat
+        if (q == null || q.isEmpty) {
+          try {
+            final res = await _client
+                .from('v_low_stock_parts')
+                .select()
+                .range(offset, offset + limit - 1);
+            return (res as List).map((m) => Part.fromMap(m)).toList();
+          } catch (_) {
+            // fallback ke parts
+          }
+        }
+        // Dengan search + low-stock: ambil lebih banyak + filter server
+        final effectiveLimit = 200;
+        var query = _client.from('parts').select().order('name');
+        if (q != null && q.isNotEmpty) {
+          final safe = _sanitize(q);
+          query = _client
+              .from('parts')
+              .select()
+              .or('name.ilike.%$safe%,code.ilike.%$safe%')
+              .gt('min_stock', 0)
+              .order('name');
+        } else {
+          query = _client.from('parts').select().gt('min_stock', 0).order('name');
+        }
+        final result = await query.range(0, effectiveLimit - 1);
+        final parts = (result as List).map((m) => Part.fromMap(m)).toList();
+        return parts.where((p) => p.isLowStock).toList();
+      }
       var query = _client.from('parts').select().order('name');
       final q = search?.trim();
       if (q != null && q.isNotEmpty) {
@@ -67,10 +99,7 @@ class SupabasePartRepository implements PartRepository {
             .order('name');
       }
       final result = await query.range(offset, offset + limit - 1);
-      final parts =
-          (result as List).map((m) => Part.fromMap(m)).toList();
-      if (!filterLowStock) return parts;
-      return parts.where((p) => p.isLowStock).toList();
+      return (result as List).map((m) => Part.fromMap(m)).toList();
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }

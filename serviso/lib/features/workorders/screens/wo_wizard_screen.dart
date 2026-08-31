@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,6 +50,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   final _partLines = <_PartLine>[];
 
   bool _creating = false;
+  Timer? _vehicleSearchDebounce;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     _searchController.dispose();
     _complaintController.dispose();
     _odometerController.dispose();
+    _vehicleSearchDebounce?.cancel();
     for (final c in _jasaDesc) {
       c.dispose();
     }
@@ -76,18 +80,21 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   }
 
   Future<void> _searchVehicles(String query) async {
+    _vehicleSearchDebounce?.cancel();
     if (query.trim().isEmpty) {
       setState(() => _vehicleResults = []);
       return;
     }
-    try {
-      final results = await ref
-          .read(vehicleRepositoryProvider)
-          .searchVehicles(query, limit: 20);
-      if (mounted) setState(() => _vehicleResults = results);
-    } catch (_) {
-      if (mounted) setState(() => _vehicleResults = []);
-    }
+    _vehicleSearchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      try {
+        final results = await ref
+            .read(vehicleRepositoryProvider)
+            .searchVehicles(query, limit: 20);
+        if (mounted) setState(() => _vehicleResults = results);
+      } catch (_) {
+        if (mounted) setState(() => _vehicleResults = []);
+      }
+    });
   }
 
   void _selectVehicle(Vehicle vehicle) {
@@ -940,6 +947,7 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
   final _controller = TextEditingController();
   List<Part> _results = [];
   bool _loading = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -949,6 +957,7 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -1016,7 +1025,10 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
                   },
                 ),
               ),
-              onChanged: (value) => _fetch(value),
+              onChanged: (value) {
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 350), () => _fetch(value));
+              },
               autofocus: true,
             ),
             const SizedBox(height: 12),

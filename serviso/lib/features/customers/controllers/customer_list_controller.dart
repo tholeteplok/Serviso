@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/customer_repository.dart';
@@ -37,11 +39,17 @@ class CustomerListController
   bool _hasMore = true;
   final List<Customer> _items = [];
 
+  Timer? _searchDebounce;
+
   @override
   Future<CustomerListData> build() async {
     _repo = ref.watch(customerRepositoryProvider);
     _query = ref.read(customerSearchProvider);
-    ref.listen(customerSearchProvider, (_, next) => _runSearch(next));
+    ref.onDispose(() => _searchDebounce?.cancel());
+    ref.listen(customerSearchProvider, (_, next) {
+      _searchDebounce?.cancel();
+      _searchDebounce = Timer(const Duration(milliseconds: 350), () => _runSearch(next));
+    });
 
     _items.clear();
     _offset = 0;

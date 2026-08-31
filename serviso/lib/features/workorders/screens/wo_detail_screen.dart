@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -1011,6 +1013,7 @@ class _DetailPartPickerSheetState
   final _searchController = TextEditingController();
   List<Part>? _parts;
   bool _loading = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -1020,6 +1023,7 @@ class _DetailPartPickerSheetState
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -1083,7 +1087,10 @@ class _DetailPartPickerSheetState
                   },
                 ),
               ),
-              onChanged: (q) => _fetchParts(q),
+              onChanged: (q) {
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 350), () => _fetchParts(q));
+              },
             ),
             const SizedBox(height: 12),
             if (_loading)
