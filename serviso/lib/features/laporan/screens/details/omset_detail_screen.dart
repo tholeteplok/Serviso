@@ -95,6 +95,8 @@ class OmsetDetailScreen extends ConsumerWidget {
     final periodLabel = period.label;
     final asyncRows =
         ref.watch(omsetDetailRowsProvider((start: range.start, end: range.end)));
+    final asyncMethodRows =
+        ref.watch(dailyRevenueByMethodProvider((start: range.start, end: range.end)));
 
     final rowsForExport = asyncRows.valueOrNull ?? <DailySummaryRow>[];
 
@@ -166,6 +168,13 @@ class OmsetDetailScreen extends ConsumerWidget {
                 // Filter newest: tampilkan hari terbaru di atas
                 final displayRows = List<DailySummaryRow>.from(rows)
                   ..sort((a, b) => b.date.compareTo(a.date));
+                // Kelompokkan revenue per metode per tanggal
+                final methodRows = asyncMethodRows.valueOrNull ?? [];
+                final methodByDate = <String, Map<String, double>>{};
+                for (final m in methodRows) {
+                  final k = m.date.toIso8601String().substring(0, 10);
+                  methodByDate.putIfAbsent(k, () => {})[m.payMethod ?? 'cash'] = m.revenue;
+                }
 
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -333,6 +342,52 @@ class OmsetDetailScreen extends ConsumerWidget {
                                           ?.copyWith(
                                               color: AppColors.inkMuted),
                                     ),
+                                    Builder(builder: (_) {
+                                      final key = r.date.toIso8601String().substring(0, 10);
+                                      final map = methodByDate[key];
+                                      if (map == null || map.isEmpty) return const SizedBox.shrink();
+                                      String label(String m) {
+                                        switch (m) {
+                                          case 'transfer':
+                                            return 'Transfer';
+                                          case 'qris':
+                                            return 'QRIS';
+                                          default:
+                                            return 'Tunai';
+                                        }
+                                      }
+                                      Color bg(String m) {
+                                        switch (m) {
+                                          case 'transfer':
+                                            return AppColors.pastelBlue;
+                                          case 'qris':
+                                            return AppColors.pastelYellow;
+                                          default:
+                                            return AppColors.pastelMint;
+                                        }
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 6),
+                                        child: Wrap(
+                                          spacing: 4,
+                                          runSpacing: 4,
+                                          children: map.entries.map((e) {
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: bg(e.key).withValues(alpha: 0.35),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: AppColors.borderStrong, width: 1),
+                                              ),
+                                              child: Text(
+                                                '${label(e.key)} ${rupiah(e.value)}',
+                                                style: AppTypography.mono(fontSize: 9, fontWeight: FontWeight.w600),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      );
+                                    }),
                                   ],
                                 ),
                               ),

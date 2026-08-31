@@ -40,6 +40,7 @@ class BerandaScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardSummaryProvider);
+          ref.invalidate(dailyRevenueByMethodProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -81,6 +82,8 @@ class BerandaScreen extends ConsumerWidget {
               data: (summary) => Column(
                 children: [
                   _buildRevenueCard(context, summary.todayRevenue),
+                  const SizedBox(height: 8),
+                  const _TodayMethodBreakdown(),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -375,6 +378,59 @@ class BerandaScreen extends ConsumerWidget {
                     color: AppColors.ink,
                   ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayMethodBreakdown extends ConsumerWidget {
+  const _TodayMethodBreakdown();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final async = ref.watch(dailyRevenueByMethodProvider((start: today, end: today)));
+    return async.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (rows) {
+        if (rows.isEmpty) return const SizedBox.shrink();
+        final totals = <String, double>{'cash': 0, 'transfer': 0, 'qris': 0};
+        for (final r in rows) {
+          final k = r.payMethod ?? 'cash';
+          totals[k] = (totals[k] ?? 0) + r.revenue;
+        }
+        if (totals.values.every((v) => v == 0)) return const SizedBox.shrink();
+        return Row(
+          children: [
+            _miniMethodChip('Tunai', rupiah(totals['cash'] ?? 0), AppColors.pastelMint),
+            const SizedBox(width: 8),
+            _miniMethodChip('Transfer', rupiah(totals['transfer'] ?? 0), AppColors.pastelBlue),
+            const SizedBox(width: 8),
+            _miniMethodChip('QRIS', rupiah(totals['qris'] ?? 0), AppColors.pastelYellow),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _miniMethodChip(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: AppTypography.textTheme().labelSmall?.copyWith(fontWeight: FontWeight.w700, fontSize: 10)),
+            const SizedBox(height: 2),
+            FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: AppTypography.mono(fontSize: 11, fontWeight: FontWeight.bold))),
           ],
         ),
       ),

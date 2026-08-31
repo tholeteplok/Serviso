@@ -39,6 +39,7 @@ class LaporanScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(laporanDailySummariesProvider);
           ref.invalidate(topPartsProvider);
+          ref.invalidate(dailyRevenueByMethodProvider);
           if (isAdmin) {
             ref.invalidate(ownerFinancialSummaryProvider);
             ref.invalidate(distributorDebtsProvider);
@@ -372,6 +373,8 @@ class LaporanScreen extends ConsumerWidget {
                 );
               },
             ),
+            // Rekap Metode Pembayaran per periode (Fase2/3)
+            _MethodBreakdownSection(period: period),
             const SizedBox(height: 16),
 
             // Top Parts Section
@@ -709,6 +712,79 @@ class LaporanScreen extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _MethodBreakdownSection extends ConsumerWidget {
+  const _MethodBreakdownSection({required this.period});
+  final LaporanPeriod period;
+
+  ({DateTime start, DateTime end}) _range(LaporanPeriod p) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    switch (p) {
+      case LaporanPeriod.days7:
+        return (start: today.subtract(const Duration(days: 6)), end: today);
+      case LaporanPeriod.days30:
+        return (start: today.subtract(const Duration(days: 29)), end: today);
+      case LaporanPeriod.thisMonth:
+        return (start: DateTime(now.year, now.month, 1), end: today);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final range = _range(period);
+    final async = ref.watch(dailyRevenueByMethodProvider((start: range.start, end: range.end)));
+    return async.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (rows) {
+        if (rows.isEmpty) return const SizedBox.shrink();
+        final totals = <String, double>{'cash': 0, 'transfer': 0, 'qris': 0};
+        for (final r in rows) {
+          final k = r.payMethod ?? 'cash';
+          totals[k] = (totals[k] ?? 0) + r.revenue;
+        }
+        final hasAny = totals.values.any((v) => v > 0);
+        if (!hasAny) return const SizedBox.shrink();
+        return SectionCard(
+          title: 'Rekap Metode Pembayaran',
+          child: Row(
+            children: [
+              _methodMiniCard(context, 'Tunai', rupiah(totals['cash'] ?? 0), AppColors.pastelMint),
+              const SizedBox(width: 8),
+              _methodMiniCard(context, 'Transfer', rupiah(totals['transfer'] ?? 0), AppColors.pastelBlue),
+              const SizedBox(width: 8),
+              _methodMiniCard(context, 'QRIS', rupiah(totals['qris'] ?? 0), AppColors.pastelYellow),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _methodMiniCard(BuildContext context, String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: AppTypography.textTheme().labelSmall?.copyWith(fontWeight: FontWeight.w700, fontSize: 10)),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(value, style: AppTypography.mono(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }

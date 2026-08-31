@@ -323,6 +323,7 @@ class HomeShell extends ConsumerWidget {
             } else if (index == 3) {
               ref.invalidate(laporanDailySummariesProvider);
               ref.invalidate(topPartsProvider);
+              ref.invalidate(dailyRevenueByMethodProvider);
             }
             navigationShell.goBranch(
               index,

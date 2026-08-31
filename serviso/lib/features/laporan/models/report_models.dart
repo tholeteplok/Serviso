@@ -273,6 +273,38 @@ class PartSoldDetailRow {
   }
 }
 
+class DailyRevenueByMethodRow {
+  final DateTime date;
+  final String? payMethod;
+  final double revenue;
+  final int woCount;
+
+  const DailyRevenueByMethodRow({
+    required this.date,
+    this.payMethod,
+    required this.revenue,
+    required this.woCount,
+  });
+
+  factory DailyRevenueByMethodRow.fromMap(Map<String, dynamic> map) {
+    return DailyRevenueByMethodRow(
+      date: DateTime.parse(map['date'].toString()),
+      payMethod: map['pay_method'] as String?,
+      revenue: (map['revenue'] as num?)?.toDouble() ?? 0.0,
+      woCount: (map['wo_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date.toIso8601String().substring(0, 10),
+      'pay_method': payMethod,
+      'revenue': revenue,
+      'wo_count': woCount,
+    };
+  }
+}
+
 class HppRow {
   final String woId;
   final String woNumber;

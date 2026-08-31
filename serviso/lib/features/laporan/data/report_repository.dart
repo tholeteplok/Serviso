@@ -43,6 +43,11 @@ abstract class ReportRepository {
     required DateTime start,
     required DateTime end,
   });
+
+  Future<List<DailyRevenueByMethodRow>> fetchDailyRevenueByPayMethod({
+    required DateTime start,
+    required DateTime end,
+  });
 }
 
 class SupabaseReportRepository implements ReportRepository {
@@ -636,6 +641,62 @@ class SupabaseReportRepository implements ReportRepository {
   }
 
   @override
+  Future<List<DailyRevenueByMethodRow>> fetchDailyRevenueByPayMethod({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+      try {
+        final res = await _client
+            .from('v_daily_summary_by_pay_method')
+            .select()
+            .gte('date', startStr)
+            .lte('date', endStr)
+            .order('date', ascending: true);
+        return (res as List).map((m) => DailyRevenueByMethodRow.fromMap(m)).toList();
+      } catch (_) {
+        final res = await _client
+            .from('work_orders')
+            .select('paid_amount, pay_method, paid_at, completed_at')
+            .eq('status', 'selesai')
+            .gte('completed_at', '${startStr}T00:00:00')
+            .lte('completed_at', '${endStr}T23:59:59')
+            .order('completed_at', ascending: true);
+        final grouped = <String, DailyRevenueByMethodRow>{};
+        for (final m in res as List) {
+          final paidAt = m['paid_at'] as String?;
+          final completedAt = m['completed_at'] as String?;
+          final dateStr = (paidAt ?? completedAt ?? startStr).substring(0, 10);
+          final payMethod = m['pay_method'] as String?;
+          final key = '${dateStr}_$payMethod';
+          final revenue = (m['paid_amount'] as num?)?.toDouble() ?? 0.0;
+          final existing = grouped[key];
+          if (existing == null) {
+            grouped[key] = DailyRevenueByMethodRow(
+              date: DateTime.parse(dateStr),
+              payMethod: payMethod,
+              revenue: revenue,
+              woCount: 1,
+            );
+          } else {
+            grouped[key] = DailyRevenueByMethodRow(
+              date: existing.date,
+              payMethod: existing.payMethod,
+              revenue: existing.revenue + revenue,
+              woCount: existing.woCount + 1,
+            );
+          }
+        }
+        return grouped.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+      }
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
   Future<void> markDebtPaid(String movementId) async {
     try {
       // 1. Try stored procedure if migration 0007 applied
@@ -900,5 +961,32 @@ class FakeReportRepository implements ReportRepository {
         itemCount: wo.itemCount,
       );
     });
+  }
+
+  List<DailyRevenueByMethodRow>? mockDailyRevenueByMethod;
+
+  @override
+  Future<List<DailyRevenueByMethodRow>> fetchDailyRevenueByPayMethod({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (mockDailyRevenueByMethod != null) return List.from(mockDailyRevenueByMethod!);
+    final days = end.difference(start).inDays + 1;
+    const methods = ['cash', 'transfer', 'qris'];
+    final rows = <DailyRevenueByMethodRow>[];
+    for (int i = 0; i < days; i++) {
+      final d = start.add(Duration(days: i));
+      for (int m = 0; m < methods.length; m++) {
+        if ((i + m) % 2 == 0) {
+          rows.add(DailyRevenueByMethodRow(
+            date: d,
+            payMethod: methods[m],
+            revenue: ((i % 3 + 1) * 80000 + m * 50000).toDouble(),
+            woCount: (i % 2 + 1),
+          ));
+        }
+      }
+    }
+    return rows;
   }
 }

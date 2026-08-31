@@ -122,3 +122,9 @@ final hppDetailProvider = FutureProvider.family<
   final repo = ref.watch(reportRepositoryProvider);
   return repo.fetchHppDetail(start: range.start, end: range.end);
 });
+
+final dailyRevenueByMethodProvider = FutureProvider.family<
+    List<DailyRevenueByMethodRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchDailyRevenueByPayMethod(start: range.start, end: range.end);
+});
