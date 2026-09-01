@@ -53,6 +53,11 @@ class PartDetailController
     ref.invalidateSelf();
     ref.invalidate(partListControllerProvider);
     ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(distributorDebtsProvider);
+    ref.invalidate(ownerFinancialSummaryProvider);
+    if (distributor != null && distributor.trim().isNotEmpty) {
+      ref.invalidate(distributorsProvider);
+    }
   }
 
   Future<void> adjustStock(double signedDelta, String reason) async {
@@ -61,6 +66,7 @@ class PartDetailController
     ref.invalidateSelf();
     ref.invalidate(partListControllerProvider);
     ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(distributorDebtsProvider);
   }
 
   Future<void> deletePart() async {

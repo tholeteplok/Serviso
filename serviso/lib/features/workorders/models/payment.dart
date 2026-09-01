@@ -81,10 +81,11 @@ class WoTotals {
       subtotal += item.qty * item.unitPrice;
       totalDiscount += item.discount;
     }
+    final rawTotal = subtotal - totalDiscount;
     return WoTotals(
       subtotal: subtotal,
       totalDiscount: totalDiscount,
-      total: subtotal - totalDiscount,
+      total: rawTotal < 0 ? 0 : rawTotal,
     );
   }
 }
@@ -107,6 +108,12 @@ PaymentValidation validatePaymentAmount(double amount, double total) {
     return const PaymentValidation(
       isValid: false,
       error: 'Nominal pembayaran tidak boleh negatif',
+    );
+  }
+  if (total > 0 && amount < total) {
+    return PaymentValidation(
+      isValid: false,
+      error: 'Nominal kurang dari total ${total.toStringAsFixed(0)}',
     );
   }
   if (total > 0 && amount > total * 1000) {

@@ -38,6 +38,8 @@ abstract class PartRepository {
   Future<void> adjustStock(String partId, double signedDelta, String reason);
 
   Future<List<PartMovement>> movements(String partId);
+
+  Future<List<String>> fetchDistributors();
 }
 
 class SupabasePartRepository implements PartRepository {
@@ -203,7 +205,12 @@ class SupabasePartRepository implements PartRepository {
 
       try {
         await _client.from('part_movements').insert(insertMap);
-      } catch (_) {
+      } catch (e) {
+        final msg = e.toString().toLowerCase();
+        final isMissingColumn = msg.contains('column') && msg.contains('does not exist') ||
+            msg.contains('schema cache') ||
+            msg.contains('could not find');
+        if (!isMissingColumn) rethrow;
         // Graceful fallback if new columns not yet migrated
         var fallbackNote = note?.trim() ?? '';
         if (distributor?.trim().isNotEmpty == true) {
@@ -295,6 +302,39 @@ class SupabasePartRepository implements PartRepository {
           .toList();
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<String>> fetchDistributors() async {
+    try {
+      final result = await _client
+          .from('part_movements')
+          .select('distributor, note')
+          .or('distributor.not.is.null,note.ilike.%[Distributor:%');
+      final set = <String>{};
+      for (final row in result as List) {
+        final dist = row['distributor'] as String?;
+        if (dist != null && dist.trim().isNotEmpty) {
+          set.add(dist.trim());
+        }
+        final note = row['note'] as String?;
+        if (note != null && note.contains('[Distributor:')) {
+          final match =
+              RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+          if (match != null) {
+            final extracted = match.group(1)?.trim();
+            if (extracted != null && extracted.isNotEmpty) {
+              set.add(extracted);
+            }
+          }
+        }
+      }
+      final list = set.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return list;
+    } catch (_) {
+      return [];
     }
   }
 }

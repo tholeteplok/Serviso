@@ -47,6 +47,7 @@ dependencies:
   connectivity_plus: ^7.3.1
   mobile_scanner: ^6.0.0
   phosphor_flutter: ^2.1.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

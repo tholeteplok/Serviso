@@ -10,6 +10,7 @@ import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/section_card.dart';
+import '../../../../core/widgets/transaction_card.dart';
 import '../../controllers/report_controllers.dart';
 import '../../models/report_models.dart';
 import '../../pdf/laporan_export.dart';
@@ -299,15 +300,7 @@ class OmsetDetailScreen extends ConsumerWidget {
                     ...displayRows.map((r) => NeoCard(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${dateShortId(r.date)} • ${rupiah(r.revenue)} • ${r.woDoneCount} WO • ${r.partsOutQty.toStringAsFixed(0)} pcs',
-                                ),
-                              ),
-                            );
-                          },
+                          onTap: () => _showDayTransactions(context, ref, r.date),
                           child: Row(
                             children: [
                               Container(
@@ -339,7 +332,7 @@ class OmsetDetailScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${r.woDoneCount} WO selesai • ${r.partsOutQty.toStringAsFixed(0)} pcs part',
+                                      '${r.woDoneCount} WO + ${r.directSaleCount} PL • ${r.partsOutQty.toStringAsFixed(0)} pcs part',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -423,6 +416,57 @@ class OmsetDetailScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDayTransactions(BuildContext context, WidgetRef ref, DateTime date) {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetCtx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, controller) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Transaksi ${dateShortId(date)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Consumer(
+                  builder: (ctx, ref2, _) {
+                    final async = ref2.watch(transactionsProvider((start: start, end: end)));
+                    return async.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => ErrorView(
+                          message: e.toString(),
+                          onRetry: () => ref2.invalidate(transactionsProvider((start: start, end: end)))),
+                      data: (rows) {
+                        if (rows.isEmpty) {
+                          return const EmptyState(
+                              icon: Icons.receipt_long_rounded,
+                              title: 'Tidak ada transaksi',
+                              message: 'Tidak ada WO maupun Penjualan Langsung pada tanggal ini.');
+                        }
+                        return ListView.builder(
+                          controller: controller,
+                          itemCount: rows.length,
+                          itemBuilder: (_, i) => TransactionCard(row: rows[i]),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

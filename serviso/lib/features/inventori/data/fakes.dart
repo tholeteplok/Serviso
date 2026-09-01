@@ -219,4 +219,21 @@ class FakePartRepository implements PartRepository {
     _movements.add(movement);
     return movement;
   }
+
+  @override
+  Future<List<String>> fetchDistributors() async {
+    final set = <String>{
+      'PT Astra Otoparts',
+      'cv. Tirta Nugraha',
+      'Panca Mandiri',
+    };
+    for (final m in _movements) {
+      if (m.distributor != null && m.distributor!.trim().isNotEmpty) {
+        set.add(m.distributor!.trim());
+      }
+    }
+    final list = set.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
 }

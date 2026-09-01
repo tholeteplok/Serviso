@@ -8,8 +8,12 @@ import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/auth/data/auth_repository.dart';
 import 'package:serviso/features/auth/models/profile.dart';
 import 'package:serviso/features/auth/screens/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
   testWidgets('login gagal menampilkan pesan error Indonesia', (tester) async {
     final fake = FakeAuthRepository()..failLogin = true;
     await tester.pumpWidget(
@@ -22,6 +26,7 @@ void main() {
       ),
     );
 
+    await tester.enterText(find.byKey(const Key('shop_slug')), 'bengkel1');
     await tester.enterText(find.byKey(const Key('username')), 'kasir1');
     await tester.enterText(find.byKey(const Key('password')), 'salah');
     await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Masuk'));
@@ -49,6 +54,7 @@ void main() {
       ),
     );
 
+    await tester.enterText(find.byKey(const Key('shop_slug')), 'bengkel1');
     await tester.enterText(find.byKey(const Key('username')), 'kasir1');
     await tester.enterText(find.byKey(const Key('password')), 'benar');
     await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Masuk'));
@@ -59,3 +65,7 @@ void main() {
     expect(current?.username, 'kasir1');
   });
 }
+
+
+
+

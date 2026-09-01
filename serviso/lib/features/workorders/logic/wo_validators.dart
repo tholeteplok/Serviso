@@ -25,12 +25,24 @@ abstract final class WoValidators {
     return null;
   }
 
+  static String? validateDiscount(double discount, double qty, double unitPrice) {
+    if (discount < 0) return 'Diskon tidak boleh negatif';
+    if (discount > qty * unitPrice) return 'Diskon melebihi subtotal';
+    return null;
+  }
+
   static bool isValidDraft(WorkOrderDraft draft) {
     if (draft.complaint == null || draft.complaint!.trim().isEmpty) {
       return false;
     }
+    if (draft.vehicleId.trim().isEmpty) return false;
+    if (draft.odometerIn != null && draft.odometerIn! < 0) return false;
+    if (draft.items.isEmpty) return false;
     for (final item in draft.items) {
       if (item.qty <= 0) return false;
+      if (item.unitPrice < 0) return false;
+      if (item.discount < 0 || item.discount > item.qty * item.unitPrice) return false;
+      if (item.kind == WoItemKind.part && (item.partId == null || item.partId!.isEmpty)) return false;
     }
     return true;
   }

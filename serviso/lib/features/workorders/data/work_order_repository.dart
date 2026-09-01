@@ -201,6 +201,18 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
     required PaymentMethod payMethod,
   }) async {
     try {
+      final status = await _currentStatus(id);
+      if (status != WoStatus.selesai) {
+        throw const RepositoryException('Pembayaran hanya untuk work order yang sudah selesai');
+      }
+      if (paidAmount.isNaN || paidAmount.isInfinite || paidAmount < 0) {
+        throw const RepositoryException('Nominal pembayaran tidak valid');
+      }
+      final order = await getById(id);
+      final total = order?.total ?? 0;
+      if (total > 0 && paidAmount < total) {
+        throw const RepositoryException('Nominal kurang dari total tagihan');
+      }
       await _client.from('work_orders').update({
         'paid_amount': paidAmount,
         'pay_method': payMethod.value,

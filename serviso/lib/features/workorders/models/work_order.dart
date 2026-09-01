@@ -37,19 +37,29 @@ class WoItem {
             ? parts['name'] as String
             : parts['code'] as String?)
         : null;
+    final qty = _parseNumeric(map['qty']);
+    final unitPrice = _parseNumeric(map['unit_price']);
+    var discount = _parseNumeric(map['discount']);
+    // Clamp discount agar tidak melebihi subtotal (DB juga enforce)
+    final maxDiscount = qty * unitPrice;
+    if (discount > maxDiscount) discount = maxDiscount;
+    if (discount < 0) discount = 0;
     return WoItem(
       id: map['id'] as String,
       kind: map['kind'] == 'part' ? WoItemKind.part : WoItemKind.jasa,
       partId: map['part_id'] as String?,
       partName: partName,
       description: map['description'] as String?,
-      qty: _parseNumeric(map['qty']),
-      unitPrice: _parseNumeric(map['unit_price']),
-      discount: _parseNumeric(map['discount']),
+      qty: qty,
+      unitPrice: unitPrice,
+      discount: discount,
     );
   }
 
-  double get lineTotal => (qty * unitPrice) - discount;
+  double get lineTotal {
+    final raw = (qty * unitPrice) - discount;
+    return raw < 0 ? 0 : raw;
+  }
 
   Map<String, dynamic> toInsertMap(String workOrderId) => {
         'work_order_id': workOrderId,

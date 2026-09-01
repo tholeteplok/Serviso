@@ -25,9 +25,17 @@ class SectionCard extends StatelessWidget {
         borderRadius: AppRadius.card,
         border: Border.all(color: AppColors.borderStrong, width: 1.5),
         boxShadow: const [
+          // DS v2: soft diffuse layer
+          BoxShadow(
+            color: Color(0x0F111111), // rgba(17,17,17,0.06)
+            offset: Offset(0, 8),
+            blurRadius: 24,
+            spreadRadius: 0,
+          ),
+          // DS v2: hard ink offset 4x4
           BoxShadow(
             color: AppColors.borderStrong,
-            offset: Offset(0, 3),
+            offset: Offset(4, 4),
             blurRadius: 0,
             spreadRadius: 0,
           ),

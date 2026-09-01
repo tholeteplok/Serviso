@@ -111,7 +111,7 @@ void main() {
       final totals = WoTotals.calculate(items);
       expect(totals.subtotal, 50000);
       expect(totals.totalDiscount, 80000);
-      expect(totals.total, -30000);
+      expect(totals.total, 0);
     });
   });
 

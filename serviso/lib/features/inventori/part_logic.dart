@@ -3,6 +3,7 @@ double previewAdjustStock(double currentStock, double signedDelta) {
 }
 
 bool canAdjustStock(double currentStock, double signedDelta) {
+  if (signedDelta == 0) return false;
   return previewAdjustStock(currentStock, signedDelta) >= 0;
 }
 

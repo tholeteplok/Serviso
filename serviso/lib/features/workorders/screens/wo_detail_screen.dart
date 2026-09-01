@@ -16,7 +16,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../inventori/controllers/part_providers.dart';
 import '../../inventori/models/part.dart';
-import '../../settings/data/settings_repository.dart';
+
 import '../controllers/wo_detail_controller.dart';
 import '../controllers/work_order_providers.dart';
 import '../logic/wo_state_machine.dart';
@@ -443,14 +443,14 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
   }
 
   Future<void> _onReceipt(WorkOrder order) async {
-    final settings = await ref.read(settingsRepositoryProvider).getSettings();
-    final fullName =
-        ref.read(sessionProvider).valueOrNull?.fullName ?? 'Kasir';
+    final profile = ref.read(sessionProvider).valueOrNull;
+    final fullName = profile?.fullName ?? 'Kasir';
     if (!mounted) return;
+    if (profile == null) return;
     showReceiptOptions(
       context: context,
       order: order,
-      settings: settings,
+      profile: profile,
       printedBy: fullName,
     );
   }
@@ -1151,3 +1151,4 @@ class _DetailPartPickerSheetState
     );
   }
 }
+

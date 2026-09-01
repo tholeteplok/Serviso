@@ -15,3 +15,8 @@ final partLowStockFilterProvider = StateProvider<bool>((ref) => false);
 final fakePartRepositoryProvider = Provider<FakePartRepository>((ref) {
   return FakePartRepository();
 });
+
+final distributorsProvider = FutureProvider<List<String>>((ref) async {
+  final repo = ref.watch(partRepositoryProvider);
+  return repo.fetchDistributors();
+});

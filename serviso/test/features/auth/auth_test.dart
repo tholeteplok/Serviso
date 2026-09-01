@@ -12,6 +12,7 @@ Profile _profile(UserRole role, {bool active = true}) => Profile(
       fullName: 'Budi',
       role: role,
       isActive: active,
+      isPlatformAdmin: false,
     );
 
 void main() {
@@ -20,6 +21,7 @@ void main() {
       final target = authGuardRedirect(
         session: const AsyncData<Profile?>(null),
         isAdmin: false,
+        isPlatformAdmin: false,
         location: AppRoutes.beranda,
       );
       expect(target, AppRoutes.login);
@@ -29,6 +31,7 @@ void main() {
       final target = authGuardRedirect(
         session: AsyncData<Profile?>(_profile(UserRole.kasir)),
         isAdmin: false,
+        isPlatformAdmin: false,
         location: AppRoutes.admin,
       );
       expect(target, AppRoutes.beranda);
@@ -38,6 +41,7 @@ void main() {
       final target = authGuardRedirect(
         session: AsyncData<Profile?>(_profile(UserRole.admin)),
         isAdmin: true,
+        isPlatformAdmin: false,
         location: AppRoutes.admin,
       );
       expect(target, isNull);
@@ -47,6 +51,7 @@ void main() {
       final target = authGuardRedirect(
         session: const AsyncLoading<Profile?>(),
         isAdmin: false,
+        isPlatformAdmin: false,
         location: AppRoutes.beranda,
       );
       expect(target, AppRoutes.splash);
@@ -56,6 +61,7 @@ void main() {
       final target = authGuardRedirect(
         session: const AsyncLoading<Profile?>(),
         isAdmin: false,
+        isPlatformAdmin: false,
         location: AppRoutes.login,
       );
       expect(target, isNull);
@@ -112,7 +118,7 @@ void main() {
       );
       await container
           .read(sessionProvider.notifier)
-          .login(username: 'user', password: 'pass');
+          .login(username: 'user', password: 'pass', shopSlug: 'test-shop');
       expect(container.read(sessionProvider).valueOrNull, isNotNull);
 
       await container.read(sessionProvider.notifier).logout();
@@ -130,7 +136,7 @@ void main() {
       );
       await container
           .read(sessionProvider.notifier)
-          .login(username: 'user', password: 'pass');
+          .login(username: 'user', password: 'pass', shopSlug: 'test-shop');
 
       final future = container.read(sessionProvider.notifier).logout();
       await expectLater(future, completes);
@@ -140,19 +146,19 @@ void main() {
 
   group('resolveLoginEmail (Universal Login)', () {
     test('username biasa ditambahkan domain sintetis', () {
-      expect(resolveLoginEmail('admin'), 'admin@users.serviso.app');
-      expect(resolveLoginEmail('  kasir01  '), 'kasir01@users.serviso.app');
+      expect(resolveLoginEmail('admin', 'test-shop'), 'admin.test-shop@users.serviso.app');
+      expect(resolveLoginEmail('  kasir01  ', 'test-shop'), 'kasir01.test-shop@users.serviso.app');
     });
 
     test('email langsung dipakai apa adanya', () {
-      expect(resolveLoginEmail('owner@gmail.com'), 'owner@gmail.com');
-      expect(resolveLoginEmail('  User@Bengkel.co.id  '), 'user@bengkel.co.id');
+      expect(resolveLoginEmail('owner@gmail.com', 'test-shop'), 'owner@gmail.com');
+      expect(resolveLoginEmail('  User@Bengkel.co.id  ', 'test-shop'), 'user@bengkel.co.id');
     });
 
     test('email domain sintetis tetap valid', () {
       expect(
-        resolveLoginEmail('admin@users.serviso.app'),
-        'admin@users.serviso.app',
+        resolveLoginEmail('admin.test-shop@users.serviso.app', 'test-shop'),
+        'admin.test-shop@users.serviso.app',
       );
     });
   });

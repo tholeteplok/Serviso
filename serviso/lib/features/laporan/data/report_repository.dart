@@ -58,12 +58,32 @@ abstract class ReportRepository {
     required DateTime start,
     required DateTime end,
   });
+
+  Future<List<TransactionRow>> fetchTransactions({
+    required DateTime start,
+    required DateTime end,
+  });
 }
 
 class SupabaseReportRepository implements ReportRepository {
   SupabaseReportRepository(this._client);
 
   final SupabaseClient _client;
+
+  Future<List<DailySummaryRow>> _fetchDailyRows(
+      String view, String startStr, String endStr) async {
+    try {
+      final res = await _client
+          .from(view)
+          .select()
+          .gte('date', startStr)
+          .lte('date', endStr)
+          .order('date', ascending: true);
+      return (res as List).map((m) => DailySummaryRow.fromMap(m)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
 
   @override
   Future<DashboardSummary> fetchDashboardSummary() async {
@@ -73,15 +93,22 @@ class SupabaseReportRepository implements ReportRepository {
       final sevenDaysAgo = now.subtract(const Duration(days: 6));
       final sevenDaysAgoStr = sevenDaysAgo.toIso8601String().substring(0, 10);
 
-      // Fetch 7 days summary
-      final dailyResult = await _client
-          .from('v_daily_summary')
-          .select()
-          .gte('date', sevenDaysAgoStr)
-          .lte('date', todayStr)
-          .order('date', ascending: true);
-      final dailyRows =
-          (dailyResult as List).map((m) => DailySummaryRow.fromMap(m)).toList();
+      // Fetch 7 days summary — prefer combined (WO + Penjualan Langsung), fallback ke legacy
+      List<DailySummaryRow> dailyRows = [];
+      try {
+        dailyRows = await _fetchDailyRows(
+            'v_daily_summary_combined', sevenDaysAgoStr, todayStr);
+        if (dailyRows.isEmpty) throw Exception('empty');
+      } catch (_) {
+        final dailyResult = await _client
+            .from('v_daily_summary')
+            .select()
+            .gte('date', sevenDaysAgoStr)
+            .lte('date', todayStr)
+            .order('date', ascending: true);
+        dailyRows =
+            (dailyResult as List).map((m) => DailySummaryRow.fromMap(m)).toList();
+      }
 
       final todayRow = dailyRows.firstWhere(
         (r) => r.date.toIso8601String().substring(0, 10) == todayStr,
@@ -128,6 +155,11 @@ class SupabaseReportRepository implements ReportRepository {
       final startStr = start.toIso8601String().substring(0, 10);
       final endStr = end.toIso8601String().substring(0, 10);
 
+      try {
+        final rows = await _fetchDailyRows(
+            'v_daily_summary_combined', startStr, endStr);
+        if (rows.isNotEmpty) return rows;
+      } catch (_) {}
       final result = await _client
           .from('v_daily_summary')
           .select()
@@ -148,6 +180,16 @@ class SupabaseReportRepository implements ReportRepository {
           .toIso8601String()
           .substring(0, 10);
 
+      try {
+        final combined = await _client
+            .from('v_top_parts_combined')
+            .select()
+            .eq('month_start', monthStart)
+            .order('qty_out', ascending: false)
+            .limit(10);
+        final rows = (combined as List).map((m) => TopPartRow.fromMap(m)).toList();
+        if (rows.isNotEmpty) return rows;
+      } catch (_) {}
       final result = await _client
           .from('v_top_parts')
           .select()
@@ -194,15 +236,28 @@ class SupabaseReportRepository implements ReportRepository {
       final startStr = start.toIso8601String().substring(0, 10);
       final endStr = end.toIso8601String().substring(0, 10);
 
-      // 1. Total revenue in range from v_daily_summary
-      final dailyRes = await _client
-          .from('v_daily_summary')
-          .select('revenue')
-          .gte('date', startStr)
-          .lte('date', endStr);
+      // 1. Total revenue in range — prefer combined
       double totalRev = 0.0;
-      for (final r in dailyRes as List) {
-        totalRev += (r['revenue'] as num?)?.toDouble() ?? 0.0;
+      try {
+        final combined = await _client
+            .from('v_daily_summary_combined')
+            .select('revenue')
+            .gte('date', startStr)
+            .lte('date', endStr);
+        for (final r in combined as List) {
+          totalRev += (r['revenue'] as num?)?.toDouble() ?? 0.0;
+        }
+        if (totalRev == 0) throw Exception('fallback');
+      } catch (_) {
+        final dailyRes = await _client
+            .from('v_daily_summary')
+            .select('revenue')
+            .gte('date', startStr)
+            .lte('date', endStr);
+        totalRev = 0;
+        for (final r in dailyRes as List) {
+          totalRev += (r['revenue'] as num?)?.toDouble() ?? 0.0;
+        }
       }
 
       // 2. Total COGS (modal part) from wo_items join parts
@@ -305,7 +360,7 @@ class SupabaseReportRepository implements ReportRepository {
       }
 
       final list = <DistributorDebtItem>[];
-      for (final m in res) {
+      for (final m in res as List) {
         final note = (m['note'] as String?) ?? '';
         final payType = (m['payment_type'] as String?) ??
             (note.contains('[HUTANG]') ? 'hutang' : 'tunai');
@@ -322,38 +377,39 @@ class SupabaseReportRepository implements ReportRepository {
             (m['purchase_price'] as num?)?.toDouble() ?? costFallback;
         final totalDebt = qty * price;
         final paid = paidAmounts[movementId] ?? 0.0;
-        final isSettled = (totalDebt - paid) <= 0;
-        final effectiveStatus = isSettled ? 'lunas' : dStatus;
+        
+        final bool isExplicitlyLunas = dStatus == 'lunas' || note.contains('[LUNAS]');
+        final bool isPaidInFull = totalDebt > 0 && paid >= totalDebt;
+        final String effectiveStatus =
+            (isExplicitlyLunas || isPaidInFull) ? 'lunas' : 'belum_lunas';
 
         if (status != null && effectiveStatus != status) continue;
-        final isUnpaid = payType == 'hutang' && effectiveStatus == 'belum_lunas';
-        final shouldInclude = status != null ? payType == 'hutang' : isUnpaid;
-        if (shouldInclude) {
-          var dist = m['distributor'] as String?;
-          if ((dist == null || dist.isEmpty) && note.contains('[Distributor:')) {
-            final match =
-                RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
-            if (match != null) dist = match.group(1)?.trim();
-          }
+        if (payType != 'hutang') continue;
 
-          list.add(DistributorDebtItem(
-            movementId: movementId,
-            partId: m['part_id'] as String,
-            partName: pName,
-            distributor: (dist != null && dist.isNotEmpty)
-                ? dist
-                : 'Distributor Umum',
-            qty: qty,
-            purchasePrice: price,
-            totalDebt: totalDebt,
-            totalPaid: paid,
-            createdAt: DateTime.parse(m['created_at'].toString()),
-            dueDate: m['due_date'] != null
-                ? DateTime.tryParse(m['due_date'].toString())
-                : null,
-            debtStatus: effectiveStatus,
-          ));
+        var dist = m['distributor'] as String?;
+        if ((dist == null || dist.isEmpty) && note.contains('[Distributor:')) {
+          final match =
+              RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+          if (match != null) dist = match.group(1)?.trim();
         }
+
+        list.add(DistributorDebtItem(
+          movementId: movementId,
+          partId: m['part_id'] as String,
+          partName: pName,
+          distributor: (dist != null && dist.isNotEmpty)
+              ? dist
+              : 'Distributor Umum',
+          qty: qty,
+          purchasePrice: price,
+          totalDebt: totalDebt,
+          totalPaid: paid,
+          createdAt: DateTime.parse(m['created_at'].toString()),
+          dueDate: m['due_date'] != null
+              ? DateTime.tryParse(m['due_date'].toString())
+              : null,
+          debtStatus: effectiveStatus,
+        ));
       }
       return list;
     } catch (_) {
@@ -368,37 +424,34 @@ class SupabaseReportRepository implements ReportRepository {
         final list = <DistributorDebtItem>[];
         for (final m in fallbackRes as List) {
           final note = (m['note'] as String?) ?? '';
-          final matchesStatus = status == null
-              ? (note.contains('[HUTANG]') && !note.contains('[LUNAS]'))
-              : (status == 'lunas'
-                  ? note.contains('[LUNAS]')
-                  : note.contains('[HUTANG]') && !note.contains('[LUNAS]'));
-          if (matchesStatus) {
-            final partMap = m['parts'] as Map?;
-            final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
-            final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
-            final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+          final isExplicitlyLunas = note.contains('[LUNAS]');
+          final effectiveStatus = isExplicitlyLunas ? 'lunas' : 'belum_lunas';
+          if (status != null && effectiveStatus != status) continue;
 
-            String dist = 'Distributor Umum';
-            if (note.contains('[Distributor:')) {
-              final match =
-                  RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
-              if (match != null) dist = match.group(1)?.trim() ?? dist;
-            }
+          final partMap = m['parts'] as Map?;
+          final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
+          final cost = (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
 
-            list.add(DistributorDebtItem(
-              movementId: m['id'] as String,
-              partId: m['part_id'] as String,
-              partName: pName,
-              distributor: dist,
-              qty: qty,
-              purchasePrice: cost,
-              totalDebt: qty * cost,
-              createdAt: DateTime.parse(m['created_at'].toString()),
-              dueDate: null,
-              debtStatus: note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas',
-            ));
+          String dist = 'Distributor Umum';
+          if (note.contains('[Distributor:')) {
+            final match =
+                RegExp(r'\[Distributor:\s*([^\]]+)\]').firstMatch(note);
+            if (match != null) dist = match.group(1)?.trim() ?? dist;
           }
+
+          list.add(DistributorDebtItem(
+            movementId: m['id'] as String,
+            partId: m['part_id'] as String,
+            partName: pName,
+            distributor: dist,
+            qty: qty,
+            purchasePrice: cost,
+            totalDebt: qty * cost,
+            totalPaid: 0,
+            createdAt: DateTime.parse(m['created_at'].toString()),
+            debtStatus: effectiveStatus,
+          ));
         }
         return list;
       } catch (_) {
@@ -515,13 +568,13 @@ class SupabaseReportRepository implements ReportRepository {
       final endStr = end.toIso8601String().substring(0, 10);
       final monthStart = DateTime(start.year, start.month, 1);
 
-      // Primary: aggregate via part_movements (sumber v_top_parts)
+      // Primary: aggregate via part_movements (sumber v_top_parts_combined)
       try {
         final res = await _client
             .from('part_movements')
             .select('part_id, qty, parts(name, sell_price)')
             .eq('direction', 'out')
-            .eq('ref_type', 'wo')
+            .inFilter('ref_type', ['wo', 'penjualan_langsung'])
             .gte('created_at', '${startStr}T00:00:00')
             .lte('created_at', '${endStr}T23:59:59');
         final grouped = <String, PartSoldDetailRow>{};
@@ -683,6 +736,17 @@ class SupabaseReportRepository implements ReportRepository {
     try {
       final startStr = start.toIso8601String().substring(0, 10);
       final endStr = end.toIso8601String().substring(0, 10);
+      // Prefer combined view (WO + PL) jika ada
+      try {
+        final res = await _client
+            .from('v_daily_revenue_by_pay_method_combined')
+            .select()
+            .gte('date', startStr)
+            .lte('date', endStr)
+            .order('date', ascending: true);
+        final rows = (res as List).map((m) => DailyRevenueByMethodRow.fromMap(m)).toList();
+        if (rows.isNotEmpty) return rows;
+      } catch (_) {}
       try {
         final res = await _client
             .from('v_daily_summary_by_pay_method')
@@ -726,6 +790,76 @@ class SupabaseReportRepository implements ReportRepository {
         }
         return grouped.values.toList()..sort((a, b) => a.date.compareTo(b.date));
       }
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<List<TransactionRow>> fetchTransactions({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    try {
+      final startStr = start.toIso8601String().substring(0, 10);
+      final endStr = end.toIso8601String().substring(0, 10);
+      // Prefer view v_transactions_history
+      try {
+        final res = await _client
+            .from('v_transactions_history')
+            .select()
+            .gte('transacted_at', '${startStr}T00:00:00')
+            .lte('transacted_at', '${endStr}T23:59:59')
+            .order('transacted_at', ascending: false);
+        return (res as List).map((m) => TransactionRow.fromMap(m)).toList();
+      } catch (_) {}
+      // Fallback: union in Dart (query both tables)
+      final woRes = await _client
+          .from('work_orders')
+          .select('id, wo_number, paid_amount, pay_method, completed_at, paid_at, vehicles(plate_no, customers(name)), wo_items(id)')
+          .eq('status', 'selesai')
+          .gte('completed_at', '${startStr}T00:00:00')
+          .lte('completed_at', '${endStr}T23:59:59');
+      final woRows = (woRes as List).map((m) {
+        final vehicles = m['vehicles'] as Map?;
+        return TransactionRow(
+          id: m['id'] as String,
+          number: m['wo_number'] as String? ?? '',
+          type: 'wo',
+          amount: (m['paid_amount'] as num?)?.toDouble() ?? 0,
+          payMethod: m['pay_method'] as String?,
+          transactedAt: m['paid_at'] != null
+              ? DateTime.parse(m['paid_at'].toString())
+              : DateTime.parse(m['completed_at'].toString()),
+          plateNo: vehicles?['plate_no'] as String?,
+          customerName: (vehicles?['customers'] is Map) ? (vehicles?['customers'] as Map)['name'] as String? : null,
+          itemCount: (m['wo_items'] is List) ? (m['wo_items'] as List).length : 0,
+        );
+      }).toList();
+      List<TransactionRow> plRows = [];
+      try {
+        final plRes = await _client
+            .from('direct_sales')
+            .select('id, sale_number, paid_amount, pay_method, paid_at, customers(name), direct_sale_items(id)')
+            .gte('paid_at', '${startStr}T00:00:00')
+            .lte('paid_at', '${endStr}T23:59:59');
+        plRows = (plRes as List).map((m) {
+          final cust = m['customers'];
+          return TransactionRow(
+            id: m['id'] as String,
+            number: m['sale_number'] as String? ?? '',
+            type: 'pl',
+            amount: (m['paid_amount'] as num?)?.toDouble() ?? 0,
+            payMethod: m['pay_method'] as String?,
+            transactedAt: DateTime.parse(m['paid_at'].toString()),
+            plateNo: null,
+            customerName: cust is Map ? cust['name'] as String? : null,
+            itemCount: (m['direct_sale_items'] is List) ? (m['direct_sale_items'] as List).length : 0,
+          );
+        }).toList();
+      } catch (_) {}
+      final all = [...woRows, ...plRows]..sort((a, b) => b.transactedAt.compareTo(a.transactedAt));
+      return all;
     } catch (e) {
       throw RepositoryException(mapRepositoryError(e));
     }
@@ -970,8 +1104,10 @@ class FakeReportRepository implements ReportRepository {
     for (final d in mockDistributorDebts!) {
       final payments = _debtPayments[d.movementId] ?? [];
       final paid = payments.fold<double>(0, (s, r) => s + r.amount);
-      final isSettled = (d.totalDebt - paid) <= 0;
-      final currentStatus = isSettled ? 'lunas' : d.debtStatus;
+      final isExplicitlyLunas = d.debtStatus == 'lunas';
+      final isPaidInFull = d.totalDebt > 0 && paid >= d.totalDebt;
+      final currentStatus =
+          (isExplicitlyLunas || isPaidInFull) ? 'lunas' : 'belum_lunas';
 
       final updated = DistributorDebtItem(
         movementId: d.movementId,
@@ -987,11 +1123,7 @@ class FakeReportRepository implements ReportRepository {
         debtStatus: currentStatus,
       );
 
-      if (status != null) {
-        if (currentStatus != status) continue;
-      } else {
-        if (currentStatus != 'belum_lunas') continue;
-      }
+      if (status != null && currentStatus != status) continue;
       list.add(updated);
     }
     return list;
@@ -1191,5 +1323,46 @@ class FakeReportRepository implements ReportRepository {
       }
     }
     return rows;
+  }
+
+  @override
+  Future<List<TransactionRow>> fetchTransactions({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    // Fake: merge WO + PL
+    final wos = await fetchCompletedWorkOrders(start: start, end: end);
+    final woRows = wos
+        .map((w) => TransactionRow(
+              id: w.id,
+              number: w.woNumber,
+              type: 'wo',
+              amount: w.paidAmount,
+              payMethod: w.payMethod,
+              transactedAt: w.completedAt,
+              plateNo: w.plateNo,
+              customerName: w.customerName,
+              itemCount: w.itemCount,
+            ))
+        .toList();
+    // Fake PL rows (1 per 2 days)
+    final plRows = <TransactionRow>[];
+    final days = end.difference(start).inDays + 1;
+    for (int i = 0; i < days; i += 2) {
+      final d = start.add(Duration(days: i));
+      plRows.add(TransactionRow(
+        id: 'pl-$i',
+        number: 'PL-2026-${200 + i}',
+        type: 'pl',
+        amount: 150000 + i * 10000,
+        payMethod: 'cash',
+        transactedAt: d,
+        plateNo: null,
+        customerName: i % 4 == 0 ? null : 'Walk-in ${i + 1}',
+        itemCount: 2,
+      ));
+    }
+    final all = [...woRows, ...plRows]..sort((a, b) => b.transactedAt.compareTo(a.transactedAt));
+    return all;
   }
 }

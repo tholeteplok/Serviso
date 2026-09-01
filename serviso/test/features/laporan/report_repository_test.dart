@@ -47,13 +47,17 @@ void main() {
   });
 
   test('fetchDistributorDebts and markDebtPaid work properly', () async {
-    final debts = await repo.fetchDistributorDebts();
+    final debts = await repo.fetchDistributorDebts(status: 'belum_lunas');
     expect(debts.length, 1);
     expect(debts.first.distributor, 'PT Pertamina Lubricants');
     expect(debts.first.totalDebt, 750000);
 
     await repo.markDebtPaid(debts.first.movementId);
-    final after = await repo.fetchDistributorDebts();
+    final after = await repo.fetchDistributorDebts(status: 'belum_lunas');
     expect(after, isEmpty);
+
+    final allDebts = await repo.fetchDistributorDebts();
+    expect(allDebts.length, 1);
+    expect(allDebts.first.isSettled, true);
   });
 }

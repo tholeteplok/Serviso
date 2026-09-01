@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/neo_segment_control.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/laporan/controllers/report_controllers.dart';
 import 'package:serviso/features/laporan/data/report_repository.dart';
@@ -226,6 +227,96 @@ void main() {
       expect(find.text('Riwayat Pembayaran'), findsOneWidget);
       expect(find.text('Metode: Transfer'), findsOneWidget);
       expect(find.text('Nota Cicilan #1'), findsOneWidget);
+    });
+
+    testWidgets('DebtDetailScreen displays debts from multiple distributors and switches tabs',
+        (tester) async {
+      final fakeReportRepo = FakeReportRepository();
+      fakeReportRepo.mockDistributorDebts = [
+        DistributorDebtItem(
+          movementId: 'm-1',
+          partId: 'p-1',
+          partName: 'Busi Champion',
+          distributor: 'Panca Mandiri',
+          qty: 10,
+          purchasePrice: 25000,
+          totalDebt: 250000,
+          totalPaid: 100000,
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+          debtStatus: 'belum_lunas',
+        ),
+        DistributorDebtItem(
+          movementId: 'm-2',
+          partId: 'p-2',
+          partName: 'Oli MPX 0.8L',
+          distributor: 'cv. Tirta Nugraha',
+          qty: 20,
+          purchasePrice: 5000,
+          totalDebt: 100000,
+          totalPaid: 0,
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          debtStatus: 'belum_lunas',
+        ),
+        DistributorDebtItem(
+          movementId: 'm-3',
+          partId: 'p-3',
+          partName: 'Kampas Ganda',
+          distributor: 'Tirta Nugraha',
+          qty: 8,
+          purchasePrice: 0, // 0 purchase price fallback
+          totalDebt: 0,
+          totalPaid: 0,
+          createdAt: DateTime.now(),
+          debtStatus: 'belum_lunas',
+        ),
+        DistributorDebtItem(
+          movementId: 'm-4',
+          partId: 'p-4',
+          partName: 'Filter Oli',
+          distributor: 'PT Astra Otoparts',
+          qty: 5,
+          purchasePrice: 30000,
+          totalDebt: 150000,
+          totalPaid: 150000,
+          createdAt: DateTime.now().subtract(const Duration(days: 5)),
+          debtStatus: 'lunas',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWith((ref) => true),
+            reportRepositoryProvider.overrideWithValue(fakeReportRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const DebtDetailScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // On Belum Lunas tab, all 3 unpaid debts from different distributors must appear
+      expect(find.text('Panca Mandiri'), findsOneWidget);
+      expect(find.text('cv. Tirta Nugraha'), findsOneWidget);
+      expect(find.text('Tirta Nugraha'), findsOneWidget);
+      expect(find.text('PT Astra Otoparts'), findsNothing);
+
+      // Switch to Lunas tab
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NeoSegmentControl<DebtFilter>),
+          matching: find.text('Lunas'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PT Astra Otoparts'), findsOneWidget);
+      expect(find.text('Panca Mandiri'), findsNothing);
+      expect(find.text('cv. Tirta Nugraha'), findsNothing);
+      expect(find.text('Tirta Nugraha'), findsNothing);
     });
   });
 }

@@ -17,8 +17,9 @@ class NeoCard extends StatefulWidget {
     this.borderWidth = 1.5,
     this.borderRadius = AppRadius.card,
     this.showHardShadow = true,
-    this.shadowOffset = const Offset(0, 3),
+    this.shadowOffset = const Offset(4, 4),  // DS v2: hard 4px 4px offset
     this.shadowColor = AppColors.borderInk,
+    this.showSoftShadow = true,              // DS v2: soft diffuse layer
     this.onTap,
   });
 
@@ -32,6 +33,7 @@ class NeoCard extends StatefulWidget {
   final bool showHardShadow;
   final Offset shadowOffset;
   final Color shadowColor;
+  final bool showSoftShadow;
   final VoidCallback? onTap;
 
   @override
@@ -48,6 +50,24 @@ class _NeoCardState extends State<NeoCard> {
         : Offset.zero;
     final translateY = widget.onTap != null && _isPressed ? 2.0 : 0.0;
 
+    // DS v2: --shadow-card: 0 8px 24px rgba(17,17,17,0.06), 4px 4px 0 #111
+    final List<BoxShadow> shadows = [
+      if (widget.showSoftShadow && !_isPressed)
+        const BoxShadow(
+          color: Color(0x0F111111), // rgba(17,17,17,0.06)
+          offset: Offset(0, 8),
+          blurRadius: 24,
+          spreadRadius: 0,
+        ),
+      if (widget.showHardShadow)
+        BoxShadow(
+          color: widget.shadowColor,
+          offset: currentOffset,
+          blurRadius: 0,
+          spreadRadius: 0,
+        ),
+    ];
+
     Widget container = AnimatedContainer(
       duration: const Duration(milliseconds: 90),
       transform: Matrix4.translationValues(0, translateY, 0),
@@ -60,16 +80,7 @@ class _NeoCardState extends State<NeoCard> {
           color: widget.borderColor,
           width: widget.borderWidth,
         ),
-        boxShadow: widget.showHardShadow
-            ? [
-                BoxShadow(
-                  color: widget.shadowColor,
-                  offset: currentOffset,
-                  blurRadius: 0,
-                  spreadRadius: 0,
-                ),
-              ]
-            : null,
+        boxShadow: shadows.isEmpty ? null : shadows,
       ),
       child: widget.child,
     );

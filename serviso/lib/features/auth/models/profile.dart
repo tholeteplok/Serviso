@@ -9,6 +9,9 @@ class Profile {
     required this.role,
     required this.isActive,
     this.phone,
+    this.shopId,
+    this.shopName,
+    this.isPlatformAdmin = false,
   });
 
   final String id;
@@ -18,6 +21,9 @@ class Profile {
   final UserRole role;
   final bool isActive;
   final String? phone;
+  final String? shopId;
+  final String? shopName;
+  final bool isPlatformAdmin;
 
   bool get isAdmin => role == UserRole.admin;
 
@@ -30,6 +36,9 @@ class Profile {
       role: _roleFromString(map['role'] as String?),
       isActive: (map['is_active'] as bool?) ?? true,
       phone: map['phone'] as String?,
+      shopId: map['shop_id'] as String?,
+      shopName: map['shops']?['name'] as String?,
+      isPlatformAdmin: (map['is_platform_admin'] as bool?) ?? false,
     );
   }
 
@@ -41,6 +50,8 @@ class Profile {
         'role': _roleToString(role),
         'is_active': isActive,
         'phone': phone,
+        'shop_id': shopId,
+        'is_platform_admin': isPlatformAdmin,
       };
 
   Profile copyWith({
@@ -51,6 +62,9 @@ class Profile {
     UserRole? role,
     bool? isActive,
     String? phone,
+    String? shopId,
+    String? shopName,
+    bool? isPlatformAdmin,
   }) =>
       Profile(
         id: id ?? this.id,
@@ -60,6 +74,9 @@ class Profile {
         role: role ?? this.role,
         isActive: isActive ?? this.isActive,
         phone: phone ?? this.phone,
+        shopId: shopId ?? this.shopId,
+        shopName: shopName ?? this.shopName,
+        isPlatformAdmin: isPlatformAdmin ?? this.isPlatformAdmin,
       );
 }
 
@@ -91,3 +108,4 @@ const Map<UserRole, String> userRoleLabel = {
   UserRole.kasir: 'Kasir',
   UserRole.mekanik: 'Mekanik',
 };
+

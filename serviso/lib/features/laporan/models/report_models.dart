@@ -2,20 +2,25 @@ class DailySummaryRow {
   final DateTime date;
   final double revenue;
   final int woDoneCount;
+  final int directSaleCount;
   final double partsOutQty;
 
   const DailySummaryRow({
     required this.date,
     required this.revenue,
     required this.woDoneCount,
+    this.directSaleCount = 0,
     required this.partsOutQty,
   });
+
+  int get totalTransactions => woDoneCount + directSaleCount;
 
   factory DailySummaryRow.fromMap(Map<String, dynamic> map) {
     return DailySummaryRow(
       date: DateTime.parse(map['date'].toString()),
       revenue: (map['revenue'] as num?)?.toDouble() ?? 0.0,
       woDoneCount: (map['wo_done_count'] as num?)?.toInt() ?? 0,
+      directSaleCount: (map['direct_sale_count'] as num?)?.toInt() ?? 0,
       partsOutQty: (map['parts_out_qty'] as num?)?.toDouble() ?? 0.0,
     );
   }
@@ -25,8 +30,56 @@ class DailySummaryRow {
       'date': date.toIso8601String().substring(0, 10),
       'revenue': revenue,
       'wo_done_count': woDoneCount,
+      'direct_sale_count': directSaleCount,
       'parts_out_qty': partsOutQty,
     };
+  }
+}
+
+class TransactionRow {
+  final String id;
+  final String number;
+  final String type; // 'wo' | 'pl'
+  final double amount;
+  final String? payMethod;
+  final DateTime transactedAt;
+  final String? plateNo;
+  final String? customerName;
+  final int itemCount;
+
+  const TransactionRow({
+    required this.id,
+    required this.number,
+    required this.type,
+    required this.amount,
+    this.payMethod,
+    required this.transactedAt,
+    this.plateNo,
+    this.customerName,
+    required this.itemCount,
+  });
+
+  bool get isWo => type == 'wo';
+  bool get isPl => type == 'pl';
+
+  factory TransactionRow.fromMap(Map<String, dynamic> map) {
+    return TransactionRow(
+      id: map['id'] as String? ?? '',
+      number: map['number'] as String? ?? map['wo_number'] as String? ?? map['sale_number'] as String? ?? '',
+      type: map['type'] as String? ?? 'wo',
+      amount: (map['amount'] as num?)?.toDouble() ?? (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
+      payMethod: map['pay_method'] as String?,
+      transactedAt: map['transacted_at'] != null
+          ? DateTime.parse(map['transacted_at'].toString())
+          : map['paid_at'] != null
+              ? DateTime.parse(map['paid_at'].toString())
+              : map['completed_at'] != null
+                  ? DateTime.parse(map['completed_at'].toString())
+                  : DateTime.now(),
+      plateNo: map['plate_no'] as String?,
+      customerName: map['customer_name'] as String?,
+      itemCount: (map['item_count'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 

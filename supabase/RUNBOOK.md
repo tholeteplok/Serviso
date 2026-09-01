@@ -20,6 +20,17 @@ Buka **SQL Editor** → New query → paste isi file → **Run**. Ulangi satu pe
 | 2 | `supabase/migrations/0002_functions.sql` | RPC bisnis, sinkronisasi stok, penjaga transisi WO |
 | 3 | `supabase/migrations/0003_audit.sql` | trigger audit untuk 7 tabel |
 | 4 | `supabase/migrations/0004_rls.sql` | helper `is_admin()`, RLS, policy, grants |
+| 5 | `supabase/migrations/0005_app_settings_seed.sql` | seed `app_settings` |
+| 6 | `supabase/migrations/0006_reporting_views.sql` | view `v_daily_summary`, `v_top_parts` |
+| 7 | `supabase/migrations/0007_stock_in_and_payables.sql` | kolom `distributor/purchase_price/payment_type/debt_status` + `mark_debt_paid` |
+| 8 | `supabase/migrations/0008_revenue_by_pay_method.sql` | view `v_daily_summary_by_pay_method` |
+| 9 | `supabase/migrations/0009_debt_partial_payments.sql` | tabel `debt_payments` + `pay_debt` |
+| 10 | `supabase/migrations/0010_price_guard_and_low_stock_view.sql` | `v_low_stock_parts` + trigger `check_price_update_is_admin` |
+| 11 | `supabase/migrations/0011_business_logic_hardening.sql` | `CHECK discount<=qty*unit_price`, hardening `enforce_wo_transition` (admin guard), `complete_work_order FOR UPDATE wo_items`, `cancel_work_order is_active` |
+| 12 | `supabase/migrations/0012_debt_hardening.sql` | `CHECK payment tunai=>lunas`, `pay_debt` race-safe + validasi, `debt_payments` append-only, `mark_debt_paid` ledger-aware |
+| 13 | `supabase/migrations/0013_reporting_and_audit_hardening.sql` | fix `v_daily_summary`/`v_top_parts` historis, audit `app_settings`+`debt_payments` |
+| 14 | `supabase/migrations/0014_direct_sales.sql` | enum `penjualan_langsung`, `direct_sales`+`direct_sale_items` (discount bound), `gen_sale_number()` PL-, RPC `checkout_direct_sale()` atomik + RLS + audit |
+| 15 | `supabase/migrations/0015_reporting_combined.sql` | `v_daily_summary_combined` + `v_top_parts_combined` gabungan WO + Penjualan Langsung |
 
 Verifikasi cepat setelah selesai:
 
@@ -147,15 +158,16 @@ pra-login — permukaan enumerasi username/email lewat API anon jadi nihil.
 `profiles.email` bukan email login lagi, melainkan email pemulihan asli yang
 hanya tersentuh alur reset password sisi admin (Edge Function Task 8).
 
-### Batasan v1
+### Status hardening v1.1 (0011-0013)
 
-Update langsung via API/SQL `selesai -> dibatalkan` (mengisi `cancelled_at`)
-**lolos** guard transisi, tetapi **tidak** membuat entri pembalikan stok — jalur
-ini mem-bypass `cancel_work_order`. UI aplikasi secara eksklusif memakai RPC
-`cancel_work_order` yang memposting reversal; perlakukan jalur langsung sebagai
-kesalahan operator. Jejaknya tetap terlihat: `audit_logs` mencatat UPDATE
-work_orders tanpa movement `pembatalan` pendamping (v2 dapat menutup celah ini
-dengan security-definer wrapper atau policy kolom-granular).
+- `enforce_wo_transition` kini menolak `selesai/dikerjakan → dibatalkan` jika bukan `is_admin()` (`is_active` true) — menutup bypass RLS di v1.
+- `complete_work_order` mengunci `wo_items FOR UPDATE` sebelum validasi stok — menutup TOCTOU injeksi item konkuren.
+- `cancel_work_order` pakai `is_admin()` (cek `is_active`) — konsisten dengan RLS.
+- `wo_items CHECK (discount <= qty*unit_price)` menolak diskon melebihi subtotal (total negatif tertutup).
+- `pay_debt` race-safe (`FOR UPDATE` movement + `debt_payments`) + validasi `direction='in' && payment_type='hutang'` + tolak `amount<=0` / melebihi sisa; `debt_payments` append-only (tanpa DELETE/UPDATE); `mark_debt_paid` ledger-aware.
+- `v_daily_summary`/`v_top_parts` sudah historis & benar (tanpa fallback `updated_at`, revenue historis).
+
+Bypass langsung `selesai→dibatalkan` yang dijelaskan di batasan v1 **sudah tertutup** di 0011.
 
 ## 9. Troubleshooting
 

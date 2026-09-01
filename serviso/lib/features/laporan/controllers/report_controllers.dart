@@ -135,3 +135,9 @@ final dailyRevenueByMethodProvider = FutureProvider.family<
   final repo = ref.watch(reportRepositoryProvider);
   return repo.fetchDailyRevenueByPayMethod(start: range.start, end: range.end);
 });
+
+final transactionsProvider = FutureProvider.family<
+    List<TransactionRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchTransactions(start: range.start, end: range.end);
+});

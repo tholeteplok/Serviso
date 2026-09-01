@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
-  // 2.1 Base Tokens (Soft Pastel UI)
+  // 2.1 Base Tokens — aligned with DS v2 "Warm Industrial Soft Brutalism"
   // ---------------------------------------------------------------------------
-  /// Canvas background for main screens (#FDF7F2 - warm cream)
-  static const bgBase = Color(0xFFFDF7F2);
+  /// Canvas background for main screens (#F9F5EF - warm grey-cream) — DS v2: --bg
+  static const bgBase = Color(0xFFF9F5EF);
 
-  /// Card, sheet, modal background (#FFFFFF)
+  /// Card, sheet, modal background (#FFFFFF) — DS v2: --surface
   static const bgSurface = Color(0xFFFFFFFF);
 
-  /// Primary dark ink (#111111 - studio brand contrast)
+  /// Primary dark ink (#111111 - studio brand contrast) — DS v2: --fg, --border-strong
   static const ink900 = Color(0xFF111111);
 
-  /// Secondary text color, subtitles, captions (#6E6E6E) — WCAG AA 4.5:1
-  static const textSecondary = Color(0xFF6E6E6E);
+  /// Secondary text color, subtitles, captions (#5E5E62) — DS v2: --muted, WCAG AA 4.5:1
+  static const textSecondary = Color(0xFF5E5E62);
 
   /// Subtle hairline divider & passive card outline (#ECE6DF)
   static const borderHairline = Color(0xFFECE6DF);
@@ -62,6 +62,13 @@ abstract final class AppColors {
   /// Solid Mint accent alias (#3FBE85)
   static const accentMint = Color(0xFF3FBE85);
   static const accentMintBorder = ink900;
+
+  // ---------------------------------------------------------------------------
+  // 2.5 Amber Accent — DS v2 Dual-Accent System (Mint primary + Amber secondary)
+  // ---------------------------------------------------------------------------
+  /// Solid Amber — DS v2: --amber: #FFC526 (secondary CTA, highlight, badge)
+  static const amber = Color(0xFFFFC526);
+  static const amberPress = Color(0xFFE8AE12);  // DS v2: --amber-press
 
   // ---------------------------------------------------------------------------
   // 2.5 Universal Line-Art Border (Seluruh card, button, chip, chart)

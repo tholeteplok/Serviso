@@ -48,14 +48,22 @@ serve(async (req) => {
     // Verify caller role in profiles
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("role")
+      .select("role, shop_id, shops(slug)")
       .eq("id", caller.id)
       .single();
 
-    if (profileError || profile?.role !== "admin") {
+    if (profileError || profile?.role !== "admin" || !profile.shop_id) {
       return new Response(
-        JSON.stringify({ error: "Akses ditolak. Hanya pemilik yang dapat mengelola user." }),
+        JSON.stringify({ error: "Akses ditolak. Hanya pemilik toko yang dapat mengelola user." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const shopSlug = (profile.shops as any)?.slug;
+    if (!shopSlug) {
+      return new Response(
+        JSON.stringify({ error: "Toko tidak memiliki slug yang valid." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -71,21 +79,22 @@ serve(async (req) => {
       }
 
       const cleanUsername = username.trim().toLowerCase();
-      // Check if username exists
+      // Check if username exists in the same shop
       const { data: existing } = await supabaseAdmin
         .from("profiles")
         .select("id")
         .eq("username", cleanUsername)
+        .eq("shop_id", profile.shop_id)
         .maybeSingle();
 
       if (existing) {
         return new Response(
-          JSON.stringify({ error: `Username '${cleanUsername}' sudah digunakan.` }),
+          JSON.stringify({ error: "Username '$cleanUsername' sudah digunakan di toko ini." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const syntheticEmail = `${cleanUsername}@users.serviso.app`;
+      const syntheticEmail = "$cleanUsername."$shopSlug@users.serviso.app";
       const recoveryEmail = email?.trim() || syntheticEmail;
 
       const { data: inviteData, error: inviteError } =
@@ -95,6 +104,7 @@ serve(async (req) => {
             full_name: full_name.trim(),
             role: role === "admin" ? "admin" : "kasir",
             email: recoveryEmail,
+            shop_id: profile.shop_id,
           },
         });
 
@@ -106,7 +116,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ message: `Undangan terkirim untuk ${cleanUsername}`, user: inviteData.user }),
+        JSON.stringify({ message: "Undangan terkirim untuk $cleanUsername", user: inviteData.user }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -120,10 +130,12 @@ serve(async (req) => {
       }
 
       const isActive = action === "activate";
+      // ensure user is in the same shop
       const { error: updateError } = await supabaseAdmin
         .from("profiles")
         .update({ is_active: isActive })
-        .eq("id", user_id);
+        .eq("id", user_id)
+        .eq("shop_id", profile.shop_id);
 
       if (updateError) {
         return new Response(
@@ -145,7 +157,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ message: `Status pengguna berhasil diperbarui.` }),
+        JSON.stringify({ message: "Status pengguna berhasil diperbarui." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -162,9 +174,17 @@ serve(async (req) => {
         .from("profiles")
         .select("email, username")
         .eq("id", user_id)
+        .eq("shop_id", profile.shop_id)
         .single();
+        
+      if (!targetProfile) {
+        return new Response(
+          JSON.stringify({ error: "Pengguna tidak ditemukan." }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-      const targetEmail = targetProfile?.email || `${targetProfile?.username}@users.serviso.app`;
+      const targetEmail = targetProfile?.email || "$targetProfile?.username."$shopSlug@users.serviso.app";
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
         targetEmail
       );
@@ -177,7 +197,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ message: `Email reset password terkirim ke ${targetEmail}` }),
+        JSON.stringify({ message: "Email reset password terkirim ke $targetEmail" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

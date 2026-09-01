@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -18,6 +19,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _shopSlugController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -26,7 +28,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _loadShopSlug();
+  }
+
+  Future<void> _loadShopSlug() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('saved_shop_slug');
+    if (saved != null && mounted) {
+      _shopSlugController.text = saved;
+    }
+  }
+
+  @override
   void dispose() {
+    _shopSlugController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -43,7 +60,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(sessionProvider.notifier).login(
             username: _usernameController.text,
             password: _passwordController.text,
+            shopSlug: _shopSlugController.text,
           );
+    final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_shop_slug', _shopSlugController.text.trim());
     } catch (e) {
       setState(() {
         _error = e is AuthException ? e.message : 'Terjadi kesalahan. Coba lagi.';
@@ -91,6 +111,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ?.copyWith(color: AppColors.inkMuted),
                     ),
                     const SizedBox(height: 24),
+                    TextFormField(
+                      key: const Key('shop_slug'),
+                      controller: _shopSlugController,
+                      decoration: InputDecoration(
+                        labelText: 'Kode Toko',
+                        prefixIcon: Icon(AppIcons.storefront),
+                      ),
+                      textInputAction: TextInputAction.next,
+                      autocorrect: false,
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Kode Toko wajib diisi'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       key: const Key('username'),
                       controller: _usernameController,
@@ -155,3 +189,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+

@@ -104,6 +104,15 @@ class WoDetailController
     String? diagnosis,
     String? techNote,
   }) async {
+    final current = state.valueOrNull;
+    if (current != null &&
+        current.status != WoStatus.menunggu &&
+        current.status != WoStatus.dikerjakan) {
+      throw const RepositoryException('Detail hanya bisa diedit saat Menunggu atau Dikerjakan');
+    }
+    if (complaint != null && complaint.trim().isEmpty) {
+      throw const RepositoryException('Keluhan wajib diisi');
+    }
     final repo = ref.read(workOrderRepositoryProvider);
     await repo.updateDetail(
       id: arg,

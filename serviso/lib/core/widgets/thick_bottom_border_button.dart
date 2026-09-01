@@ -12,6 +12,7 @@ enum ThickButtonVariant {
   danger,
   info,
   mint,
+  amber,  // DS v2: solid #FFC526 for secondary CTAs
 }
 
 /// A tactile Neo-Brutalist button with solid 1.5px black border,
@@ -76,6 +77,10 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
         break;
       case ThickButtonVariant.mint:
         bg = isEnabled ? AppColors.pastelMint : AppColors.borderSubtle;
+        fg = AppColors.ink900;
+        break;
+      case ThickButtonVariant.amber:
+        bg = isEnabled ? AppColors.amber : AppColors.borderSubtle;
         fg = AppColors.ink900;
         break;
     }

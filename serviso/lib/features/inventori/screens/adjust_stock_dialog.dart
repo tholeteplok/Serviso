@@ -72,8 +72,12 @@ Future<void> showAdjustStockDialog(
                       if (value == null || value.trim().isEmpty) {
                         return 'Masukkan jumlah perubahan';
                       }
-                      if (double.tryParse(value) == null) {
+                      final parsed = double.tryParse(value);
+                      if (parsed == null) {
                         return 'Masukkan angka yang valid';
+                      }
+                      if (parsed == 0) {
+                        return 'Perubahan tidak boleh 0';
                       }
                       return null;
                     },

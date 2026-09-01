@@ -14,18 +14,17 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
-String resolveLoginEmail(String identifier) {
+String resolveLoginEmail(String identifier, String shopSlug) {
   final clean = identifier.trim().toLowerCase();
+  final cleanSlug = shopSlug.trim().toLowerCase();
   if (clean.contains('@')) {
     return clean;
   }
-  return '$clean@users.serviso.app';
+  return '$clean.$cleanSlug@users.serviso.app';
 }
 
-String syntheticLoginEmail(String username) => resolveLoginEmail(username);
-
 abstract class AuthRepository {
-  Future<Profile> login({required String username, required String password});
+  Future<Profile> login({required String username, required String password, required String shopSlug});
 
   Future<void> logout();
 
@@ -45,10 +44,11 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<Profile> login({
     required String username,
     required String password,
+    required String shopSlug,
   }) async {
     try {
       final response = await _client.auth.signInWithPassword(
-        email: resolveLoginEmail(username),
+        email: resolveLoginEmail(username, shopSlug),
         password: password,
       );
       final user = response.user;
@@ -186,6 +186,7 @@ class FakeAuthRepository implements AuthRepository {
   Future<Profile> login({
     required String username,
     required String password,
+    required String shopSlug,
   }) async {
     if (networkError) {
       throw const AuthException('Tidak ada koneksi internet');
@@ -241,3 +242,5 @@ class FakeAuthRepository implements AuthRepository {
     return updated;
   }
 }
+
+

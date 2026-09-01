@@ -59,6 +59,9 @@ class PartFormController
         ref.invalidate(distributorDebtsProvider);
         ref.invalidate(ownerFinancialSummaryProvider);
       }
+      if (effectiveDistributor != null && effectiveDistributor.isNotEmpty) {
+        ref.invalidate(distributorsProvider);
+      }
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

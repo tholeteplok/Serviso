@@ -280,6 +280,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
+                if (profile.isPlatformAdmin) ...[
+                  SectionCard(
+                    title: 'Platform Admin',
+                    child: Column(
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(AppIcons.shieldCheck),
+                          title: const Text('Manajemen Toko'),
+                          subtitle: const Text('Daftar & buat toko baru'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(AppRoutes.platformAdmin),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

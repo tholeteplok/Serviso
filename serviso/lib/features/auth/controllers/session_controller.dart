@@ -20,6 +20,11 @@ final isAdminProvider = Provider<bool>((ref) {
   return session.valueOrNull?.isAdmin ?? false;
 });
 
+final isPlatformAdminProvider = Provider<bool>((ref) {
+  final session = ref.watch(sessionProvider);
+  return session.valueOrNull?.isPlatformAdmin ?? false;
+});
+
 class SessionController extends AsyncNotifier<Profile?> {
   late final AuthRepository _auth;
 
@@ -39,10 +44,15 @@ class SessionController extends AsyncNotifier<Profile?> {
   Future<void> login({
     required String username,
     required String password,
+    required String shopSlug,
   }) async {
     state = const AsyncLoading();
     try {
-      final profile = await _auth.login(username: username, password: password);
+      final profile = await _auth.login(
+        username: username,
+        password: password,
+        shopSlug: shopSlug,
+      );
       state = AsyncData(profile);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -63,3 +73,5 @@ class SessionController extends AsyncNotifier<Profile?> {
     state = AsyncData(updated);
   }
 }
+
+

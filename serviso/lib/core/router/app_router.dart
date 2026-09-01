@@ -30,6 +30,7 @@ import '../../features/laporan/screens/details/part_sold_detail_screen.dart';
 import '../../features/laporan/screens/details/profit_detail_screen.dart';
 import '../../features/laporan/screens/details/wo_done_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
+import '../../features/direct_sales/screens/direct_sale_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
 import '../../features/admin/screens/audit_log_screen.dart';
@@ -50,12 +51,14 @@ abstract final class AppRoutes {
   static const laporanPartTerjual = '/laporan/part-terjual';
   static const profil = '/profil';
   static const admin = '/admin';
+  static const platformAdmin = '/platform';
   static const adminUsers = '/admin/users';
   static const adminAuditLogs = '/admin/audit-logs';
   static const pengaturan = '/admin/pengaturan';
   static const pelanggan = '/pelanggan';
   static const pelangganDetail = '/pelanggan/:id';
   static const woBaru = '/antrian/baru';
+  static const jualLangsung = '/jual-langsung';
   static const inventoriTambah = '/inventori/tambah';
   static const inventoriEdit = '/inventori/:id/edit';
 }
@@ -63,6 +66,7 @@ abstract final class AppRoutes {
 String? authGuardRedirect({
   required AsyncValue<Profile?> session,
   required bool isAdmin,
+  required bool isPlatformAdmin,
   required String location,
 }) {
   if (session.isLoading) {
@@ -81,13 +85,16 @@ String? authGuardRedirect({
   if (location == AppRoutes.login || location == AppRoutes.splash) {
     return AppRoutes.beranda;
   }
-  if (location.startsWith('/admin') && !isAdmin) {
+  if (location.startsWith('/admin') && !isAdmin && !isPlatformAdmin) {
+    return AppRoutes.beranda;
+  }
+  if (location.startsWith('/platform') && !isPlatformAdmin) {
     return AppRoutes.beranda;
   }
   final isLaporanOwnerOnly = location.startsWith(AppRoutes.laporanLaba) ||
       location.startsWith(AppRoutes.laporanHpp) ||
       location.startsWith(AppRoutes.laporanHutang);
-  if (isLaporanOwnerOnly && !isAdmin) {
+  if (isLaporanOwnerOnly && !isAdmin && !isPlatformAdmin) {
     return AppRoutes.laporan;
   }
   return null;
@@ -116,9 +123,11 @@ class RouterNotifier extends ChangeNotifier {
   String? _redirect(BuildContext context, GoRouterState state) {
     final session = _ref.read(sessionProvider);
     final isAdmin = _ref.read(isAdminProvider);
+    final isPlatformAdmin = _ref.read(isPlatformAdminProvider);
     final target = authGuardRedirect(
       session: session,
       isAdmin: isAdmin,
+      isPlatformAdmin: isPlatformAdmin,
       location: state.uri.path,
     );
     if (target == AppRoutes.beranda && state.uri.path.startsWith('/admin')) {
@@ -189,6 +198,10 @@ final List<RouteBase> _appRoutes = [
       builder: (context, state) => WoWizardScreen(
         initialVehicle: state.extra as Vehicle?,
       ),
+    ),
+    GoRoute(
+      path: AppRoutes.jualLangsung,
+      builder: (context, state) => const DirectSaleScreen(),
     ),
     GoRoute(
       path: '${AppRoutes.antrian}/:id',
@@ -340,3 +353,4 @@ class HomeShell extends ConsumerWidget {
     );
   }
 }
+

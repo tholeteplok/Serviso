@@ -21,7 +21,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
@@ -60,6 +60,22 @@ class EmptyState extends StatelessWidget {
           ),
         ],
       ],
+    );
+
+    // DS v2: .empty-state { border: 1.5px dashed var(--border-strong); background: #FFFBF7; border-radius: 16px }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderInk,
+          width: 1.5,
+          strokeAlign: BorderSide.strokeAlignCenter,
+        ),
+      ),
+      child: content,
     );
   }
 }

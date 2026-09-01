@@ -7,6 +7,7 @@ enum NeoButtonVariant {
   primary,
   secondary,
   danger,
+  amber,  // DS v2: solid amber #FFC526
 }
 
 /// Compatibility wrapper around [ThickBottomBorderButton].
@@ -36,6 +37,7 @@ class NeoButton extends StatelessWidget {
       NeoButtonVariant.primary => ThickButtonVariant.primary,
       NeoButtonVariant.secondary => ThickButtonVariant.secondary,
       NeoButtonVariant.danger => ThickButtonVariant.danger,
+      NeoButtonVariant.amber => ThickButtonVariant.amber,
     };
 
     return ThickBottomBorderButton(

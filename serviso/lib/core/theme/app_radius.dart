@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-/// Centralized border radius tokens for Serviso Neo-Brutalism system.
+/// Centralized border radius tokens for Serviso Design System v2 (Soft Brutalism).
 abstract final class AppRadius {
-  /// Base values
-  static const double cardValue = 16.0;
-  static const double buttonValue = 12.0;
-  static const double inputValue = 10.0;
+  /// Base values - aligned with DS v2 spec
+  static const double cardValue = 20.0;
+  static const double buttonValue = 14.0;
+  static const double inputValue = 12.0;
   static const double chipValue = 999.0;
   static const double modalValue = 20.0;
   static const double badgeValue = 6.0;

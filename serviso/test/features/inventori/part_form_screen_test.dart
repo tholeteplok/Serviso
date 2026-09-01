@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:serviso/core/theme/app_icons.dart';
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/neo_stepper.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/inventori/controllers/part_providers.dart';
 import 'package:serviso/features/inventori/data/fakes.dart';
@@ -187,6 +189,47 @@ void main() {
       expect(parts.first.costPrice, 35000);
       expect(parts.first.sellPrice, 50000);
       expect(parts.first.minStock, 5);
+    });
+
+    testWidgets('DistributorAutocompleteField shows suggestions on typing matching text',
+        (tester) async {
+      final fakeRepo = FakePartRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWith((ref) => true),
+            partRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const PartFormScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Ensure stepper is visible and increment quantity > 0
+      await tester.ensureVisible(find.byType(NeoStepper));
+      await tester.tap(find.byIcon(AppIcons.add));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pengadaan Stok Awal'), findsOneWidget);
+
+      // Type "Tir" into distributor field
+      await tester.ensureVisible(find.byKey(const Key('part_distributor_field')));
+      await tester.enterText(find.byKey(const Key('part_distributor_field')), 'Tir');
+      await tester.pumpAndSettle();
+
+      // Suggestion for "cv. Tirta Nugraha" must appear
+      expect(find.text('cv. Tirta Nugraha'), findsOneWidget);
+
+      // Tap suggestion to select
+      await tester.tap(find.text('cv. Tirta Nugraha'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, 'cv. Tirta Nugraha'), findsOneWidget);
     });
   });
 }

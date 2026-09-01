@@ -5,20 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 
-import '../../settings/models/app_settings.dart';
+import '../../auth/models/profile.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
 import 'receipt_builder.dart';
 
 ReceiptInput _buildInput({
   required WorkOrder order,
-  required AppSettings settings,
+  required Profile profile,
   required String printedBy,
 }) {
   return ReceiptInput(
-    shopName: settings.shopName,
-    shopAddress: settings.address,
-    shopPhone: settings.phone,
+    shopName: profile.shopName ?? 'Bengkel',
+    shopAddress: null,
+    shopPhone: null,
     woNumber: order.woNumber,
     plate: order.plateNo ?? '—',
     vehicleDesc: order.vehicleDesc,
@@ -34,11 +34,11 @@ ReceiptInput _buildInput({
 
 Future<void> shareReceipt({
   required WorkOrder order,
-  required AppSettings settings,
+  required Profile profile,
   required String printedBy,
 }) async {
   final result = await buildReceiptPdf(
-    _buildInput(order: order, settings: settings, printedBy: printedBy),
+    _buildInput(order: order, profile: profile, printedBy: printedBy),
   );
   final file = await _saveTempPdf(result);
   await Printing.sharePdf(
@@ -49,11 +49,11 @@ Future<void> shareReceipt({
 
 Future<void> previewReceipt({
   required WorkOrder order,
-  required AppSettings settings,
+  required Profile profile,
   required String printedBy,
 }) async {
   final result = await buildReceiptPdf(
-    _buildInput(order: order, settings: settings, printedBy: printedBy),
+    _buildInput(order: order, profile: profile, printedBy: printedBy),
   );
   final file = await _saveTempPdf(result);
   await Printing.layoutPdf(
@@ -72,7 +72,7 @@ Future<File> _saveTempPdf(ReceiptBuildResult result) async {
 void showReceiptOptions({
   required BuildContext context,
   required WorkOrder order,
-  required AppSettings settings,
+  required Profile profile,
   required String printedBy,
 }) {
   showModalBottomSheet(
@@ -88,7 +88,7 @@ void showReceiptOptions({
               Navigator.of(sheetContext).pop();
               shareReceipt(
                 order: order,
-                settings: settings,
+                profile: profile,
                 printedBy: printedBy,
               );
             },
@@ -100,7 +100,7 @@ void showReceiptOptions({
               Navigator.of(sheetContext).pop();
               previewReceipt(
                 order: order,
-                settings: settings,
+                profile: profile,
                 printedBy: printedBy,
               );
             },
@@ -110,3 +110,4 @@ void showReceiptOptions({
     ),
   );
 }
+

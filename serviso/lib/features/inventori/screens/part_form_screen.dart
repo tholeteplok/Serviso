@@ -8,6 +8,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
+import '../../../core/widgets/distributor_autocomplete_field.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_stepper.dart';
 import '../../../core/widgets/section_card.dart';
@@ -584,14 +585,11 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextFormField(
+                          DistributorAutocompleteField(
                             key: const Key('part_distributor_field'),
                             controller: _distributorController,
-                            decoration: InputDecoration(
-                              labelText: 'Distributor / Pemasok (Opsional)',
-                              hintText: 'Misal: PT Astra Otoparts',
-                              prefixIcon: Icon(AppIcons.truck),
-                            ),
+                            labelText: 'Distributor / Pemasok (Opsional)',
+                            hintText: 'Misal: PT Astra Otoparts',
                             textInputAction: TextInputAction.next,
                           ),
                           const SizedBox(height: 14),
@@ -628,10 +626,8 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                 onTap: () async {
                                   final picked = await showDatePicker(
                                     context: context,
-                                    initialDate: _dueDate,
-                                    firstDate: DateTime.now().subtract(
-                                      const Duration(days: 30),
-                                    ),
+                                    initialDate: _dueDate.isBefore(DateTime.now()) ? DateTime.now() : _dueDate,
+                                    firstDate: DateTime.now(),
                                     lastDate: DateTime.now().add(
                                       const Duration(days: 365),
                                     ),

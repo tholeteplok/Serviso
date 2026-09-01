@@ -7,6 +7,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/distributor_autocomplete_field.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
@@ -79,18 +80,24 @@ Future<void> showStockInDialog(
                     ),
                     const SizedBox(height: 12),
 
-                    // Distributor / Pemasok
-                    TextFormField(
+                    // Distributor / Pemasok — wajib jika hutang (DB hutang perlu jejak)
+                    DistributorAutocompleteField(
                       controller: distributorController,
-                      decoration: InputDecoration(
-                        labelText: 'Distributor / Pemasok (opsional)',
-                        prefixIcon: Icon(AppIcons.truck),
-                      ),
+                      labelText: paymentType == 'hutang'
+                          ? 'Distributor / Pemasok *'
+                          : 'Distributor / Pemasok (opsional)',
                       textInputAction: TextInputAction.next,
+                      onChanged: (_) => setState(() {}),
+                      validator: (value) {
+                        if (paymentType == 'hutang' && (value == null || value.trim().isEmpty)) {
+                          return 'Distributor wajib diisi untuk hutang';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 14),
 
-                    // Status / Metode Pembayaran
+                    // Status / Metode Pembayaran — hutang hanya admin
                     Text(
                       'Metode Pembayaran',
                       style: textTheme.labelMedium?.copyWith(
@@ -98,24 +105,50 @@ Future<void> showStockInDialog(
                       ),
                     ),
                     const SizedBox(height: 6),
-                    NeoSegmentControl<String>(
-                      selectedValue: paymentType,
-                      onValueChanged: (val) => setState(() => paymentType = val),
-                      items: [
-                        NeoSegmentItem<String>(
-                          value: 'tunai',
-                          label: 'Tunai',
-                          activeColor: AppColors.pastelMint,
-                          icon: Icon(AppIcons.wallet, size: 16),
+                    if (isAdmin)
+                      NeoSegmentControl<String>(
+                        selectedValue: paymentType,
+                        onValueChanged: (val) => setState(() => paymentType = val),
+                        items: [
+                          NeoSegmentItem<String>(
+                            value: 'tunai',
+                            label: 'Tunai',
+                            activeColor: AppColors.pastelMint,
+                            icon: Icon(AppIcons.wallet, size: 16),
+                          ),
+                          NeoSegmentItem<String>(
+                            value: 'hutang',
+                            label: 'Hutang',
+                            activeColor: AppColors.pastelYellow,
+                            icon: Icon(AppIcons.receipt, size: 16),
+                          ),
+                        ],
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.pastelMint.withValues(alpha: 0.3),
+                          borderRadius: AppRadius.chipSmall,
+                          border: Border.all(color: AppColors.borderStrong, width: 1.2),
                         ),
-                        NeoSegmentItem<String>(
-                          value: 'hutang',
-                          label: 'Hutang',
-                          activeColor: AppColors.pastelYellow,
-                          icon: Icon(AppIcons.receipt, size: 16),
+                        child: Row(
+                          children: [
+                            Icon(AppIcons.wallet, size: 16, color: AppColors.ink900),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tunai (Hutang hanya oleh Admin)',
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.ink900,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
 
                     // Jika Hutang: Picker Jatuh Tempo
                     if (paymentType == 'hutang') ...[
@@ -185,13 +218,22 @@ Future<void> showStockInDialog(
                       TextFormField(
                         controller: priceController,
                         decoration: InputDecoration(
-                          labelText: 'Harga Beli Satuan (Modal)',
+                          labelText: paymentType == 'hutang'
+                              ? 'Harga Beli Satuan *'
+                              : 'Harga Beli Satuan (Modal)',
                           prefixText: 'Rp ',
                           prefixIcon: Icon(AppIcons.wallet),
                         ),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
+                        validator: (value) {
+                          if (paymentType == 'hutang') {
+                            final p = double.tryParse(value?.trim() ?? '');
+                            if (p == null || p <= 0) return 'Harga beli wajib >0 untuk hutang';
+                          }
+                          return null;
+                        },
                       ),
                       if (qty > 0 && purchasePrice > 0) ...[
                         const SizedBox(height: 8),
