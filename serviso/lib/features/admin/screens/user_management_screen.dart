@@ -318,7 +318,7 @@ class UserManagementScreen extends ConsumerWidget {
                               }
                             },
                       child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: AppColors.textOnDark)
                           : const Text('Simpan & Undang'),
                     ),
                   ),

@@ -99,7 +99,7 @@ class StockIndicatorCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.pastelCream,
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: AppRadius.badge,
                                 border: Border.all(
                                   color: AppColors.borderStrong,
                                   width: 1.0,
@@ -123,7 +123,7 @@ class StockIndicatorCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: indicatorColor,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: AppRadius.badge,
                               border: Border.all(
                                 color: AppColors.borderStrong,
                                 width: 1.5,
@@ -131,7 +131,7 @@ class StockIndicatorCard extends StatelessWidget {
                             ),
                             child: Text(
                               statusText,
-                              style: const TextStyle(
+                              style: AppTypography.inter(
                                 color: AppColors.ink900,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -144,7 +144,7 @@ class StockIndicatorCard extends StatelessWidget {
                       if (distributor != null && distributor!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          'Distributor: ',
+                          'Distributor: $distributor',
                           style: textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -190,7 +190,7 @@ class StockIndicatorCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      'Min:  ',
+                      'Min: $minStock $unit',
                       style: AppTypography.mono(
                         fontSize: 11,
                         color: AppColors.textSecondary,

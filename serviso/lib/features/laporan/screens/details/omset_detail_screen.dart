@@ -273,7 +273,11 @@ class OmsetDetailScreen extends ConsumerWidget {
                                     color: AppColors.primary,
                                     width: 16,
                                     borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(4),
+                                      top: Radius.circular(8.0),
+                                    ),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.borderInk,
+                                      width: 1.5,
                                     ),
                                   ),
                                 ],

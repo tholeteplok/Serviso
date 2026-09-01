@@ -288,7 +288,11 @@ class ProfitDetailScreen extends ConsumerWidget {
                                         : AppColors.action,
                                     width: 14,
                                     borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(4),
+                                      top: Radius.circular(8.0),
+                                    ),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.borderInk,
+                                      width: 1.5,
                                     ),
                                   ),
                                 ],

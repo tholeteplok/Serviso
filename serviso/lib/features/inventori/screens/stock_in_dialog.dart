@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/neo_segment_control.dart';
@@ -133,7 +134,7 @@ Future<void> showStockInDialog(
                             setState(() => dueDate = picked);
                           }
                         },
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: AppRadius.input,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -141,7 +142,7 @@ Future<void> showStockInDialog(
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(color: AppColors.borderStrong, width: 1.5),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: AppRadius.input,
                           ),
                           child: Row(
                             children: [
@@ -198,7 +199,7 @@ Future<void> showStockInDialog(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: AppColors.tintOf(AppColors.primary),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: AppRadius.chipSmall,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
+import '../theme/app_typography.dart';
 
 /// Centralized pop-brutalism input field.
 ///
@@ -78,7 +79,7 @@ class NeoTextField extends StatelessWidget {
       enabled: enabled,
       textInputAction: textInputAction,
       obscureText: obscureText,
-      style: const TextStyle(
+      style: AppTypography.inter(
         color: AppColors.ink900,
         fontSize: 14,
         fontWeight: FontWeight.w500,
@@ -136,11 +137,11 @@ class NeoTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: enabled ? AppColors.bgSurface : AppColors.borderHairline.withValues(alpha: 0.3),
-        labelStyle: const TextStyle(
+        labelStyle: AppTypography.inter(
           color: AppColors.textSecondary,
           fontSize: 14,
         ),
-        hintStyle: const TextStyle(
+        hintStyle: AppTypography.inter(
           color: AppColors.textSecondary,
           fontSize: 14,
         ),

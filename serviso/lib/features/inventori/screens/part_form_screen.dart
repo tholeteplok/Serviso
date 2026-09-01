@@ -6,14 +6,17 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_stepper.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
 import '../controllers/part_form_controller.dart';
 import '../controllers/part_list_controller.dart';
+import '../data/repository_exception.dart';
 import '../models/part.dart';
 
 class PartFormScreen extends ConsumerStatefulWidget {
@@ -35,9 +38,11 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
   late final TextEditingController _sellController;
   late final TextEditingController _unitController;
   late final TextEditingController _distributorController;
+
   var _paymentType = 'tunai';
   late DateTime _dueDate;
   bool _loadingPart = false;
+  bool _isSubmitting = false;
   Part? _resolvedInitial;
   num _quantity = 0;
 
@@ -73,15 +78,23 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
     _distributorController = TextEditingController();
     _dueDate = DateTime.now().add(const Duration(days: 14));
 
+    _costController.addListener(_onPriceChanged);
+    _sellController.addListener(_onPriceChanged);
+
     if (widget.partId != null && _resolvedInitial == null) {
       _fetchPart();
     }
   }
 
+  void _onPriceChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _fetchPart() async {
     setState(() => _loadingPart = true);
     try {
-      final data = await ref.read(partDetailControllerProvider(widget.partId!).future);
+      final data =
+          await ref.read(partDetailControllerProvider(widget.partId!).future);
       final part = data.part;
       if (!mounted) return;
       setState(() {
@@ -89,12 +102,14 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
         _nameController.text = part.name;
         _codeController.text = part.code ?? '';
         _minStockController.text = part.minStock.toString();
-        _costController.text = part.costPrice == 0 ? '' : part.costPrice.toStringAsFixed(0);
-        _sellController.text = part.sellPrice == 0 ? '' : part.sellPrice.toStringAsFixed(0);
+        _costController.text =
+            part.costPrice == 0 ? '' : part.costPrice.toStringAsFixed(0);
+        _sellController.text =
+            part.sellPrice == 0 ? '' : part.sellPrice.toStringAsFixed(0);
         _unitController.text = part.unit ?? 'pcs';
       });
     } catch (_) {
-      // keep empty for create fallback
+      // keep empty for fallback
     } finally {
       if (mounted) setState(() => _loadingPart = false);
     }
@@ -102,6 +117,8 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
 
   @override
   void dispose() {
+    _costController.removeListener(_onPriceChanged);
+    _sellController.removeListener(_onPriceChanged);
     _nameController.dispose();
     _codeController.dispose();
     _minStockController.dispose();
@@ -116,28 +133,82 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
 
   Part? get _effectiveInitial => _resolvedInitial ?? widget.initial;
 
+  bool get _hasUnsavedChanges {
+    if (_isEdit) {
+      final init = _effectiveInitial;
+      if (init == null) return false;
+      return _nameController.text.trim() != init.name ||
+          _codeController.text.trim() != (init.code ?? '') ||
+          _minStockController.text.trim() != init.minStock.toString() ||
+          _costController.text.trim() !=
+              (init.costPrice == 0 ? '' : init.costPrice.toStringAsFixed(0)) ||
+          _sellController.text.trim() !=
+              (init.sellPrice == 0 ? '' : init.sellPrice.toStringAsFixed(0)) ||
+          _unitController.text.trim() != (init.unit ?? 'pcs');
+    } else {
+      return _nameController.text.trim().isNotEmpty ||
+          _costController.text.trim().isNotEmpty ||
+          _sellController.text.trim().isNotEmpty ||
+          _quantity > 0 ||
+          _distributorController.text.trim().isNotEmpty;
+    }
+  }
+
+  Future<bool> _handlePop() async {
+    if (!_hasUnsavedChanges) return true;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Batalkan Pengisian?'),
+        content: const Text(
+          'Data yang telah Anda masukkan belum disimpan dan akan hilang.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Lanjut Mengisi'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.action),
+            child: const Text('Batalkan'),
+          ),
+        ],
+      ),
+    );
+    return confirm ?? false;
+  }
+
   Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
     final isAdmin = ref.read(isAdminProvider);
     final controller =
         ref.read(partFormControllerProvider(_effectiveInitial).notifier);
+
     final minStock = int.tryParse(_minStockController.text.trim()) ?? 0;
-    final cost = isAdmin ? double.tryParse(_costController.text) : null;
-    final sell = isAdmin ? double.tryParse(_sellController.text) : null;
+    final cost = isAdmin ? double.tryParse(_costController.text.trim()) : null;
+    final sell = isAdmin ? double.tryParse(_sellController.text.trim()) : null;
 
     final isEdit = _isEdit;
     final initialStock = !isEdit ? _quantity.toDouble() : 0.0;
-    final rawDistributor = !isEdit ? _distributorController.text.trim() : null;
+    final rawDistributor =
+        (!isEdit && initialStock > 0) ? _distributorController.text.trim() : null;
     final distributor =
         rawDistributor?.isEmpty == true ? null : rawDistributor;
-    final paymentType = !isEdit ? _paymentType : 'tunai';
-    final dueDate = (!isEdit && paymentType == 'hutang') ? _dueDate : null;
+    // Kasir dilarang memilih hutang; jika bukan admin, kunci metode ke tunai
+    final paymentType =
+        (!isEdit && initialStock > 0 && isAdmin) ? _paymentType : 'tunai';
+    final dueDate =
+        (!isEdit && initialStock > 0 && paymentType == 'hutang') ? _dueDate : null;
 
     try {
       await controller.submit(
-        name: _nameController.text,
-        code: _codeController.text,
-        unit: _unitController.text,
+        name: _nameController.text.trim(),
+        code: _codeController.text.trim(),
+        unit: _unitController.text.trim(),
         minStock: minStock < 0 ? 0 : minStock,
         costPrice: cost,
         sellPrice: sell,
@@ -153,15 +224,26 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
       }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isEdit ? 'Suku cadang diperbarui' : 'Suku cadang ditambahkan')),
+          SnackBar(
+            content: Text(
+              isEdit
+                  ? 'Suku cadang berhasil diperbarui'
+                  : 'Suku cadang berhasil ditambahkan',
+            ),
+          ),
         );
         context.pop();
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          backgroundColor: AppColors.action,
+          content: Text(mapRepositoryError(e)),
+        ),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -171,7 +253,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
     final isEdit = _isEdit;
     final isAdmin = ref.watch(isAdminProvider);
     final state = ref.watch(partFormControllerProvider(_effectiveInitial));
-    final saving = state.isLoading;
+    final saving = state.isLoading || _isSubmitting;
 
     if (_loadingPart) {
       return Scaffold(
@@ -186,335 +268,520 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(AppIcons.back),
-          tooltip: 'Kembali',
-          onPressed: () => context.pop(),
+    final cost = double.tryParse(_costController.text.trim()) ?? 0;
+    final sell = double.tryParse(_sellController.text.trim()) ?? 0;
+    final hasBothPrices = cost > 0 && sell > 0;
+    final profit = sell - cost;
+    final marginPercent = sell > 0 ? (profit / sell) * 100 : 0.0;
+    final isNegativeMargin = hasBothPrices && sell < cost;
+
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _handlePop();
+        if (shouldPop && context.mounted) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(AppIcons.back),
+            tooltip: 'Kembali',
+            onPressed: () async {
+              final shouldPop = await _handlePop();
+              if (shouldPop && context.mounted) {
+                context.pop();
+              }
+            },
+          ),
+          title: Text(isEdit ? 'Ubah Suku Cadang' : 'Tambah Suku Cadang'),
         ),
-        title: Text(isEdit ? 'Ubah Suku Cadang' : 'Tambah Suku Cadang'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionCard(
-                title: 'Informasi Dasar',
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama *',
-                        prefixIcon: Icon(AppIcons.tag),
-                      ),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Nama suku cadang wajib diisi';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _codeController,
-                      decoration: InputDecoration(
-                        labelText: 'Kode',
-                        prefixIcon: Icon(AppIcons.tag),
-                        helperText: 'Saran kode otomatis, atau scan barcode',
-                        suffixIcon: IconButton(
-                          icon: Icon(AppIcons.barcode),
-                          tooltip: 'Scan Barcode',
-                          onPressed: () async {
-                            final code = await showBarcodeScanner(context);
-                            if (code != null && code.isNotEmpty) {
-                              setState(() {
-                                _codeController.text = code;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownMenu<String>(
-                      controller: _unitController,
-                      width: double.infinity,
-                      label: const Text('Unit'),
-                      leadingIcon: Icon(AppIcons.tag),
-                      enableFilter: true,
-                      requestFocusOnTap: true,
-                      initialSelection: _effectiveInitial?.unit ?? 'pcs',
-                      onSelected: (val) {
-                        if (val != null) setState(() {});
-                      },
-                      dropdownMenuEntries: _unitOptions
-                          .map((u) => DropdownMenuEntry(value: u, label: u))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _minStockController,
-                      decoration: InputDecoration(
-                        labelText: 'Batas Stok Menipis',
-                        prefixIcon: Icon(AppIcons.warning),
-                        helperText: 'Peringatan jika stok <= nilai ini',
-                      ),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return null;
-                        if (int.tryParse(value) == null) {
-                          return 'Masukkan angka yang valid';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (isAdmin) ...[
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 SectionCard(
-                  title: 'Harga',
+                  title: 'Informasi Dasar',
                   child: Column(
                     children: [
                       TextFormField(
-                        controller: _costController,
+                        key: const Key('part_name_field'),
+                        controller: _nameController,
                         decoration: InputDecoration(
-                          labelText: 'Modal Beli (Rp)',
-                          prefixIcon: Icon(AppIcons.cart),
+                          labelText: 'Nama *',
+                          hintText: 'Misal: Kampas Rem Depan Vario',
+                          prefixIcon: Icon(AppIcons.tag),
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         textInputAction: TextInputAction.next,
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) return null;
-                          if (double.tryParse(value) == null) {
-                            return 'Masukkan angka yang valid';
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Nama suku cadang wajib diisi';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        controller: _sellController,
+                        key: const Key('part_code_field'),
+                        controller: _codeController,
                         decoration: InputDecoration(
-                          labelText: 'Harga Jual (Rp)',
-                          prefixIcon: Icon(AppIcons.money),
+                          labelText: 'Kode (Opsional)',
+                          prefixIcon: Icon(AppIcons.barcode),
+                          helperText: 'Saran kode otomatis, atau scan barcode',
+                          suffixIcon: IconButton(
+                            icon: Icon(AppIcons.barcode),
+                            tooltip: 'Scan Barcode',
+                            onPressed: () async {
+                              final code = await showBarcodeScanner(context);
+                              if (code != null && code.isNotEmpty) {
+                                setState(() {
+                                  _codeController.text = code;
+                                });
+                              }
+                            },
+                          ),
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return null;
-                          if (double.tryParse(value) == null) {
-                            return 'Masukkan angka yang valid';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.tintPrimary,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderStrong, width: 1.5),
-                  ),
-                  child: Text(
-                    'Harga diatur oleh pemilik. Suku cadang ditambahkan tanpa harga.',
-                    style: textTheme.bodySmall,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (!isEdit) ...[
-                SectionCard(
-                  title: 'Kuantitas',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Jumlah awal',
-                              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          NeoStepper(
-                            value: _quantity,
-                            min: 0,
-                            step: 1,
-                            unit: _unitController.text.isEmpty ? 'pcs' : _unitController.text,
-                            allowDecimals: true,
-                            onChanged: (v) => setState(() => _quantity = v),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 12),
-                      Container(
+                      DropdownMenu<String>(
+                        controller: _unitController,
                         width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.canvas,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.borderHairline),
+                        label: const Text('Satuan Unit'),
+                        leadingIcon: Icon(AppIcons.tag),
+                        enableFilter: true,
+                        requestFocusOnTap: true,
+                        initialSelection: _effectiveInitial?.unit ?? 'pcs',
+                        onSelected: (val) {
+                          if (val != null) setState(() {});
+                        },
+                        dropdownMenuEntries: _unitOptions
+                            .map((u) => DropdownMenuEntry(value: u, label: u))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        key: const Key('part_min_stock_field'),
+                        controller: _minStockController,
+                        decoration: InputDecoration(
+                          labelText: 'Batas Stok Menipis',
+                          prefixIcon: Icon(AppIcons.warning),
+                          helperText:
+                              'Peringatan otomatis muncul saat stok <= nilai ini',
                         ),
-                        child: Row(
-                          children: [
-                            Icon(AppIcons.inventory, size: 16, color: AppColors.inkMuted),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _quantity == 0
-                                    ? 'Kosongkan (0) jika belum ada stok fisik.'
-                                    : '${_quantity.toString().replaceAll(RegExp(r'\.0$'), '')} ${_unitController.text.isEmpty ? 'pcs' : _unitController.text} akan dicatat sebagai Stok Masuk.',
-                                style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
-                              ),
-                            ),
-                          ],
-                        ),
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          final parsed = int.tryParse(value.trim());
+                          if (parsed == null || parsed < 0) {
+                            return 'Masukkan angka batas stok yang valid (>= 0)';
+                          }
+                          return null;
+                        },
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                SectionCard(
-                  title: 'Pengadaan',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextFormField(
-                        controller: _distributorController,
-                        decoration: InputDecoration(
-                          labelText: 'Distributor / Pemasok (opsional)',
-                          hintText: 'Misal: PT Astra Otoparts',
-                          prefixIcon: Icon(AppIcons.truck),
-                        ),
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Metode Pembayaran',
-                        style: textTheme.labelMedium?.copyWith(color: AppColors.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      NeoSegmentControl<String>(
-                        selectedValue: _paymentType,
-                        onValueChanged: (val) => setState(() => _paymentType = val),
-                        items: [
-                          NeoSegmentItem<String>(
-                            value: 'tunai',
-                            label: 'Tunai',
-                            activeColor: AppColors.pastelMint,
-                            icon: Icon(AppIcons.wallet, size: 16),
+                if (isAdmin) ...[
+                  SectionCard(
+                    title: 'Harga',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          key: const Key('part_cost_field'),
+                          controller: _costController,
+                          decoration: InputDecoration(
+                            labelText: 'Modal Beli (Rp)',
+                            hintText: 'Misal: 45000',
+                            prefixIcon: Icon(AppIcons.cart),
                           ),
-                          NeoSegmentItem<String>(
-                            value: 'hutang',
-                            label: 'Hutang',
-                            activeColor: AppColors.pastelYellow,
-                            icon: Icon(AppIcons.receipt, size: 16),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
-                        ],
-                      ),
-                      if (_paymentType == 'hutang') ...[
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _dueDate,
-                              firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (picked != null) {
-                              setState(() => _dueDate = picked);
+                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null;
                             }
+                            final parsed = double.tryParse(value.trim());
+                            if (parsed == null || parsed < 0) {
+                              return 'Masukkan modal beli yang valid (>= 0)';
+                            }
+                            return null;
                           },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          key: const Key('part_sell_field'),
+                          controller: _sellController,
+                          decoration: InputDecoration(
+                            labelText: 'Harga Jual (Rp)',
+                            hintText: 'Misal: 60000',
+                            prefixIcon: Icon(AppIcons.money),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null;
+                            }
+                            final parsed = double.tryParse(value.trim());
+                            if (parsed == null || parsed < 0) {
+                              return 'Masukkan harga jual yang valid (>= 0)';
+                            }
+                            return null;
+                          },
+                        ),
+                        if (hasBothPrices) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                              color: isNegativeMargin
+                                  ? AppColors.pastelPink
+                                  : AppColors.pastelMint,
                               borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.borderStrong,
+                                width: 1.5,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(AppIcons.calendar, color: AppColors.primary, size: 20),
+                                Icon(
+                                  isNegativeMargin
+                                      ? AppIcons.warning
+                                      : AppIcons.check,
+                                  size: 18,
+                                  color: AppColors.ink900,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Jatuh Tempo: ${DateFormat('dd/MM/yyyy').format(_dueDate)}',
-                                    style: textTheme.bodyMedium,
+                                    isNegativeMargin
+                                        ? 'Peringatan: Harga jual lebih rendah dari modal (Rugi ${rupiah(profit.abs())} / unit)'
+                                        : 'Estimasi Laba: ${rupiah(profit)} / unit (Margin: ${marginPercent.toStringAsFixed(1)}%)',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.ink900,
+                                    ),
                                   ),
                                 ),
-                                Icon(AppIcons.caretDown, color: AppColors.inkMuted, size: 16),
                               ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.tintPrimary,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.borderStrong,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.alertCircle, size: 18, color: AppColors.inkMuted),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Harga diatur oleh pemilik. Suku cadang ditambahkan tanpa harga.',
+                            style: textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (!isEdit) ...[
+                  SectionCard(
+                    title: 'Kuantitas',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Jumlah Stok Awal',
+                                style: textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            NeoStepper(
+                              value: _quantity,
+                              min: 0,
+                              step: 1,
+                              unit: _unitController.text.isEmpty
+                                  ? 'pcs'
+                                  : _unitController.text,
+                              allowDecimals: true,
+                              onChanged: (v) => setState(() => _quantity = v),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.borderHairline),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                AppIcons.inventory,
+                                size: 16,
+                                color: AppColors.inkMuted,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _quantity == 0
+                                      ? 'Kosongkan (0) jika belum ada stok fisik. Pengadaan dapat dicatat nanti di menu Stok Masuk.'
+                                      : '${_quantity.toString().replaceAll(RegExp(r'\.0$'), '')} ${_unitController.text.isEmpty ? 'pcs' : _unitController.text} akan langsung dicatat sebagai Stok Masuk.',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: AppColors.inkMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_quantity > 0) ...[
+                    const SizedBox(height: 16),
+                    SectionCard(
+                      title: 'Pengadaan Stok Awal',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextFormField(
+                            key: const Key('part_distributor_field'),
+                            controller: _distributorController,
+                            decoration: InputDecoration(
+                              labelText: 'Distributor / Pemasok (Opsional)',
+                              hintText: 'Misal: PT Astra Otoparts',
+                              prefixIcon: Icon(AppIcons.truck),
+                            ),
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Metode Pembayaran Pengadaan',
+                            style: textTheme.labelMedium?.copyWith(
+                              color: AppColors.inkMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (isAdmin) ...[
+                            NeoSegmentControl<String>(
+                              selectedValue: _paymentType,
+                              onValueChanged: (val) =>
+                                  setState(() => _paymentType = val),
+                              items: [
+                                NeoSegmentItem<String>(
+                                  value: 'tunai',
+                                  label: 'Tunai',
+                                  activeColor: AppColors.pastelMint,
+                                  icon: Icon(AppIcons.wallet, size: 16),
+                                ),
+                                NeoSegmentItem<String>(
+                                  value: 'hutang',
+                                  label: 'Hutang',
+                                  activeColor: AppColors.pastelYellow,
+                                  icon: Icon(AppIcons.receipt, size: 16),
+                                ),
+                              ],
+                            ),
+                            if (_paymentType == 'hutang') ...[
+                              const SizedBox(height: 12),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: _dueDate,
+                                    firstDate: DateTime.now().subtract(
+                                      const Duration(days: 30),
+                                    ),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 365),
+                                    ),
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _dueDate = picked);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: AppColors.borderStrong,
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        AppIcons.calendar,
+                                        color: AppColors.primary,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Jatuh Tempo: ${DateFormat('dd/MM/yyyy').format(_dueDate)}',
+                                          style: textTheme.bodyMedium,
+                                        ),
+                                      ),
+                                      Icon(
+                                        AppIcons.caretDown,
+                                        color: AppColors.inkMuted,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ] else ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.pastelMint.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.borderStrong,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    AppIcons.wallet,
+                                    size: 16,
+                                    color: AppColors.ink900,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Metode Pembayaran: Tunai (Hutang hanya dapat dicatat oleh Admin/Pemilik)',
+                                      style: textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.ink900,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.borderStrong,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.warning, size: 18, color: AppColors.inkMuted),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Stok tidak diubah di sini. Gunakan menu Stok Masuk / Koreksi Stok di detail suku cadang.',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.inkMuted,
                             ),
                           ),
                         ),
                       ],
-                    ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                ThickBottomBorderButton(
+                  key: const Key('submit_part_button'),
+                  onPressed: saving ? null : _submit,
+                  isLoading: saving,
+                  isFullWidth: true,
+                  variant: ThickButtonVariant.primary,
+                  icon: Icon(AppIcons.check, size: 18),
+                  child: Text(
+                    isEdit ? 'Simpan Perubahan' : 'Tambah Suku Cadang',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ] else ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgSurface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderStrong, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(AppIcons.warning, size: 18, color: AppColors.inkMuted),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Stok tidak diubah di sini. Gunakan menu Stok Masuk / Koreksi Stok di detail suku cadang.',
-                          style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 12),
+                ThickBottomBorderButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final shouldPop = await _handlePop();
+                          if (shouldPop && context.mounted) {
+                            context.pop();
+                          }
+                        },
+                  isFullWidth: true,
+                  variant: ThickButtonVariant.secondary,
+                  child: Text(
+                    'Batal',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  icon: Icon(AppIcons.check, size: 18),
-                  onPressed: saving ? null : _submit,
-                  label: saving
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(isEdit ? 'Simpan Perubahan' : 'Tambah Suku Cadang'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: saving ? null : () => context.pop(),
-                  child: const Text('Batal'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

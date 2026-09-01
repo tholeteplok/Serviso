@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
+import '../theme/app_typography.dart';
 
 class NeoSegmentItem<T> {
   const NeoSegmentItem({
@@ -48,12 +49,12 @@ class NeoSegmentControl<T> extends StatelessWidget {
         color: AppColors.bgSurface,
         borderRadius: AppRadius.pill,
         border: Border.all(
-          color: AppColors.borderStrong,
+          color: AppColors.borderInk,
           width: 1.5,
         ),
         boxShadow: const [
           BoxShadow(
-            color: AppColors.borderStrong,
+            color: AppColors.borderInk,
             offset: Offset(0, 2.5),
             blurRadius: 0,
             spreadRadius: 0,
@@ -75,25 +76,6 @@ class NeoSegmentControl<T> extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected ? currentActiveColor : Colors.transparent,
                   borderRadius: AppRadius.pill,
-                  border: isSelected
-                      ? Border.all(
-                          color: AppColors.borderStrong,
-                          width: 1.5,
-                        )
-                      : Border.all(
-                          color: Colors.transparent,
-                          width: 1.5,
-                        ),
-                  boxShadow: isSelected
-                      ? const [
-                          BoxShadow(
-                            color: AppColors.borderStrong,
-                            offset: Offset(0, 1.5),
-                            blurRadius: 0,
-                            spreadRadius: 0,
-                          ),
-                        ]
-                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -121,7 +103,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
                         item.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: AppTypography.inter(
                           color: AppColors.ink900,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w600,
@@ -133,7 +115,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         '(${item.count})',
-                        style: TextStyle(
+                        style: AppTypography.inter(
                           color: AppColors.ink900,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w600,

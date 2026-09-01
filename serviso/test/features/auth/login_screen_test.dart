@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/thick_bottom_border_button.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/auth/data/auth_repository.dart';
 import 'package:serviso/features/auth/models/profile.dart';
@@ -23,7 +24,7 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('username')), 'kasir1');
     await tester.enterText(find.byKey(const Key('password')), 'salah');
-    await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
+    await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Masuk'));
     await tester.pumpAndSettle();
 
     expect(find.text('Username atau password salah'), findsOneWidget);
@@ -50,7 +51,7 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('username')), 'kasir1');
     await tester.enterText(find.byKey(const Key('password')), 'benar');
-    await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
+    await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Masuk'));
     await tester.pumpAndSettle();
 
     final current = await fake.currentProfile();

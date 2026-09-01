@@ -18,7 +18,7 @@ class StatusChip extends StatelessWidget {
         color: status.bgColor,
         borderRadius: AppRadius.pill,
         border: Border.all(
-          color: AppColors.borderStrong,
+          color: AppColors.borderInk,
           width: 1.5,
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:serviso/features/workorders/controllers/work_order_providers.dar
 import 'package:serviso/features/workorders/data/fakes.dart';
 import 'package:serviso/features/workorders/models/payment.dart';
 import 'package:serviso/features/workorders/models/work_order.dart';
+import 'package:serviso/core/widgets/thick_bottom_border_button.dart';
 import 'package:serviso/features/workorders/screens/wo_detail_screen.dart';
 
 Future<String> _seed(FakeWorkOrderRepository fake, WoStatus status) async {
@@ -71,7 +72,7 @@ void main() {
       final id = await _seed(fake, WoStatus.menunggu);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Mulai Kerja'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Mulai Kerja'), findsOneWidget);
       expect(find.text('Batalkan'), findsOneWidget);
       expect(find.text('Selesaikan'), findsNothing);
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
@@ -83,7 +84,7 @@ void main() {
       final id = await _seed(fake, WoStatus.dikerjakan);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Selesaikan'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Selesaikan'), findsOneWidget);
       expect(find.text('Mulai Kerja'), findsNothing);
       expect(find.text('Batalkan'), findsNothing);
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
@@ -95,8 +96,8 @@ void main() {
       final id = await _seed(fake, WoStatus.selesai);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Pembayaran'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Struk'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Pembayaran'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Struk'), findsOneWidget);
       expect(find.text('Selesaikan'), findsNothing);
       expect(find.text('Mulai Kerja'), findsNothing);
       expect(find.text('Batalkan'), findsNothing);
@@ -109,8 +110,8 @@ void main() {
       await fake.pay(id: id, paidAmount: 100000, payMethod: PaymentMethod.cash);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: false));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Selesai'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Struk'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Selesai'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Struk'), findsOneWidget);
       expect(find.text('Pembayaran'), findsNothing);
       expect(find.text('Batalkan'), findsNothing);
     });
@@ -120,7 +121,7 @@ void main() {
       final id = await _seed(fake, WoStatus.menunggu);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: true));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Mulai Kerja'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Mulai Kerja'), findsOneWidget);
       expect(find.text('Batalkan'), findsOneWidget);
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });
@@ -130,7 +131,7 @@ void main() {
       final id = await _seed(fake, WoStatus.dikerjakan);
       await tester.pumpWidget(_pumpDetail(fake: fake, id: id, isAdmin: true));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Selesaikan'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Selesaikan'), findsOneWidget);
       expect(find.text('Batalkan'), findsOneWidget);
       expect(find.text('Batalkan (kembalikan stok)'), findsNothing);
     });

@@ -77,13 +77,13 @@ class NeoStepper extends StatelessWidget {
             label: 'Kurangi',
             child: InkWell(
               onTap: canDecrement ? _decrement : null,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: AppRadius.pill,
               child: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   color: canDecrement ? AppColors.pastelYellow : AppColors.borderHairline,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.pill,
                   border: Border.all(
                     color: AppColors.borderStrong,
                     width: 1.5,
@@ -114,7 +114,7 @@ class NeoStepper extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     unit!,
-                    style: const TextStyle(
+                    style: AppTypography.inter(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
@@ -131,13 +131,13 @@ class NeoStepper extends StatelessWidget {
             label: 'Tambah',
             child: InkWell(
               onTap: canIncrement ? _increment : null,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: AppRadius.pill,
               child: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   color: canIncrement ? AppColors.pastelYellow : AppColors.borderHairline,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.pill,
                   border: Border.all(
                     color: AppColors.borderStrong,
                     width: 1.5,

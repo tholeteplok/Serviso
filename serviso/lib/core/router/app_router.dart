@@ -299,6 +299,7 @@ class HomeShell extends ConsumerWidget {
         body: navigationShell,
         bottomNavigationBar: PastelPopBottomBar(
           currentIndex: navigationShell.currentIndex,
+          onCenterActionTap: () => context.push(AppRoutes.woBaru),
           onTap: (index) {
             if (index == 0) {
               ref.invalidate(dashboardSummaryProvider);

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/connectivity/connectivity_provider.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 
 class OfflineBanner extends ConsumerWidget {
   const OfflineBanner({super.key});
@@ -14,14 +16,14 @@ class OfflineBanner extends ConsumerWidget {
       width: double.infinity,
       color: Colors.orange.shade700,
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.cloud_off, color: Colors.white, size: 16),
-          SizedBox(width: 8),
+          const Icon(Icons.cloud_off, color: AppColors.textOnDark, size: 16),
+          const SizedBox(width: 8),
           Text(
             'Offline — perubahan tersimpan saat daring',
-            style: TextStyle(color: Colors.white, fontSize: 12),
+            style: AppTypography.inter(color: AppColors.textOnDark, fontSize: 12),
           ),
         ],
       ),

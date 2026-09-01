@@ -114,6 +114,7 @@ class DistributorDebtItem {
   final double qty;
   final double purchasePrice;
   final double totalDebt;
+  final double totalPaid;
   final DateTime createdAt;
   final DateTime? dueDate;
   final String debtStatus;
@@ -126,10 +127,64 @@ class DistributorDebtItem {
     required this.qty,
     required this.purchasePrice,
     required this.totalDebt,
+    this.totalPaid = 0,
     required this.createdAt,
     this.dueDate,
     required this.debtStatus,
   });
+
+  /// Sisa hutang yang belum dibayar
+  double get remaining => totalDebt - totalPaid;
+
+  /// Apakah sudah lunas (total bayar >= total hutang)
+  bool get isSettled => remaining <= 0;
+
+  /// Progress pembayaran (0.0 - 1.0)
+  double get paymentProgress =>
+      totalDebt > 0 ? (totalPaid / totalDebt).clamp(0.0, 1.0) : 0.0;
+}
+
+/// Record of a single debt payment (partial or full).
+class DebtPaymentRecord {
+  final String id;
+  final String movementId;
+  final double amount;
+  final String? payMethod;
+  final String? note;
+  final DateTime createdAt;
+
+  const DebtPaymentRecord({
+    required this.id,
+    required this.movementId,
+    required this.amount,
+    this.payMethod,
+    this.note,
+    required this.createdAt,
+  });
+
+  factory DebtPaymentRecord.fromMap(Map<String, dynamic> map) {
+    return DebtPaymentRecord(
+      id: map['id'] as String? ?? '',
+      movementId: map['movement_id'] as String? ?? '',
+      amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+      payMethod: map['pay_method'] as String?,
+      note: map['note'] as String?,
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'].toString())
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'movement_id': movementId,
+      'amount': amount,
+      'pay_method': payMethod,
+      'note': note,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
 }
 
 class ProfitBreakdownRow {

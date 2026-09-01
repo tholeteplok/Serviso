@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_radius.dart';
+import '../theme/app_typography.dart';
 
 /// Tactile Pop-Brutalist SearchBar with 1.5px black border,
 /// hard pop shadow, and scanner integration.
@@ -62,14 +63,14 @@ class NeoSearchBar extends StatelessWidget {
               focusNode: focusNode,
               onChanged: onChanged,
               autofocus: autofocus,
-              style: const TextStyle(
+              style: AppTypography.inter(
                 color: AppColors.ink900,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: const TextStyle(
+                hintStyle: AppTypography.inter(
                   color: AppColors.textSecondary,
                   fontSize: 14,
                 ),

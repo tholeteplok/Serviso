@@ -13,6 +13,7 @@ import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../inventori/controllers/part_providers.dart';
 import '../../inventori/models/part.dart';
 import '../../settings/data/settings_repository.dart';
@@ -308,7 +309,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
             children: [
               Text(
                 'Stok tersedia: ${selectedPart.stockQty.toStringAsFixed(0)} ${selectedPart.unit ?? 'pcs'}',
-                style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                style: AppTypography.inter(color: AppColors.inkMuted, fontSize: 13),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -541,21 +542,19 @@ class _DetailBody extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: order.isPaid
-                        ? AppColors.tintOf(AppColors.teal)
-                        : AppColors.tintOf(AppColors.action),
+                        ? AppColors.statusDone
+                        : AppColors.pastelPink,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color:
-                          order.isPaid ? AppColors.teal : AppColors.action,
+                      color: AppColors.borderInk,
                       width: 1.5,
                     ),
                   ),
                   child: Text(
                     order.isPaid ? 'Lunas' : 'Belum Bayar',
                     style: textTheme.labelSmall?.copyWith(
-                      color:
-                          order.isPaid ? AppColors.teal : AppColors.action,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -566,11 +565,14 @@ class _DetailBody extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.bgSurface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                      border: Border.all(color: AppColors.borderInk, width: 1.5),
                     ),
                     child: Text(
                       order.payMethod!.label,
-                      style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.ink900,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -946,52 +948,62 @@ class _ActionButtons extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (canStart)
-          FilledButton.icon(
+          ThickBottomBorderButton(
             onPressed: onStart,
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('Mulai Kerja'),
+            isFullWidth: true,
+            variant: ThickButtonVariant.primary,
+            icon: const Icon(Icons.play_arrow, color: AppColors.ink900, size: 20),
+            child: const Text('Mulai Kerja'),
           ),
         if (canComplete) ...[
-          FilledButton.icon(
+          ThickBottomBorderButton(
             onPressed: onComplete,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Selesaikan'),
+            isFullWidth: true,
+            variant: ThickButtonVariant.primary,
+            icon: const Icon(Icons.check_circle_outline, color: AppColors.ink900, size: 20),
+            child: const Text('Selesaikan'),
           ),
         ],
         if (status == WoStatus.selesai) ...[
           if (!isPaid)
-            FilledButton.icon(
+            ThickBottomBorderButton(
               onPressed: onPay,
-              icon: Icon(AppIcons.wallet),
-              label: const Text('Pembayaran'),
+              isFullWidth: true,
+              variant: ThickButtonVariant.primary,
+              icon: Icon(AppIcons.wallet, color: AppColors.ink900, size: 20),
+              child: const Text('Pembayaran'),
             )
           else
-            FilledButton.icon(
+            ThickBottomBorderButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                 Navigator.of(context).pop();
               },
-              icon: Icon(AppIcons.check),
-              label: const Text('Selesai'),
+              isFullWidth: true,
+              variant: ThickButtonVariant.primary,
+              icon: Icon(AppIcons.check, color: AppColors.ink900, size: 20),
+              child: const Text('Selesai'),
             ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
+          ThickBottomBorderButton(
             onPressed: onReceipt,
-            icon: Icon(AppIcons.receipt),
-            label: const Text('Struk'),
+            isFullWidth: true,
+            variant: ThickButtonVariant.secondary,
+            icon: Icon(AppIcons.receipt, color: AppColors.ink900, size: 20),
+            child: const Text('Struk'),
           ),
         ],
         if (canCancel) ...[
           const SizedBox(height: 12),
-          OutlinedButton.icon(
+          ThickBottomBorderButton(
             onPressed: onCancel,
-            icon: Icon(AppIcons.prohibit),
-            label: Text(status == WoStatus.selesai
-                ? 'Batalkan (kembalikan stok)'
-                : 'Batalkan'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.action,
-              side: const BorderSide(color: AppColors.action),
+            isFullWidth: true,
+            variant: ThickButtonVariant.danger,
+            icon: Icon(AppIcons.prohibit, color: AppColors.ink900, size: 20),
+            child: Text(
+              status == WoStatus.selesai
+                  ? 'Batalkan (kembalikan stok)'
+                  : 'Batalkan',
             ),
           ),
         ],

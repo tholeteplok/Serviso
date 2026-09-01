@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_brand_icon.dart';
+import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/session_controller.dart';
 import '../data/auth_repository.dart';
 
@@ -60,21 +62,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Container(
-              width: double.infinity,
+            child: NeoCard(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderStrong, width: 1.5),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.borderStrong,
-                    offset: Offset(0, 4),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -91,7 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'SERVISO',
                       style: AppTypography.chakra(
                         fontSize: 32,
-                        color: AppColors.primary,
+                        color: AppColors.ink900,
                         letterSpacing: 3,
                       ),
                     ),
@@ -148,22 +137,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        icon: Icon(AppIcons.check, size: 18),
-                        onPressed: _loading ? null : _submit,
-                        label: _loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.surface,
-                                ),
-                              )
-                            : const Text('Masuk'),
-                      ),
+                    ThickBottomBorderButton(
+                      isFullWidth: true,
+                      isLoading: _loading,
+                      variant: ThickButtonVariant.primary,
+                      onPressed: _loading ? null : _submit,
+                      icon: Icon(AppIcons.check, size: 18, color: AppColors.ink900),
+                      child: const Text('Masuk'),
                     ),
                   ],
                 ),

@@ -8,12 +8,15 @@ import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_search_bar.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/stock_indicator_card.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/router/app_router.dart';
 import '../controllers/part_list_controller.dart';
 import '../controllers/part_providers.dart';
 import '../models/part.dart';
+
+enum _FilterOption { all, lowStock }
 
 class InventoriScreen extends ConsumerStatefulWidget {
   const InventoriScreen({super.key});
@@ -103,84 +106,102 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
         icon: Icon(AppIcons.add),
         label: const Text('Tambah'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('Stok Menipis'),
-                  selected: lowStockOnly,
-                  selectedColor: AppColors.tintAction,
-                  checkmarkColor: AppColors.action,
-                  onSelected: (value) =>
-                      ref.read(partLowStockFilterProvider.notifier).state = value,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: state.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => ErrorView(
-                message: e.toString(),
-                onRetry: () =>
-                    ref.read(partListControllerProvider.notifier).refresh(),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(partListControllerProvider.notifier).refresh(),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: NeoSegmentControl<_FilterOption>(
+                selectedValue: lowStockOnly ? _FilterOption.lowStock : _FilterOption.all,
+                onValueChanged: (value) {
+                  ref.read(partLowStockFilterProvider.notifier).state = value == _FilterOption.lowStock;
+                },
+                activeColor: AppColors.pastelMint,
+                items: const [
+                  NeoSegmentItem<_FilterOption>(
+                    value: _FilterOption.all,
+                    label: 'Semua',
+                  ),
+                  NeoSegmentItem<_FilterOption>(
+                    value: _FilterOption.lowStock,
+                    label: 'Stok Menipis',
+                    activeColor: AppColors.pastelYellow,
+                  ),
+                ],
               ),
-              data: (data) {
-                if (data.items.isEmpty) {
-                  final searching =
-                      ref.read(partSearchProvider).trim().isNotEmpty;
-                  final lowStock = ref.read(partLowStockFilterProvider);
-                  if (searching || lowStock) {
-                    return const Center(
-                      child: EmptyState(
-                        icon: Icons.search_off_outlined,
-                        title: 'Tidak ada suku cadang cocok',
-                        message:
-                            'Coba kata kunci lain atau ubah filter stok menipis.',
-                      ),
+            ),
+            Expanded(
+              child: state.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ErrorView(
+                  message: e.toString(),
+                  onRetry: () =>
+                      ref.read(partListControllerProvider.notifier).refresh(),
+                ),
+                data: (data) {
+                  if (data.items.isEmpty) {
+                    final searching =
+                        ref.read(partSearchProvider).trim().isNotEmpty;
+                    final lowStock = ref.read(partLowStockFilterProvider);
+                    if (searching || lowStock) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        children: const [
+                          EmptyState(
+                            icon: Icons.search_off_outlined,
+                            title: 'Tidak ada suku cadang cocok',
+                            message:
+                                'Coba kata kunci lain atau ubah filter stok menipis.',
+                          ),
+                        ],
+                      );
+                    }
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        EmptyState(
+                          icon: Icons.inventory_2_outlined,
+                          title: 'Belum ada suku cadang',
+                          message:
+                              'Tambahkan suku cadang untuk mencatat stok bengkel.',
+                          actionLabel: 'Tambah Suku Cadang',
+                          onAction: () => context.push(AppRoutes.inventoriTambah),
+                        ),
+                      ],
                     );
                   }
-                  return Center(
-                    child: EmptyState(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'Belum ada suku cadang',
-                      message:
-                          'Tambahkan suku cadang untuk mencatat stok bengkel.',
-                      actionLabel: 'Tambah Suku Cadang',
-                      onAction: () => context.push(AppRoutes.inventoriTambah),
-                    ),
-                  );
-                }
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-                  children: [
-                    for (final part in data.items) ...[
-                      _PartCard(part: part),
-                      const SizedBox(height: 8),
-                    ],
-                    if (data.hasMore)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Center(
-                          child: data.loadingMore
-                              ? const CircularProgressIndicator()
-                              : TextButton(
-                                  onPressed: () => ref
-                                      .read(partListControllerProvider.notifier)
-                                      .loadMore(),
-                                  child: const Text('Muat lagi'),
-                                ),
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                    children: [
+                      for (final part in data.items) ...[
+                        _PartCard(part: part),
+                        const SizedBox(height: 8),
+                      ],
+                      if (data.hasMore)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Center(
+                            child: data.loadingMore
+                                ? const CircularProgressIndicator()
+                                : TextButton(
+                                    onPressed: () => ref
+                                        .read(partListControllerProvider.notifier)
+                                        .loadMore(),
+                                    child: const Text('Muat lagi'),
+                                  ),
+                          ),
                         ),
-                      ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

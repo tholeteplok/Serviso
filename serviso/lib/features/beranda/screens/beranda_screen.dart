@@ -132,12 +132,12 @@ class BerandaScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary,
+        color: AppColors.pastelPurple,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderStrong, width: 1.5),
+        border: Border.all(color: AppColors.borderInk, width: 1.5),
         boxShadow: const [
           BoxShadow(
-            color: AppColors.borderStrong,
+            color: AppColors.borderInk,
             offset: Offset(0, 3.5),
             blurRadius: 0,
             spreadRadius: 0,
@@ -151,16 +151,17 @@ class BerandaScreen extends ConsumerWidget {
             children: [
               Icon(
                 AppIcons.wallet,
-                color: Colors.white,
+                color: AppColors.ink900,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 'Pendapatan Hari Ini',
-                style: AppTypography.textTheme().bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: AppTypography.inter(
+                  color: AppColors.ink900,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -170,7 +171,7 @@ class BerandaScreen extends ConsumerWidget {
             style: AppTypography.chakra(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.ink900,
             ),
           ),
         ],
@@ -304,7 +305,7 @@ class BerandaScreen extends ConsumerWidget {
                           radius: 4,
                           color: AppColors.teal,
                           strokeWidth: 2,
-                          strokeColor: Colors.white,
+                          strokeColor: AppColors.bgSurface,
                         ),
                       ),
                       belowBarData: BarAreaData(
@@ -360,7 +361,7 @@ class BerandaScreen extends ConsumerWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.button,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
@@ -395,7 +396,32 @@ class _TodayMethodBreakdown extends ConsumerWidget {
     final async = ref.watch(dailyRevenueByMethodProvider((start: today, end: today)));
     return async.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (err, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.action, size: 16),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Gagal muat metode: ${err.toString().replaceFirst('Exception: ', '')}',
+                style: AppTypography.textTheme().labelSmall?.copyWith(color: AppColors.action),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            TextButton(
+              onPressed: () => ref.invalidate(dailyRevenueByMethodProvider),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Coba'),
+            ),
+          ],
+        ),
+      ),
       data: (rows) {
         if (rows.isEmpty) return const SizedBox.shrink();
         final totals = <String, double>{'cash': 0, 'transfer': 0, 'qris': 0};
@@ -423,7 +449,7 @@ class _TodayMethodBreakdown extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.button,
           border: Border.all(color: AppColors.borderStrong, width: 1.5),
         ),
         child: Column(

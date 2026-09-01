@@ -22,7 +22,17 @@ abstract class ReportRepository {
 
   Future<List<DistributorDebtItem>> fetchDistributorDebts({String? status});
 
+  // @deprecated — use payDebt instead
   Future<void> markDebtPaid(String movementId);
+
+  Future<Map<String, dynamic>> payDebt({
+    required String movementId,
+    required double amount,
+    String? payMethod,
+    String? note,
+  });
+
+  Future<List<DebtPaymentRecord>> fetchDebtPayments(String movementId);
 
   Future<List<ProfitBreakdownRow>> fetchProfitBreakdown({
     required DateTime start,
@@ -275,26 +285,50 @@ class SupabaseReportRepository implements ReportRepository {
           .or('payment_type.eq.hutang,note.ilike.%[HUTANG]%')
           .order('created_at', ascending: false);
 
+      final movementIds = (res as List).map((m) => m['id'] as String).toList();
+      
+      final Map<String, double> paidAmounts = {};
+      if (movementIds.isNotEmpty) {
+        try {
+          final payments = await _client
+              .from('debt_payments')
+              .select('movement_id, amount')
+              .inFilter('movement_id', movementIds);
+          for (final p in payments as List) {
+            final mId = p['movement_id'] as String;
+            final amount = (p['amount'] as num?)?.toDouble() ?? 0.0;
+            paidAmounts[mId] = (paidAmounts[mId] ?? 0.0) + amount;
+          }
+        } catch (_) {
+          // ignore if table doesn't exist yet
+        }
+      }
+
       final list = <DistributorDebtItem>[];
-      for (final m in res as List) {
+      for (final m in res) {
         final note = (m['note'] as String?) ?? '';
         final payType = (m['payment_type'] as String?) ??
             (note.contains('[HUTANG]') ? 'hutang' : 'tunai');
         final dStatus = (m['debt_status'] as String?) ??
             (note.contains('[LUNAS]') ? 'lunas' : 'belum_lunas');
+        final movementId = m['id'] as String;
 
-        if (status != null && dStatus != status) continue;
-        final isUnpaid = payType == 'hutang' && dStatus == 'belum_lunas';
+        final partMap = m['parts'] as Map?;
+        final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
+        final costFallback =
+            (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
+        final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
+        final price =
+            (m['purchase_price'] as num?)?.toDouble() ?? costFallback;
+        final totalDebt = qty * price;
+        final paid = paidAmounts[movementId] ?? 0.0;
+        final isSettled = (totalDebt - paid) <= 0;
+        final effectiveStatus = isSettled ? 'lunas' : dStatus;
+
+        if (status != null && effectiveStatus != status) continue;
+        final isUnpaid = payType == 'hutang' && effectiveStatus == 'belum_lunas';
         final shouldInclude = status != null ? payType == 'hutang' : isUnpaid;
         if (shouldInclude) {
-          final partMap = m['parts'] as Map?;
-          final pName = (partMap?['name'] as String?) ?? 'Suku Cadang';
-          final costFallback =
-              (partMap?['cost_price'] as num?)?.toDouble() ?? 0.0;
-          final qty = (m['qty'] as num?)?.toDouble() ?? 0.0;
-          final price =
-              (m['purchase_price'] as num?)?.toDouble() ?? costFallback;
-
           var dist = m['distributor'] as String?;
           if ((dist == null || dist.isEmpty) && note.contains('[Distributor:')) {
             final match =
@@ -303,7 +337,7 @@ class SupabaseReportRepository implements ReportRepository {
           }
 
           list.add(DistributorDebtItem(
-            movementId: m['id'] as String,
+            movementId: movementId,
             partId: m['part_id'] as String,
             partName: pName,
             distributor: (dist != null && dist.isNotEmpty)
@@ -311,12 +345,13 @@ class SupabaseReportRepository implements ReportRepository {
                 : 'Distributor Umum',
             qty: qty,
             purchasePrice: price,
-            totalDebt: qty * price,
+            totalDebt: totalDebt,
+            totalPaid: paid,
             createdAt: DateTime.parse(m['created_at'].toString()),
             dueDate: m['due_date'] != null
                 ? DateTime.tryParse(m['due_date'].toString())
                 : null,
-            debtStatus: dStatus,
+            debtStatus: effectiveStatus,
           ));
         }
       }
@@ -697,37 +732,122 @@ class SupabaseReportRepository implements ReportRepository {
   }
 
   @override
-  Future<void> markDebtPaid(String movementId) async {
+  Future<Map<String, dynamic>> payDebt({
+    required String movementId,
+    required double amount,
+    String? payMethod,
+    String? note,
+  }) async {
     try {
-      // 1. Try stored procedure if migration 0007 applied
-      await _client.rpc('mark_debt_paid', params: {'p_movement_id': movementId});
+      // Tier 1: Use stored procedure
+      final result = await _client.rpc('pay_debt', params: {
+        'p_movement_id': movementId,
+        'p_amount': amount,
+        'p_pay_method': payMethod,
+        'p_note': note,
+      });
+      if (result is Map<String, dynamic>) return result;
+      return {
+        'total_paid': amount,
+        'remaining': 0,
+        'is_settled': true,
+      };
     } catch (_) {
       try {
-        // 2. Try direct column update
-        await _client
+        // Tier 2: Direct insert + manual check
+        await _client.from('debt_payments').insert({
+          'movement_id': movementId,
+          'amount': amount,
+          'pay_method': payMethod,
+          'note': note,
+        });
+
+        // Check if fully paid
+        final payments = await _client
+            .from('debt_payments')
+            .select('amount')
+            .eq('movement_id', movementId);
+        final totalPaid = (payments as List)
+            .fold<double>(0, (s, r) => s + ((r['amount'] as num?)?.toDouble() ?? 0));
+
+        final movement = await _client
             .from('part_movements')
-            .update({
-              'debt_status': 'lunas',
-              'paid_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', movementId);
-      } catch (_) {
-        // 3. Fallback: append [LUNAS] to note so it won't be counted as unpaid debt
-        try {
-          final row = await _client
-              .from('part_movements')
-              .select('note')
-              .eq('id', movementId)
-              .maybeSingle();
-          final currentNote = (row?['note'] as String?) ?? '';
+            .select('qty, purchase_price')
+            .eq('id', movementId)
+            .single();
+        final totalDebt = ((movement['qty'] as num?)?.toDouble() ?? 0) *
+            ((movement['purchase_price'] as num?)?.toDouble() ?? 0);
+
+        if (totalPaid >= totalDebt) {
           await _client
               .from('part_movements')
-              .update({'note': '$currentNote [LUNAS]'.trim()})
+              .update({'debt_status': 'lunas', 'paid_at': DateTime.now().toIso8601String()})
               .eq('id', movementId);
-        } catch (e) {
-          throw RepositoryException(mapRepositoryError(e));
         }
+
+        return {
+          'total_debt': totalDebt,
+          'total_paid': totalPaid,
+          'remaining': totalDebt - totalPaid,
+          'is_settled': totalPaid >= totalDebt,
+        };
+      } catch (e) {
+        throw RepositoryException(mapRepositoryError(e));
       }
+    }
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    // Legacy: pay full amount
+    try {
+      final movement = await _client
+          .from('part_movements')
+          .select('qty, purchase_price')
+          .eq('id', movementId)
+          .single();
+      final totalDebt = ((movement['qty'] as num?)?.toDouble() ?? 0) *
+          ((movement['purchase_price'] as num?)?.toDouble() ?? 0);
+      
+      // Get already paid
+      double alreadyPaid = 0;
+      try {
+        final payments = await _client
+            .from('debt_payments')
+            .select('amount')
+            .eq('movement_id', movementId);
+        alreadyPaid = (payments as List)
+            .fold<double>(0, (s, r) => s + ((r['amount'] as num?)?.toDouble() ?? 0));
+      } catch (_) {}
+      
+      final remaining = totalDebt - alreadyPaid;
+      if (remaining > 0) {
+        await payDebt(movementId: movementId, amount: remaining);
+      }
+    } catch (_) {
+      // Fallback to original behavior
+      try {
+        await _client.rpc('mark_debt_paid', params: {'p_movement_id': movementId});
+      } catch (_) {
+        await _client
+            .from('part_movements')
+            .update({'debt_status': 'lunas', 'paid_at': DateTime.now().toIso8601String()})
+            .eq('id', movementId);
+      }
+    }
+  }
+
+  @override
+  Future<List<DebtPaymentRecord>> fetchDebtPayments(String movementId) async {
+    try {
+      final rows = await _client
+          .from('debt_payments')
+          .select()
+          .eq('movement_id', movementId)
+          .order('created_at', ascending: true);
+      return (rows as List).map((r) => DebtPaymentRecord.fromMap(r)).toList();
+    } catch (_) {
+      return [];
     }
   }
 }
@@ -846,30 +966,113 @@ class FakeReportRepository implements ReportRepository {
         debtStatus: 'belum_lunas',
       ),
     ];
-    var list = List<DistributorDebtItem>.from(mockDistributorDebts!);
-    if (status != null) {
-      list = list.where((d) => d.debtStatus == status).toList();
+    final list = <DistributorDebtItem>[];
+    for (final d in mockDistributorDebts!) {
+      final payments = _debtPayments[d.movementId] ?? [];
+      final paid = payments.fold<double>(0, (s, r) => s + r.amount);
+      final isSettled = (d.totalDebt - paid) <= 0;
+      final currentStatus = isSettled ? 'lunas' : d.debtStatus;
+
+      final updated = DistributorDebtItem(
+        movementId: d.movementId,
+        partId: d.partId,
+        partName: d.partName,
+        distributor: d.distributor,
+        qty: d.qty,
+        purchasePrice: d.purchasePrice,
+        totalDebt: d.totalDebt,
+        totalPaid: paid,
+        createdAt: d.createdAt,
+        dueDate: d.dueDate,
+        debtStatus: currentStatus,
+      );
+
+      if (status != null) {
+        if (currentStatus != status) continue;
+      } else {
+        if (currentStatus != 'belum_lunas') continue;
+      }
+      list.add(updated);
     }
     return list;
   }
 
+  final Map<String, List<DebtPaymentRecord>> _debtPayments = {};
+
   @override
-  Future<void> markDebtPaid(String movementId) async {
-    mockDistributorDebts ??= [
-      DistributorDebtItem(
-        movementId: 'm-debt-1',
+  Future<Map<String, dynamic>> payDebt({
+    required String movementId,
+    required double amount,
+    String? payMethod,
+    String? note,
+  }) async {
+    final record = DebtPaymentRecord(
+      id: 'dp_${DateTime.now().millisecondsSinceEpoch}',
+      movementId: movementId,
+      amount: amount,
+      payMethod: payMethod,
+      note: note,
+      createdAt: DateTime.now(),
+    );
+    _debtPayments.putIfAbsent(movementId, () => []).add(record);
+
+    final totalPaid = _debtPayments[movementId]!
+        .fold<double>(0, (s, r) => s + r.amount);
+
+    final item = mockDistributorDebts?.firstWhere(
+      (d) => d.movementId == movementId,
+      orElse: () => DistributorDebtItem(
+        movementId: movementId,
         partId: 'p1',
-        partName: 'Oli Mesin Fastron 1L',
-        distributor: 'PT Pertamina Lubricants',
-        qty: 12,
-        purchasePrice: 62500,
-        totalDebt: 750000,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        dueDate: DateTime.now().add(const Duration(days: 11)),
+        partName: 'Part',
+        distributor: 'Distributor',
+        qty: 1,
+        purchasePrice: amount,
+        totalDebt: amount,
+        createdAt: DateTime.now(),
         debtStatus: 'belum_lunas',
       ),
-    ];
-    mockDistributorDebts!.removeWhere((d) => d.movementId == movementId);
+    );
+    final totalDebt = item?.totalDebt ?? amount;
+    final remaining = totalDebt - totalPaid;
+    final isSettled = remaining <= 0;
+
+    return {
+      'total_debt': totalDebt,
+      'total_paid': totalPaid,
+      'remaining': remaining > 0 ? remaining : 0,
+      'is_settled': isSettled,
+    };
+  }
+
+  @override
+  Future<List<DebtPaymentRecord>> fetchDebtPayments(String movementId) async {
+    return _debtPayments[movementId] ?? [];
+  }
+
+  @override
+  Future<void> markDebtPaid(String movementId) async {
+    final item = mockDistributorDebts?.firstWhere(
+      (d) => d.movementId == movementId,
+      orElse: () => DistributorDebtItem(
+        movementId: movementId,
+        partId: 'p1',
+        partName: 'Part',
+        distributor: 'Distributor',
+        qty: 1,
+        purchasePrice: 750000,
+        totalDebt: 750000,
+        createdAt: DateTime.now(),
+        debtStatus: 'belum_lunas',
+      ),
+    );
+    final totalDebt = item?.totalDebt ?? 750000;
+    final payments = _debtPayments[movementId] ?? [];
+    final alreadyPaid = payments.fold<double>(0, (s, r) => s + r.amount);
+    final remaining = totalDebt - alreadyPaid;
+    if (remaining > 0) {
+      await payDebt(movementId: movementId, amount: remaining);
+    }
   }
 
   @override

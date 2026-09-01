@@ -405,7 +405,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
             if (_creating)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.32),
+                  color: AppColors.ink900.withValues(alpha: 0.32),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

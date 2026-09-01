@@ -9,13 +9,13 @@ abstract final class AppTheme {
   static ThemeData get light {
     const scheme = ColorScheme.light(
       primary: AppColors.primary,
-      onPrimary: AppColors.surface,
-      primaryContainer: AppColors.tintPrimary,
-      onPrimaryContainer: AppColors.primary,
+      onPrimary: AppColors.ink900,
+      primaryContainer: AppColors.pastelMint,
+      onPrimaryContainer: AppColors.ink900,
       secondary: AppColors.statusProgress,
-      onSecondary: AppColors.surface,
-      secondaryContainer: AppColors.tintPrimary,
-      onSecondaryContainer: AppColors.ink,
+      onSecondary: AppColors.ink900,
+      secondaryContainer: AppColors.pastelBlue,
+      onSecondaryContainer: AppColors.ink900,
       error: AppColors.action,
       onError: AppColors.surface,
       errorContainer: AppColors.actionDim,
@@ -24,7 +24,7 @@ abstract final class AppTheme {
       onSurface: AppColors.ink,
       surfaceContainerHighest: AppColors.borderSubtle,
       onSurfaceVariant: AppColors.inkMuted,
-      outline: AppColors.borderStrong,
+      outline: AppColors.borderInk,
       outlineVariant: AppColors.borderSubtle,
     );
     final textTheme = AppTypography.textTheme();
@@ -65,7 +65,7 @@ abstract final class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accentPrimary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.ink900,
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -102,7 +102,7 @@ abstract final class AppTheme {
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.accentPrimary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.ink900,
         elevation: 0,
         focusElevation: 0,
         hoverElevation: 0,
@@ -161,8 +161,35 @@ abstract final class AppTheme {
         backgroundColor: AppColors.ink,
         contentTextStyle: textTheme.bodyMedium
             ?.copyWith(color: AppColors.surface),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.button,
+        ),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.bgSurface,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.modal,
+          side: BorderSide(color: AppColors.borderInk, width: 1.5),
+        ),
+        titleTextStyle: TextStyle(
+          fontFamily: 'Inter',
+          color: AppColors.ink900,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: 'Inter',
+          color: AppColors.ink900,
+          fontSize: 14,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.bgSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.modalTop,
+          side: BorderSide(color: AppColors.borderInk, width: 1.5),
         ),
       ),
     );

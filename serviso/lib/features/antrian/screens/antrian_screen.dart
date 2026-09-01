@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_search_bar.dart';
@@ -13,7 +14,6 @@ import '../../../core/widgets/neo_switch.dart';
 import '../../workorders/controllers/work_order_providers.dart';
 import '../../workorders/models/work_order.dart';
 import '../../workorders/widgets/wo_card.dart';
-import '../../../core/router/app_router.dart';
 
 class AntrianScreen extends ConsumerStatefulWidget {
   const AntrianScreen({super.key});
@@ -104,21 +104,18 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
             value: WoStatus.menunggu,
             label: 'Menunggu',
             count: grouped[WoStatus.menunggu]?.length ?? 0,
-            badgeColor: AppColors.statusWaiting,
             activeColor: AppColors.pastelYellow,
           ),
           NeoSegmentItem<WoStatus>(
             value: WoStatus.dikerjakan,
             label: 'Dikerjakan',
             count: grouped[WoStatus.dikerjakan]?.length ?? 0,
-            badgeColor: AppColors.statusProgress,
-            activeColor: AppColors.pastelMint,
+            activeColor: AppColors.pastelBlue,
           ),
           NeoSegmentItem<WoStatus>(
             value: WoStatus.selesai,
             label: 'Selesai',
             count: grouped[WoStatus.selesai]?.length ?? 0,
-            badgeColor: AppColors.statusDone,
             activeColor: AppColors.pastelMint,
           ),
         ];
@@ -160,7 +157,7 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
                     children: [
                       Text(
                         'Hari ini',
-                        style: TextStyle(
+                        style: AppTypography.inter(
                           fontSize: 12,
                           fontWeight:
                               onlyToday ? FontWeight.bold : FontWeight.w500,
@@ -179,7 +176,7 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'Semua',
-                        style: TextStyle(
+                        style: AppTypography.inter(
                           fontSize: 12,
                           fontWeight:
                               !onlyToday ? FontWeight.bold : FontWeight.w500,
@@ -191,11 +188,6 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
                 ),
               ],
             ],
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.push(AppRoutes.woBaru),
-            icon: Icon(AppIcons.add),
-            label: const Text('WO Baru'),
           ),
           body: _StatusListTab(
             status: _selectedStatus,

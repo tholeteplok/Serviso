@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -15,7 +16,6 @@ import '../../../core/widgets/section_card.dart';
 import '../../../core/router/app_router.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/report_controllers.dart';
-import '../models/report_models.dart';
 
 class LaporanScreen extends ConsumerWidget {
   const LaporanScreen({super.key});
@@ -29,7 +29,6 @@ class LaporanScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     final ownerFinancialAsync =
         isAdmin ? ref.watch(ownerFinancialSummaryProvider) : null;
-    final debtsAsync = isAdmin ? ref.watch(distributorDebtsProvider) : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -327,6 +326,7 @@ class LaporanScreen extends ConsumerWidget {
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
+                                  reservedSize: 32,
                                   getTitlesWidget: (value, meta) {
                                     final index = value.toInt();
                                     if (index < 0 || index >= rows.length) {
@@ -359,7 +359,11 @@ class LaporanScreen extends ConsumerWidget {
                                     color: AppColors.primary,
                                     width: 16,
                                     borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(4),
+                                      top: Radius.circular(8.0),
+                                    ),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.borderInk,
+                                      width: 1.5,
                                     ),
                                   ),
                                 ],
@@ -373,14 +377,43 @@ class LaporanScreen extends ConsumerWidget {
                 );
               },
             ),
+            const SizedBox(height: 16),
             // Rekap Metode Pembayaran per periode (Fase2/3)
             _MethodBreakdownSection(period: period),
             const SizedBox(height: 16),
 
             // Top Parts Section
             topPartsAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (err, stack) => const SizedBox.shrink(),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.action, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Gagal muat top parts: ${err.toString().replaceFirst('Exception: ', '')}',
+                        style: AppTypography.textTheme().labelSmall?.copyWith(color: AppColors.action),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.invalidate(topPartsProvider),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Coba'),
+                    ),
+                  ],
+                ),
+              ),
               data: (parts) {
                 if (parts.isEmpty) return const SizedBox.shrink();
 
@@ -441,196 +474,8 @@ class LaporanScreen extends ConsumerWidget {
               },
             ),
 
-            // Khusus Owner: Section Hutang Distributor
-            if (isAdmin && debtsAsync != null) ...[
-              const SizedBox(height: 16),
-              debtsAsync.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (e, _) => const SizedBox.shrink(),
-                data: (debts) {
-                  return SectionCard(
-                    title: 'Daftar Hutang Distributor (Tempo)',
-                    trailing: IconButton(
-                      icon: const Icon(Icons.refresh, size: 18),
-                      tooltip: 'Perbarui Data Hutang',
-                      onPressed: () {
-                        ref.invalidate(distributorDebtsProvider);
-                        ref.invalidate(ownerFinancialSummaryProvider);
-                      },
-                    ),
-                    child: debts.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  color: AppColors.teal,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Tidak ada hutang distributor yang belum lunas. Semua kewajiban telah terbayar!',
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.teal,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            children: debts
-                                .map((d) => _buildDebtItemCard(context, ref, d))
-                                .toList(),
-                          ),
-                  );
-                },
-              ),
-            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDebtItemCard(
-    BuildContext context,
-    WidgetRef ref,
-    DistributorDebtItem debt,
-  ) {
-    final textTheme = AppTypography.textTheme();
-    final isPastDue = debt.dueDate != null &&
-        debt.dueDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)));
-
-    return NeoCard(
-      margin: const EdgeInsets.only(bottom: 8),
-      borderColor: isPastDue ? AppColors.statusCancelled : AppColors.borderStrong,
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isPastDue
-                  ? AppColors.action.withValues(alpha: 0.12)
-                  : AppColors.inkMuted.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.local_shipping_outlined,
-              color: isPastDue ? AppColors.action : AppColors.ink,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  debt.distributor,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${debt.partName} • ${debt.qty} pcs',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.inkMuted,
-                  ),
-                ),
-                if (debt.dueDate != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Jatuh Tempo: ${dateShortId(debt.dueDate!)}',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: isPastDue ? AppColors.action : AppColors.inkMuted,
-                      fontWeight:
-                          isPastDue ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                rupiah(debt.totalDebt),
-                style: AppTypography.mono(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.action,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 6),
-              FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Pelunasan Hutang'),
-                      content: Text(
-                        'Konfirmasi pelunasan hutang ke "${debt.distributor}" sebesar ${rupiah(debt.totalDebt)}?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Batal'),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text('Ya, Lunasi'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
-                    try {
-                      await ref
-                          .read(reportRepositoryProvider)
-                          .markDebtPaid(debt.movementId);
-                      ref.invalidate(distributorDebtsProvider);
-                      ref.invalidate(ownerFinancialSummaryProvider);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Hutang distributor berhasil dilunasi'),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(e.toString())),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: const Text('Lunasi'),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -772,7 +617,7 @@ class _MethodBreakdownSection extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.button,
           border: Border.all(color: AppColors.borderStrong, width: 1.5),
         ),
         child: Column(

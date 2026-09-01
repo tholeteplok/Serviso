@@ -26,6 +26,8 @@ class WoCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       onTap: onTap,
       padding: const EdgeInsets.all(14),
+      borderWidth: 2.0,
+      borderColor: AppColors.borderInk,
       child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,16 +41,18 @@ class WoCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: initial == null
-                          ? AppColors.line
-                          : AppColors.tintOf(AppColors.teal),
+                          ? AppColors.pastelCream
+                          : AppColors.pastelMint,
+                      border: Border.all(
+                        color: AppColors.borderInk,
+                        width: 1.5,
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       initial ?? '—',
                       style: textTheme.labelLarge?.copyWith(
-                        color: initial == null
-                            ? AppColors.inkMuted
-                            : AppColors.teal,
+                        color: AppColors.ink900,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -77,15 +81,19 @@ class WoCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         color: order.isPaid
-                            ? AppColors.tintOf(AppColors.teal)
-                            : AppColors.tintOf(AppColors.inkMuted),
+                            ? AppColors.statusDone
+                            : AppColors.pastelPink,
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: AppColors.borderInk,
+                          width: 1.5,
+                        ),
                       ),
                       child: Text(
                         order.paymentStatusLabel,
                         style: textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: order.isPaid ? AppColors.teal : AppColors.inkMuted,
+                          color: AppColors.ink900,
                         ),
                       ),
                     ),
@@ -96,11 +104,17 @@ class WoCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.bgSurface,
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AppColors.borderStrong, width: 1.2),
+                          border: Border.all(
+                            color: AppColors.borderInk,
+                            width: 1.5,
+                          ),
                         ),
                         child: Text(
                           order.payMethod!.label,
-                          style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink900,
+                          ),
                         ),
                       ),
                     ],

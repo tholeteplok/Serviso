@@ -22,19 +22,29 @@ class PartFormController
     String paymentType = 'tunai',
     DateTime? dueDate,
   }) async {
+    final effectiveInitialStock = initialStock > 0 ? initialStock : 0.0;
+    final effectiveDistributor =
+        effectiveInitialStock > 0 ? distributor?.trim() : null;
+    final effectivePaymentType =
+        effectiveInitialStock > 0 ? paymentType : 'tunai';
+    final effectiveDueDate =
+        (effectiveInitialStock > 0 && effectivePaymentType == 'hutang')
+            ? dueDate
+            : null;
+
     final repo = ref.read(partRepositoryProvider);
     final input = PartInput(
       id: arg?.id,
-      name: name,
-      code: code,
-      unit: unit,
-      minStock: minStock,
+      name: name.trim(),
+      code: code?.trim().isEmpty == true ? null : code?.trim(),
+      unit: unit?.trim().isEmpty == true ? 'pcs' : unit?.trim(),
+      minStock: minStock < 0 ? 0 : minStock,
       costPrice: costPrice,
       sellPrice: sellPrice,
-      initialStock: initialStock,
-      distributor: distributor,
-      paymentType: paymentType,
-      dueDate: dueDate,
+      initialStock: effectiveInitialStock,
+      distributor: effectiveDistributor?.isEmpty == true ? null : effectiveDistributor,
+      paymentType: effectivePaymentType,
+      dueDate: effectiveDueDate,
     );
     state = const AsyncLoading();
     try {
@@ -45,7 +55,7 @@ class PartFormController
       }
       ref.invalidate(partListControllerProvider);
       ref.invalidate(dashboardSummaryProvider);
-      if (initialStock > 0) {
+      if (effectiveInitialStock > 0) {
         ref.invalidate(distributorDebtsProvider);
         ref.invalidate(ownerFinancialSummaryProvider);
       }

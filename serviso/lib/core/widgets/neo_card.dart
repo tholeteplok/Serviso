@@ -13,12 +13,12 @@ class NeoCard extends StatefulWidget {
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
-    this.borderColor = AppColors.borderStrong,
+    this.borderColor = AppColors.borderInk,
     this.borderWidth = 1.5,
     this.borderRadius = AppRadius.card,
     this.showHardShadow = true,
     this.shadowOffset = const Offset(0, 3),
-    this.shadowColor = AppColors.borderStrong,
+    this.shadowColor = AppColors.borderInk,
     this.onTap,
   });
 

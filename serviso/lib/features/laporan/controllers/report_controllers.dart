@@ -99,6 +99,13 @@ final distributorDebtsProvider =
   return repo.fetchDistributorDebts();
 });
 
+final debtPaymentsProvider = FutureProvider.family<List<DebtPaymentRecord>, String>(
+  (ref, movementId) async {
+    final repo = ref.watch(reportRepositoryProvider);
+    return repo.fetchDebtPayments(movementId);
+  },
+);
+
 final profitBreakdownProvider = FutureProvider.family<
     List<ProfitBreakdownRow>, ({DateTime start, DateTime end})>((ref, range) async {
   final repo = ref.watch(reportRepositoryProvider);

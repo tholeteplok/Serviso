@@ -53,16 +53,16 @@ class JsonDiffViewer extends StatelessWidget {
             return _buildLine(
               key: '+ $key',
               val: _formatValue(newVal),
-              bgColor: const Color(0x1F00C1D4),
-              textColor: const Color(0xFF007A87),
+              bgColor: AppColors.tintTeal,
+              textColor: AppColors.teal,
             );
           } else if (hasOld && !hasNew) {
             // Deleted key (Red)
             return _buildLine(
               key: '- $key',
               val: _formatValue(oldVal),
-              bgColor: const Color(0x1FF8485E),
-              textColor: const Color(0xFFD32F2F),
+              bgColor: AppColors.tintAction,
+              textColor: AppColors.action,
             );
           } else if (oldVal != newVal) {
             // Modified key (Yellow/Orange)
@@ -72,14 +72,14 @@ class JsonDiffViewer extends StatelessWidget {
                 _buildLine(
                   key: '- $key',
                   val: _formatValue(oldVal),
-                  bgColor: const Color(0x1FF8485E),
-                  textColor: const Color(0xFFD32F2F),
+                  bgColor: AppColors.tintAction,
+                  textColor: AppColors.action,
                 ),
                 _buildLine(
                   key: '+ $key',
                   val: _formatValue(newVal),
-                  bgColor: const Color(0x1F00C1D4),
-                  textColor: const Color(0xFF007A87),
+                  bgColor: AppColors.tintTeal,
+                  textColor: AppColors.teal,
                 ),
               ],
             );

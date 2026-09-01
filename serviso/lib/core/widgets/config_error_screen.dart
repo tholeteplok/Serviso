@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
 class ConfigErrorScreen extends StatelessWidget {
@@ -20,7 +21,7 @@ class ConfigErrorScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.card,
                 border: Border.all(color: AppColors.line),
               ),
               child: Column(
@@ -43,9 +44,9 @@ class ConfigErrorScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.canvas,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.button,
                     ),
                     child: SelectableText(
                       'flutter run \\\n'

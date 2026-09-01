@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 enum ThickButtonVariant {
   primary,
@@ -55,7 +56,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
     switch (widget.variant) {
       case ThickButtonVariant.primary:
         bg = isEnabled ? AppColors.accentPrimary : AppColors.borderSubtle;
-        fg = Colors.white;
+        fg = AppColors.ink900;
         break;
       case ThickButtonVariant.secondary:
         bg = isEnabled ? AppColors.bgSurface : AppColors.borderSubtle;
@@ -101,7 +102,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
                 const SizedBox(width: 8),
               ],
               DefaultTextStyle(
-                style: TextStyle(
+                style: AppTypography.inter(
                   color: fg,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -129,12 +130,12 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
           color: bg,
           borderRadius: radius,
           border: Border.all(
-            color: AppColors.borderStrong,
+            color: AppColors.borderInk,
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.borderStrong,
+              color: AppColors.borderInk,
               offset: Offset(0, shadowDistance),
               blurRadius: 0,
               spreadRadius: 0,

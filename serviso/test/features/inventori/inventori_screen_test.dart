@@ -102,7 +102,12 @@ void main() {
 
       await tester.pumpWidget(_pumpList(parts: fake));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilterChip, 'Stok Menipis'));
+      final textFinder = find.text('Stok Menipis');
+      final segmentFinder = find.ancestor(
+        of: textFinder,
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(segmentFinder.first);
       await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 100));
 

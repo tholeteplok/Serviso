@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -86,7 +87,7 @@ class PartDetailScreen extends ConsumerWidget {
                   color: (part.isLowStock || part.isOutOfStock)
                       ? AppColors.tintAction
                       : AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.card,
                   border: Border.all(
                     color: (part.isLowStock || part.isOutOfStock)
                         ? AppColors.action
@@ -327,7 +328,7 @@ class _MovementRow extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: AppRadius.input,
           ),
           child: Icon(
             isIn
@@ -361,7 +362,7 @@ class _MovementRow extends StatelessWidget {
                         color: movement.isUnpaidDebt
                             ? AppColors.action.withValues(alpha: 0.15)
                             : AppColors.teal.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: AppRadius.badge,
                       ),
                       child: Text(
                         movement.isUnpaidDebt ? 'Hutang' : 'Lunas',

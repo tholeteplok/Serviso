@@ -2,6 +2,7 @@
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
 /// Membuka modal scanner barcode kamera terpusat.
@@ -13,7 +14,7 @@ Future<String?> showBarcodeScanner(BuildContext context) {
     useSafeArea: true,
     backgroundColor: Colors.black,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: AppRadius.modalTop,
     ),
     builder: (ctx) => const BarcodeScannerModal(),
   );
@@ -61,7 +62,7 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
         children: [
           // Camera Preview
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: AppRadius.modalTop,
             child: MobileScanner(
               controller: _controller,
               onDetect: _onDetect,
@@ -112,7 +113,7 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
                     color: AppColors.primaryDim,
                     width: 2.5,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.card,
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primary.withValues(alpha: 0.2),
@@ -208,7 +209,7 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.black87,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.button,
                 border: Border.all(color: Colors.white12),
               ),
               child: Text(
