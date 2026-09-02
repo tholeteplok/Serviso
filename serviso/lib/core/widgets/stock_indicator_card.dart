@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -55,9 +55,17 @@ class StockIndicatorCard extends StatelessWidget {
         borderRadius: AppRadius.card,
         border: Border.all(color: AppColors.borderStrong, width: 1.5),
         boxShadow: const [
+          // Soft diffuse layer
+          BoxShadow(
+            color: Color(0x0F111111), // rgba(17,17,17,0.06)
+            offset: Offset(0, 8),
+            blurRadius: 24,
+            spreadRadius: 0,
+          ),
+          // Hard ink offset kanan-bawah (4, 4)
           BoxShadow(
             color: AppColors.borderStrong,
-            offset: Offset(0, 3.5),
+            offset: Offset(4, 4),
             blurRadius: 0,
             spreadRadius: 0,
           ),

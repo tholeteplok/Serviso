@@ -308,12 +308,20 @@ class SupabasePartRepository implements PartRepository {
   @override
   Future<List<String>> fetchDistributors() async {
     try {
-      final result = await _client
-          .from('part_movements')
-          .select('distributor, note')
-          .or('distributor.not.is.null,note.ilike.%[Distributor:%');
+      dynamic result;
+      try {
+        result = await _client
+            .from('part_movements')
+            .select('distributor, note')
+            .or('distributor.not.is.null,note.ilike.%[Distributor:%');
+      } catch (_) {
+        result = await _client
+            .from('part_movements')
+            .select('note')
+            .ilike('note', '%[Distributor:%');
+      }
       final set = <String>{};
-      for (final row in result as List) {
+      for (final row in (result as List? ?? [])) {
         final dist = row['distributor'] as String?;
         if (dist != null && dist.trim().isNotEmpty) {
           set.add(dist.trim());

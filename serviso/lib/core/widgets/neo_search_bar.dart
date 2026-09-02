@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_radius.dart';
+import '../theme/app_shadow.dart';
 import '../theme/app_typography.dart';
 
 /// Tactile Pop-Brutalist SearchBar with 1.5px black border,
@@ -41,11 +42,11 @@ class NeoSearchBar extends StatelessWidget {
           width: 1.5,
         ),
         boxShadow: const [
+          AppShadow.cardSoft,
           BoxShadow(
             color: AppColors.borderStrong,
-            offset: Offset(0, 3),
+            offset: Offset(3, 3),
             blurRadius: 0,
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -95,24 +96,16 @@ class NeoSearchBar extends StatelessWidget {
             ),
             const SizedBox(width: 4),
           ],
-          // Use ValueListenableBuilder so this rebuilds reactively
-          // whenever controller text changes (StatelessWidget wouldn't).
-          if (onClear != null && controller != null)
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller!,
-              builder: (_, value, _) {
-                if (value.text.isEmpty) return const SizedBox.shrink();
-                return IconButton(
-                  icon: Icon(
-                    PhosphorIcons.x(PhosphorIconsStyle.bold),
-                    color: AppColors.ink900,
-                    size: 18,
-                  ),
-                  tooltip: 'Hapus',
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  onPressed: onClear,
-                );
-              },
+          if (onClear != null)
+            IconButton(
+              icon: Icon(
+                PhosphorIcons.x(PhosphorIconsStyle.bold),
+                color: AppColors.ink900,
+                size: 18,
+              ),
+              tooltip: 'Tutup',
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              onPressed: onClear,
             ),
         ],
       ),

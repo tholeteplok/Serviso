@@ -14,8 +14,9 @@ class PastelPopBottomBarItem {
   final String label;
 }
 
-/// Docked Bottom Navigation Bar (Non-Pill, Edge-to-Edge) with Pastel Pop-Brutalism styling
-/// aligned with reference image (center circular [+] action button, active tab with pastel purple dot).
+/// Docked Bottom Navigation Bar with Pastel Pop-Brutalism styling.
+/// - Tab items: Vertical layout with icon on top and label below.
+/// - Center Action Button: Circular [+] action button shifted up to overlap the top navbar border by 50%.
 class PastelPopBottomBar extends StatelessWidget {
   const PastelPopBottomBar({
     super.key,
@@ -29,6 +30,9 @@ class PastelPopBottomBar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final List<PastelPopBottomBarItem> items;
   final VoidCallback? onCenterActionTap;
+
+  static const double _buttonDiameter = 54.0;
+  static const double _overlapOffset = -27.0; // 50% of button diameter
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +49,27 @@ class PastelPopBottomBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60,
+          height: 66,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               for (int i = 0; i < leftItems.length; i++)
-                _buildTabItem(index: i, item: leftItems[i]),
-              _buildCenterButton(),
+                Expanded(
+                  child: _buildTabItem(index: i, item: leftItems[i]),
+                ),
+              SizedBox(
+                width: 60,
+                child: Center(
+                  child: Transform.translate(
+                    offset: const Offset(0, _overlapOffset),
+                    child: _buildCenterButton(),
+                  ),
+                ),
+              ),
               for (int i = 0; i < rightItems.length; i++)
-                _buildTabItem(index: i + 2, item: rightItems[i]),
+                Expanded(
+                  child: _buildTabItem(index: i + 2, item: rightItems[i]),
+                ),
             ],
           ),
         ),
@@ -64,56 +80,85 @@ class PastelPopBottomBar extends StatelessWidget {
   Widget _buildTabItem({required int index, required PastelPopBottomBarItem item}) {
     final isSelected = index == currentIndex;
 
-    return InkWell(
-      onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? item.selectedIcon : item.icon,
-              color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            if (isSelected)
-              Container(
-                width: 6,
-                height: 6,
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      label: item.label,
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: AppColors.pastelMint.withValues(alpha: 0.3),
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.pastelPurple,
-                  border: Border.all(color: AppColors.borderInk, width: 1.0),
+                  color: isSelected ? AppColors.pastelMint : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
                 ),
-              )
-            else
-              const SizedBox(width: 6, height: 6),
-          ],
+                child: Icon(
+                  isSelected ? item.selectedIcon : item.icon,
+                  color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildCenterButton() {
-    return InkWell(
-      onTap: onCenterActionTap,
-      customBorder: const CircleBorder(),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.accentPrimary,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.borderInk, width: 1.5),
-        ),
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.add,
-          color: AppColors.ink900,
-          size: 24,
+    return Semantics(
+      button: true,
+      label: 'Buat SPK / Transaksi Baru',
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onCenterActionTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: _buttonDiameter,
+            height: _buttonDiameter,
+            decoration: BoxDecoration(
+              color: AppColors.accentPrimary,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.borderInk, width: 2.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.ink900,
+                  offset: Offset(0, 3),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.add,
+              color: AppColors.ink900,
+              size: 28,
+            ),
+          ),
         ),
       ),
     );

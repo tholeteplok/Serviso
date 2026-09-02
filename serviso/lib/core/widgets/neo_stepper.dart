@@ -61,7 +61,7 @@ class NeoStepper extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: AppColors.borderStrong,
-            offset: Offset(0, 2),
+            offset: Offset(2, 2),
             blurRadius: 0,
             spreadRadius: 0,
           ),
@@ -70,7 +70,7 @@ class NeoStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Decrement Button [-] — 40dp for a11y
+          // Decrement Button [-] — 44dp DS v2
           Semantics(
             button: true,
             enabled: canDecrement,
@@ -79,8 +79,8 @@ class NeoStepper extends StatelessWidget {
               onTap: canDecrement ? _decrement : null,
               borderRadius: AppRadius.pill,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: canDecrement ? AppColors.pastelYellow : AppColors.borderHairline,
                   borderRadius: AppRadius.pill,
@@ -124,7 +124,7 @@ class NeoStepper extends StatelessWidget {
               ],
             ),
           ),
-          // Increment Button [+] — 40dp for a11y
+          // Increment Button [+] — 44dp DS v2
           Semantics(
             button: true,
             enabled: canIncrement,
@@ -133,8 +133,8 @@ class NeoStepper extends StatelessWidget {
               onTap: canIncrement ? _increment : null,
               borderRadius: AppRadius.pill,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: canIncrement ? AppColors.pastelYellow : AppColors.borderHairline,
                   borderRadius: AppRadius.pill,

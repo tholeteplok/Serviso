@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +11,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_line_chart.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../features/auth/controllers/session_controller.dart';
 import '../../../features/laporan/controllers/report_controllers.dart';
@@ -137,8 +137,14 @@ class BerandaScreen extends ConsumerWidget {
         border: Border.all(color: AppColors.borderInk, width: 1.5),
         boxShadow: const [
           BoxShadow(
+            color: Color(0x0F111111),
+            offset: Offset(0, 8),
+            blurRadius: 24,
+            spreadRadius: 0,
+          ),
+          BoxShadow(
             color: AppColors.borderInk,
-            offset: Offset(0, 3.5),
+            offset: Offset(4, 4),
             blurRadius: 0,
             spreadRadius: 0,
           ),
@@ -237,85 +243,19 @@ class BerandaScreen extends ConsumerWidget {
   Widget _buildChartCard(BuildContext context, List<DailySummaryRow> rows) {
     return SectionCard(
       title: 'Tren Pendapatan 7 Hari',
-      child: SizedBox(
-        height: 180,
-        child: rows.isEmpty
-            ? Center(
-                child: Text(
-                  'Belum ada data transaksi',
-                  style: AppTypography.textTheme().bodyMedium?.copyWith(
-                        color: AppColors.inkMuted,
-                      ),
-                ),
-              )
-            : LineChart(
-                LineChartData(
-                  gridData: const FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: _getHorizontalLine,
-                  ),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index < 0 || index >= rows.length) {
-                            return const SizedBox.shrink();
-                          }
-                          final date = rows[index].date;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              '${date.day}/${date.month}',
-                              style: AppTypography.mono(
-                                fontSize: 10,
-                                color: AppColors.inkMuted,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: rows.asMap().entries.map((e) {
-                        return FlSpot(e.key.toDouble(), e.value.revenue);
-                      }).toList(),
-                      isCurved: true,
-                      color: AppColors.primary,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) =>
-                            FlDotCirclePainter(
-                          radius: 4,
-                          color: AppColors.teal,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.bgSurface,
-                        ),
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      child: NeoLineChart(
+        points: rows.asMap().entries.map((e) {
+          final date = e.value.date;
+          return NeoLineChartPoint(
+            x: e.key.toDouble(),
+            y: e.value.revenue,
+            label: '${date.day}/${date.month}',
+            tooltipTitle: '${date.day}/${date.month}/${date.year}',
+          );
+        }).toList(),
+        valueFormatter: (val) => rupiah(val),
+        emptyTitle: 'Belum ada data transaksi',
+        emptyMessage: 'Grafik tren pendapatan akan muncul otomatis.',
       ),
     );
   }
@@ -463,9 +403,4 @@ class _TodayMethodBreakdown extends ConsumerWidget {
     );
   }
 }
-
-FlLine _getHorizontalLine(double val) => const FlLine(
-      color: AppColors.line,
-      strokeWidth: 1,
-    );
 

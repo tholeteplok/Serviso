@@ -4,7 +4,7 @@ import 'package:serviso/core/theme/app_icons.dart';
 import 'package:serviso/core/widgets/pastel_pop_bottom_bar.dart';
 
 void main() {
-  testWidgets('PastelPopBottomBar renders 5-slot items and responds to taps', (tester) async {
+  testWidgets('PastelPopBottomBar renders 5-slot items with vertical labels and responds to taps', (tester) async {
     int tappedIndex = -1;
     bool centerTapped = false;
 
@@ -50,6 +50,12 @@ void main() {
     expect(find.byIcon(AppIcons.inventory), findsOneWidget);
     expect(find.byIcon(AppIcons.report), findsOneWidget);
 
+    // All text labels are rendered underneath the icons simultaneously
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Antrian'), findsOneWidget);
+    expect(find.text('Inventori'), findsOneWidget);
+    expect(find.text('Laporan'), findsOneWidget);
+
     // Center circular [+] button is present
     expect(find.byIcon(Icons.add), findsOneWidget);
 
@@ -63,7 +69,7 @@ void main() {
     await tester.pump();
     expect(tappedIndex, 3);
 
-    // Tap center button
+    // Tap center [+] button
     await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
     expect(centerTapped, true);

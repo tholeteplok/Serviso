@@ -17,25 +17,30 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: const BoxDecoration(
-                color: AppColors.tintAction,
-                shape: BoxShape.circle,
+    return Semantics(
+      liveRegion: true,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3EF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE8A0A0), width: 1.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB5C1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderInk, width: 1.5),
+                ),
+                child: const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.ink900),
               ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 26,
-                color: AppColors.action,
-              ),
-            ),
             const SizedBox(height: 14),
             Text(
               title,
@@ -51,11 +56,13 @@ class ErrorView extends StatelessWidget {
                   ?.copyWith(color: AppColors.inkMuted),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Coba Lagi'),
-            ),
+            Row(children: [
+              Expanded(child: OutlinedButton(onPressed: onRetry, child: const Text('Coba Lagi'))),
+              const SizedBox(width: 8),
+              Expanded(child: FilledButton(onPressed: onRetry, child: const Text('Coba Lagi'))),
+            ]),
           ],
+          ),
         ),
       ),
     );

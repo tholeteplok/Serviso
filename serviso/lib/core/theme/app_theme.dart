@@ -122,8 +122,8 @@ abstract final class AppTheme {
         border: inputBorder(AppColors.borderStrong, 1.5),
         enabledBorder: inputBorder(AppColors.borderStrong, 1.5),
         focusedBorder: inputBorder(AppColors.borderStrong, 2.0),
-        errorBorder: inputBorder(AppColors.action, 1.5),
-        focusedErrorBorder: inputBorder(AppColors.action, 2.0),
+        errorBorder: inputBorder(const Color(0xFFC0392B), 1.5),
+        focusedErrorBorder: inputBorder(const Color(0xFFC0392B), 2.0),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,

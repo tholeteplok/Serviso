@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
+import '../theme/app_shadow.dart';
 import '../theme/app_typography.dart';
 
 class NeoSegmentItem<T> {
@@ -32,6 +33,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
     required this.items,
     this.activeColor = AppColors.pastelMint,
     this.height = 46.0,
+    this.containerColor = AppColors.bgSurface,
   });
 
   final T selectedValue;
@@ -39,6 +41,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
   final List<NeoSegmentItem<T>> items;
   final Color activeColor;
   final double height;
+  final Color containerColor;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,8 @@ class NeoSegmentControl<T> extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+        // DS v2 spec: container #F5F1EB
+        color: const Color(0xFFF5F1EB),
         borderRadius: AppRadius.pill,
         border: Border.all(
           color: AppColors.borderInk,
@@ -55,9 +59,8 @@ class NeoSegmentControl<T> extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: AppColors.borderInk,
-            offset: Offset(0, 2.5),
+            offset: Offset(2.5, 2.5),
             blurRadius: 0,
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -70,12 +73,18 @@ class NeoSegmentControl<T> extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onValueChanged(item.value),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 140),
+                duration: Duration(milliseconds: (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ? 0 : 160),
                 curve: Curves.easeOut,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected ? currentActiveColor : Colors.transparent,
                   borderRadius: AppRadius.pill,
+                  border: isSelected
+                      ? Border.all(color: AppColors.borderInk, width: 1.5)
+                      : null,
+                  boxShadow: isSelected
+                      ? const [AppShadow.buttonHard]
+                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

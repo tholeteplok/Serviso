@@ -46,6 +46,7 @@ class ThickBottomBorderButton extends StatefulWidget {
 
 class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
   bool _isPressed = false;
+  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
@@ -56,27 +57,27 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
 
     switch (widget.variant) {
       case ThickButtonVariant.primary:
-        bg = isEnabled ? AppColors.accentPrimary : AppColors.borderSubtle;
+        bg = AppColors.accentPrimary;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.secondary:
-        bg = isEnabled ? AppColors.bgSurface : AppColors.borderSubtle;
+        bg = AppColors.bgSurface;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.warning:
-        bg = isEnabled ? AppColors.pastelYellow : AppColors.borderSubtle;
+        bg = AppColors.pastelYellow;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.danger:
-        bg = isEnabled ? AppColors.pastelPink : AppColors.borderSubtle;
+        bg = AppColors.pastelPink;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.info:
-        bg = isEnabled ? AppColors.pastelBlue : AppColors.borderSubtle;
+        bg = AppColors.pastelPurple;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.mint:
-        bg = isEnabled ? AppColors.pastelMint : AppColors.borderSubtle;
+        bg = AppColors.pastelMint;
         fg = AppColors.ink900;
         break;
       case ThickButtonVariant.amber:
@@ -117,39 +118,65 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
             ],
           );
 
-    return Semantics(
+    final disableAnim = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    Widget btn = AnimatedContainer(
+      duration: Duration(milliseconds: disableAnim ? 0 : 70),
+      curve: Curves.easeOut,
+      transform: Matrix4.translationValues(translateY, translateY, 0),
+      width: widget.isFullWidth ? double.infinity : null,
+      padding: widget.padding,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: radius,
+        border: Border.all(
+          color: AppColors.borderInk,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.borderInk,
+            offset: Offset(shadowDistance, shadowDistance),
+            blurRadius: 0,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: content,
+    );
+
+    // Disabled: opacity 0.45 per spec — wrap, not color swap
+    if (!isEnabled) {
+      btn = Opacity(opacity: 0.45, child: IgnorePointer(ignoring: !widget.isLoading, child: btn));
+    }
+    // Focus ring amber 2px offset 2 + 44px min constraint
+    btn = Semantics(
       button: true,
       enabled: isEnabled,
-      child: GestureDetector(
-        onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
-        onTapUp: isEnabled ? (_) => setState(() => _isPressed = false) : null,
-        onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
-        onTap: isEnabled ? widget.onPressed : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 70),
-        curve: Curves.easeOut,
-        transform: Matrix4.translationValues(0, translateY, 0),
-        width: widget.isFullWidth ? double.infinity : null,
-        padding: widget.padding,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: radius,
-          border: Border.all(
-            color: AppColors.borderInk,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.borderInk,
-              offset: Offset(0, shadowDistance),
-              blurRadius: 0,
-              spreadRadius: 0,
+      child: Focus(
+        canRequestFocus: isEnabled,
+        onFocusChange: (focused) => setState(() => _isFocused = focused),
+        child: Container(
+          decoration: _isFocused
+              ? BoxDecoration(
+                  borderRadius: radius,
+                  boxShadow: const [
+                    BoxShadow(color: Color(0xFFFFC526), blurRadius: 0, spreadRadius: 2),
+                  ],
+                )
+              : null,
+          child: GestureDetector(
+            onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
+            onTapUp: isEnabled ? (_) => setState(() => _isPressed = false) : null,
+            onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
+            onTap: isEnabled ? widget.onPressed : null,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: 44, minWidth: widget.isFullWidth ? 0 : 44),
+              child: btn,
             ),
-          ],
-        ),
-        child: content,
+          ),
         ),
       ),
     );
+    return btn;
   }
 }

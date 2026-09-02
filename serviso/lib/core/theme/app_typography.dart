@@ -43,6 +43,12 @@ abstract final class AppTypography {
         letterSpacing: letterSpacing,
       );
 
+  /// DS v2 tablet kasir: displayLarge 48 desktop, 40 di width <920
+  static double displayLargeSize(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return w < 920 ? 40 : 48;
+  }
+
   static TextTheme textTheme({
     Color ink = AppColors.ink,
     Color inkMuted = AppColors.inkMuted,

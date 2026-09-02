@@ -99,7 +99,7 @@ class PartDetailScreen extends ConsumerWidget {
                       color: (part.isLowStock || part.isOutOfStock)
                           ? AppColors.action.withValues(alpha: 0.25)
                           : AppColors.borderHairline,
-                      offset: const Offset(0, 4),
+                      offset: const Offset(4, 4),
                       blurRadius: 0,
                     ),
                   ],

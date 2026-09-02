@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_bar_chart.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/section_card.dart';
@@ -37,11 +37,6 @@ final omsetDetailRowsProvider = FutureProvider.autoDispose
       return (start: DateTime(now.year, now.month, 1), end: today);
   }
 }
-
-FlLine _getOmsetHorizontalLine(double _) => const FlLine(
-      color: AppColors.line,
-      strokeWidth: 1,
-    );
 
 class OmsetDetailScreen extends ConsumerWidget {
   const OmsetDetailScreen({super.key});
@@ -218,74 +213,17 @@ class OmsetDetailScreen extends ConsumerWidget {
                     // Grafik (tetap kronologis agar tren mudah dibaca)
                     SectionCard(
                       title: 'Grafik Pendapatan Harian',
-                      child: SizedBox(
-                        height: 200,
-                        child: BarChart(
-                          BarChartData(
-                            alignment: BarChartAlignment.spaceAround,
-                            gridData: const FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                              getDrawingHorizontalLine:
-                                  _getOmsetHorizontalLine,
-                            ),
-                            titlesData: FlTitlesData(
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    final idx = value.toInt();
-                                    if (idx < 0 || idx >= rows.length) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final d = rows[idx].date;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Text(
-                                        '${d.day}/${d.month}',
-                                        style: AppTypography.mono(
-                                          fontSize: 10,
-                                          color: AppColors.inkMuted,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            borderData: FlBorderData(show: false),
-                            barGroups: rows.asMap().entries.map((e) {
-                              final idx = e.key;
-                              final r = e.value;
-                              return BarChartGroupData(
-                                x: idx,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: r.revenue,
-                                    color: AppColors.primary,
-                                    width: 16,
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(8.0),
-                                    ),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.borderInk,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                      child: NeoBarChart(
+                        items: rows.map((r) {
+                          final d = r.date;
+                          return NeoBarChartItem(
+                            label: '${d.day}/${d.month}',
+                            value: r.revenue,
+                            tooltipTitle: '${d.day}/${d.month}/${d.year}',
+                            tooltipSubtitle: '${r.woDoneCount} WO • ${r.directSaleCount} PL',
+                          );
+                        }).toList(),
+                        valueFormatter: (val) => rupiah(val),
                       ),
                     ),
                     const SizedBox(height: 16),

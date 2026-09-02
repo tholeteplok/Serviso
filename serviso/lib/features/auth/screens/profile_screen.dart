@@ -144,7 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       boxShadow: const [
                         BoxShadow(
                           color: AppColors.borderStrong,
-                          offset: Offset(0, 2),
+                          offset: Offset(2, 2),
                           blurRadius: 0,
                         ),
                       ],

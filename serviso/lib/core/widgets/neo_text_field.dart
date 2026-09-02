@@ -5,15 +5,13 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
-/// Centralized pop-brutalism input field.
-///
-/// Follows `design (1).md §6.8` + Contra Kit visual:
-/// - Resting border: 1.5px hairline `#ECE6DF`
-/// - Focus border:  2px `accentPrimary` green
-/// - Error border:  1.5px `statusCancelledBorder` red
-/// - Radius: 10px (not pill — allows multi-line and labels to breathe)
-/// - No hard shadow (hard shadow reserved for tap targets only)
-class NeoTextField extends StatelessWidget {
+/// DS v2 Warm Industrial — Input Field
+/// Spec: docs/serviso-design-system-v2.html § detail-input + §4 pressable
+/// - Resting: 1.5px ink #111 (decision A — tegas)
+/// - Focus: 2px ink + outer ring 3px #FFE9A6 (amberDim) + soft shadow
+/// - Error: 1.5 #C0392B bg #FFF3EF • Success: 1.5 mint #3FBE85 bg #F0FAF5
+/// - Radius 12, height 44, hover #FFFBF7
+class NeoTextField extends StatefulWidget {
   const NeoTextField({
     super.key,
     this.controller,
@@ -62,69 +60,107 @@ class NeoTextField extends StatelessWidget {
   final bool obscureText;
 
   @override
+  State<NeoTextField> createState() => _NeoTextFieldState();
+}
+
+class _NeoTextFieldState extends State<NeoTextField> {
+  late FocusNode _focusNode;
+  bool _hasFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(() {
+      if (mounted) setState(() => _hasFocus = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    if (widget.focusNode == null) _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      initialValue: initialValue,
-      focusNode: focusNode,
-      keyboardType: keyboardType,
-      textCapitalization: textCapitalization,
-      maxLines: obscureText ? 1 : maxLines,
-      minLines: minLines,
-      validator: validator,
-      onChanged: onChanged,
-      onFieldSubmitted: onFieldSubmitted,
-      autofocus: autofocus,
-      readOnly: readOnly,
-      enabled: enabled,
-      textInputAction: textInputAction,
-      obscureText: obscureText,
+    final disableAnim = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return AnimatedContainer(
+      duration: Duration(milliseconds: disableAnim ? 0 : 160),
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.input,
+        boxShadow: _hasFocus && widget.enabled
+            ? const [
+                BoxShadow(color: Color(0xFFFFE9A6), blurRadius: 0, spreadRadius: 3),
+                BoxShadow(color: Color(0x12000000), offset: Offset(0, 4), blurRadius: 16),
+              ]
+            : null,
+      ),
+      child: TextFormField(
+      controller: widget.controller,
+      initialValue: widget.initialValue,
+      focusNode: _focusNode,
+      keyboardType: widget.keyboardType,
+      textCapitalization: widget.textCapitalization,
+      maxLines: widget.obscureText ? 1 : widget.maxLines,
+      minLines: widget.minLines,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      autofocus: widget.autofocus,
+      readOnly: widget.readOnly,
+      enabled: widget.enabled,
+      textInputAction: widget.textInputAction,
+      obscureText: widget.obscureText,
       style: AppTypography.inter(
         color: AppColors.ink900,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        prefixText: prefixText,
-        prefixIcon: prefixIcon != null
+        labelText: widget.labelText,
+        hintText: widget.hintText,
+        prefixText: widget.prefixText,
+        prefixIcon: widget.prefixIcon != null
             ? Icon(
-                prefixIcon,
+                widget.prefixIcon,
                 size: 18,
                 color: AppColors.textSecondary,
               )
             : null,
-        suffixIcon: suffixIcon,
-        isDense: isDense,
-        // Resting border: hairline abu sesuai Contra Kit
+        suffixIcon: widget.suffixIcon,
+        isDense: widget.isDense,
+        // DS v2: resting 1.5 ink — decision A
         enabledBorder: const OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(
-            color: AppColors.borderHairline,
+            color: AppColors.borderInk,
             width: 1.5,
           ),
         ),
-        // Focus border: accent primary hijau
+        border: const OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: AppColors.borderInk, width: 1.5),
+        ),
+        // Focus: 2px ink — ring drawn by outer AnimatedContainer (amberDim)
         focusedBorder: const OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(
-            color: AppColors.accentMint,
+            color: AppColors.borderInk,
             width: 2,
           ),
         ),
-        // Error border: merah
         errorBorder: const OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(
-            color: AppColors.statusCancelledBorder,
+            color: Color(0xFFC0392B),
             width: 1.5,
           ),
         ),
         focusedErrorBorder: const OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(
-            color: AppColors.statusCancelledBorder,
+            color: Color(0xFFC0392B),
             width: 2,
           ),
         ),
@@ -136,7 +172,9 @@ class NeoTextField extends StatelessWidget {
           ),
         ),
         filled: true,
-        fillColor: enabled ? AppColors.bgSurface : AppColors.borderHairline.withValues(alpha: 0.3),
+        fillColor: !widget.enabled
+            ? AppColors.borderHairline.withValues(alpha: 0.3)
+            : null,
         labelStyle: AppTypography.inter(
           color: AppColors.textSecondary,
           fontSize: 14,
@@ -145,9 +183,10 @@ class NeoTextField extends StatelessWidget {
           color: AppColors.textSecondary,
           fontSize: 14,
         ),
-        contentPadding: isDense
+        contentPadding: widget.isDense
             ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
             : const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      ),
       ),
     );
   }

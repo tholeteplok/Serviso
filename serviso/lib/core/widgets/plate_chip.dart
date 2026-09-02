@@ -22,7 +22,7 @@ class PlateChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: AppRadius.chipSmall,
-        border: Border.all(color: AppColors.ink, width: 2),
+        border: Border.all(color: AppColors.borderInk, width: 1.5),
       ),
       child: Text(
         plate(plateText),

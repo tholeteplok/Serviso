@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,8 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/horizontal_bar_list.dart';
+import '../../../core/widgets/neo_bar_chart.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/section_card.dart';
@@ -22,7 +23,6 @@ class LaporanScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = AppTypography.textTheme();
     final period = ref.watch(laporanPeriodProvider);
     final dailySummariesAsync = ref.watch(laporanDailySummariesProvider);
     final topPartsAsync = ref.watch(topPartsProvider);
@@ -302,75 +302,17 @@ class LaporanScreen extends ConsumerWidget {
                     // Bar Chart Section
                     SectionCard(
                       title: 'Grafik Pendapatan Harian',
-                      child: SizedBox(
-                        height: 200,
-                        child: BarChart(
-                          BarChartData(
-                            alignment: BarChartAlignment.spaceAround,
-                            gridData: const FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                              getDrawingHorizontalLine:
-                                  _getLaporanHorizontalLine,
-                            ),
-                            titlesData: FlTitlesData(
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 32,
-                                  getTitlesWidget: (value, meta) {
-                                    final index = value.toInt();
-                                    if (index < 0 || index >= rows.length) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final date = rows[index].date;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Text(
-                                        '${date.day}/${date.month}',
-                                        style: AppTypography.mono(
-                                          fontSize: 10,
-                                          color: AppColors.inkMuted,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            borderData: FlBorderData(show: false),
-                            barGroups: rows.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final row = entry.value;
-                              return BarChartGroupData(
-                                x: index,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: row.revenue,
-                                    color: AppColors.primary,
-                                    width: 16,
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(8.0),
-                                    ),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.borderInk,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                      child: NeoBarChart(
+                        items: rows.map((r) {
+                          final date = r.date;
+                          return NeoBarChartItem(
+                            label: '${date.day}/${date.month}',
+                            value: r.revenue,
+                            tooltipTitle: '${date.day}/${date.month}/${date.year}',
+                            tooltipSubtitle: '${r.totalTransactions} Transaksi • ${r.partsOutQty.toInt()} Part',
+                          );
+                        }).toList(),
+                        valueFormatter: (val) => rupiah(val),
                       ),
                     ),
                   ],
@@ -419,54 +361,13 @@ class LaporanScreen extends ConsumerWidget {
 
                 return SectionCard(
                   title: 'Suku Cadang Terlaris Bulan Ini',
-                  child: Column(
-                    children: parts.map((part) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: AppColors.primary,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    part.name,
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${part.qtyOut.toInt()} pcs terjual',
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: AppColors.inkMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              rupiah(part.revenue),
-                              style: AppTypography.mono(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                          ],
-                        ),
+                  child: HorizontalBarList(
+                    items: parts.map((part) {
+                      return HorizontalBarItem(
+                        title: part.name,
+                        value: part.qtyOut,
+                        valueLabel: '${part.qtyOut.toInt()}×',
+                        subtitle: '${rupiah(part.revenue)} • ${part.qtyOut.toInt()} pcs terjual',
                       );
                     }).toList(),
                   ),
@@ -634,8 +535,3 @@ class _MethodBreakdownSection extends ConsumerWidget {
     );
   }
 }
-
-FlLine _getLaporanHorizontalLine(double val) => const FlLine(
-      color: AppColors.line,
-      strokeWidth: 1,
-    );

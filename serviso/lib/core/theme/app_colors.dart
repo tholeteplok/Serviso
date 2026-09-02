@@ -16,8 +16,8 @@ abstract final class AppColors {
   /// Secondary text color, subtitles, captions (#5E5E62) — DS v2: --muted, WCAG AA 4.5:1
   static const textSecondary = Color(0xFF5E5E62);
 
-  /// Subtle hairline divider & passive card outline (#ECE6DF)
-  static const borderHairline = Color(0xFFECE6DF);
+  /// Subtle hairline divider & passive card outline — DS v2: #E8E0D6 (was ECE6DF)
+  static const borderHairline = Color(0xFFE8E0D6);
 
   // ---------------------------------------------------------------------------
   // 2.2 Pastel Palette
@@ -69,6 +69,11 @@ abstract final class AppColors {
   /// Solid Amber — DS v2: --amber: #FFC526 (secondary CTA, highlight, badge)
   static const amber = Color(0xFFFFC526);
   static const amberPress = Color(0xFFE8AE12);  // DS v2: --amber-press
+  static const amberDim = Color(0xFFFFE9A6);    // DS v2: tint for focus ring
+  // Canonical v2 name — keep `amber` as alias for backwards compat
+  static const accentAmber = amber;
+  static const accentAmberBorder = ink900;
+  static const accentAmberPress = amberPress;
 
   // ---------------------------------------------------------------------------
   // 2.5 Universal Line-Art Border (Seluruh card, button, chip, chart)
@@ -78,7 +83,7 @@ abstract final class AppColors {
   // ---------------------------------------------------------------------------
   // Dark Surface (Headers / Navigation)
   // ---------------------------------------------------------------------------
-  static const surfaceDark = Color(0xFF111111);
+  static const surfaceDark = Color(0xFF141414); // DS v2: --graphite
   static const textOnDark = Color(0xFFFDF7F2);
 
   // ---------------------------------------------------------------------------

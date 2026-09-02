@@ -414,7 +414,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.borderStrong, width: 1.5),
                         boxShadow: const [
-                          BoxShadow(color: AppColors.borderStrong, offset: Offset(0, 3), blurRadius: 0),
+                          BoxShadow(color: AppColors.borderStrong, offset: Offset(4, 4), blurRadius: 0),
                         ],
                       ),
                       child: Column(

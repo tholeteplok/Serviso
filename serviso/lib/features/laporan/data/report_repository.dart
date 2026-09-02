@@ -336,7 +336,7 @@ class SupabaseReportRepository implements ReportRepository {
     try {
       final res = await _client
           .from('part_movements')
-          .select('id, part_id, qty, purchase_price, distributor, created_at, due_date, debt_status, note, parts(name, cost_price)')
+          .select('id, part_id, qty, purchase_price, distributor, created_at, due_date, payment_type, debt_status, note, parts(name, cost_price)')
           .or('payment_type.eq.hutang,note.ilike.%[HUTANG]%')
           .order('created_at', ascending: false);
 
