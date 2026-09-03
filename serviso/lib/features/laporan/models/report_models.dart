@@ -452,3 +452,107 @@ class HppRow {
     };
   }
 }
+
+class DirectSaleItemReportRow {
+  final String kind;
+  final String description;
+  final double qty;
+  final double unitPrice;
+  final double discount;
+  final String? partName;
+
+  const DirectSaleItemReportRow({
+    required this.kind,
+    required this.description,
+    required this.qty,
+    required this.unitPrice,
+    this.discount = 0,
+    this.partName,
+  });
+
+  double get subtotal => (qty * unitPrice) - discount;
+
+  factory DirectSaleItemReportRow.fromMap(Map<String, dynamic> map) {
+    final parts = map['parts'];
+    String? pName;
+    if (parts is Map) {
+      pName = parts['name'] as String?;
+    }
+    return DirectSaleItemReportRow(
+      kind: map['kind'] as String? ?? 'part',
+      description: map['description'] as String? ?? pName ?? 'Item',
+      qty: (map['qty'] as num?)?.toDouble() ?? 0.0,
+      unitPrice: (map['unit_price'] as num?)?.toDouble() ?? 0.0,
+      discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
+      partName: pName,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'kind': kind,
+      'description': description,
+      'qty': qty,
+      'unit_price': unitPrice,
+      'discount': discount,
+      'part_name': partName,
+    };
+  }
+}
+
+class DirectSaleReportRow {
+  final String id;
+  final String saleNumber;
+  final DateTime paidAt;
+  final double paidAmount;
+  final String? payMethod;
+  final String? customerName;
+  final int itemCount;
+  final List<DirectSaleItemReportRow> items;
+
+  const DirectSaleReportRow({
+    required this.id,
+    required this.saleNumber,
+    required this.paidAt,
+    required this.paidAmount,
+    this.payMethod,
+    this.customerName,
+    this.itemCount = 0,
+    this.items = const [],
+  });
+
+  factory DirectSaleReportRow.fromMap(Map<String, dynamic> map) {
+    final cust = map['customers'];
+    final itemsList = (map['direct_sale_items'] as List?) ?? [];
+    return DirectSaleReportRow(
+      id: map['id'] as String? ?? '',
+      saleNumber: map['sale_number'] as String? ?? '',
+      paidAt: map['paid_at'] != null
+          ? DateTime.parse(map['paid_at'].toString())
+          : (map['created_at'] != null
+              ? DateTime.parse(map['created_at'].toString())
+              : DateTime.now()),
+      paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
+      payMethod: map['pay_method'] as String?,
+      customerName: cust is Map ? cust['name'] as String? : null,
+      itemCount: itemsList.isNotEmpty ? itemsList.length : ((map['item_count'] as num?)?.toInt() ?? 0),
+      items: itemsList
+          .map((e) => DirectSaleItemReportRow.fromMap(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'sale_number': saleNumber,
+      'paid_at': paidAt.toIso8601String(),
+      'paid_amount': paidAmount,
+      'pay_method': payMethod,
+      'customer_name': customerName,
+      'item_count': itemCount,
+      'items': items.map((e) => e.toMap()).toList(),
+    };
+  }
+}
+

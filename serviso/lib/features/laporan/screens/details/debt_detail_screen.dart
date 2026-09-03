@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../auth/controllers/session_controller.dart';
@@ -83,12 +85,12 @@ class DebtDetailScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Rincian Hutang')),
+        appBar: const NeoAppBar(title: 'Rincian Hutang'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: EmptyState(
-              icon: Icons.lock,
+              icon: AppIcons.lock,
               title: 'Akses Terbatas',
               message:
                   'Hanya pemilik dapat melihat rincian laba bersih. Hubungi pemilik bengkel.',
@@ -118,8 +120,8 @@ class DebtDetailScreen extends ConsumerWidget {
     final periodLabel = filter.label;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian Hutang'),
+      appBar: NeoAppBar(
+        title: 'Rincian Hutang',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -155,14 +157,20 @@ class DebtDetailScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Expanded(
             child: asyncDebts.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (err, _) => ErrorView(
                 message: err.toString(),
                 onRetry: () => ref.invalidate(distributorDebtsProvider),
               ),
-              data: (allDebts) {
-                final filtered = filteredForExport(allDebts);                if (filter == DebtFilter.paid && filtered.isEmpty) {
-                  // Still show summary with 0 + empty state for paid tab
+              data: (debts) {
+                final filtered = filteredForExport(debts);
+
+                if (filtered.isEmpty && filter == DebtFilter.paid) {
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     children: [
@@ -174,8 +182,8 @@ class DebtDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       const SizedBox(height: 32),
-                      const EmptyState(
-                        icon: Icons.check_circle_outline,
+                      EmptyState(
+                        icon: AppIcons.checkCircle,
                         title: 'Tidak ada hutang lunas',
                         message:
                             'Belum ada hutang yang dilunasi. Data hutang lunas akan tampil di sini.',
@@ -203,8 +211,8 @@ class DebtDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       const SizedBox(height: 32),
-                      const EmptyState(
-                        icon: Icons.check_circle_outline,
+                      EmptyState(
+                        icon: AppIcons.checkCircle,
                         title: 'Tidak ada hutang',
                         message:
                             'Tidak ada hutang distributor yang belum lunas. Semua kewajiban telah terbayar!',

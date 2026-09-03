@@ -9,7 +9,11 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
@@ -29,12 +33,12 @@ class PartDetailScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Suku Cadang'),
+      appBar: NeoAppBar(
+        title: 'Detail Suku Cadang',
         actions: [
           if (isAdmin) ...[
             IconButton(
-              icon: Icon(AppIcons.edit),
+              icon: Icon(AppIcons.edit, color: AppColors.ink900),
               tooltip: 'Ubah suku cadang',
               onPressed: () {
                 final currentPart = state.valueOrNull?.part;
@@ -44,7 +48,7 @@ class PartDetailScreen extends ConsumerWidget {
               },
             ),
             IconButton(
-              icon: Icon(AppIcons.trash),
+              icon: Icon(AppIcons.trash, color: AppColors.statusDanger),
               tooltip: 'Hapus suku cadang',
               onPressed: () => _confirmDelete(context, ref),
             ),
@@ -80,48 +84,38 @@ class PartDetailScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
+              NeoCard.info(
+                color: (part.isLowStock || part.isOutOfStock)
+                    ? AppColors.pastelPink
+                    : AppColors.bgSurface,
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: (part.isLowStock || part.isOutOfStock)
-                      ? AppColors.tintAction
-                      : AppColors.surface,
-                  borderRadius: AppRadius.card,
-                  border: Border.all(
-                    color: (part.isLowStock || part.isOutOfStock)
-                        ? AppColors.action
-                        : AppColors.borderHairline,
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (part.isLowStock || part.isOutOfStock)
-                          ? AppColors.action.withValues(alpha: 0.25)
-                          : AppColors.borderHairline,
-                      offset: const Offset(4, 4),
-                      blurRadius: 0,
-                    ),
-                  ],
-                ),
                 child: Column(
                   children: [
-                    Text('Stok Tersedia', style: textTheme.bodyMedium),
+                    Text(
+                      'Stok Tersedia',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       _formatStock(part),
                       style: AppTypography.chakra(
                         fontSize: 48,
-                        color: (part.isLowStock || part.isOutOfStock)
-                            ? AppColors.action
-                            : AppColors.ink,
+                        color: AppColors.ink900,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${part.unit ?? 'pcs'}'
                       '${part.isOutOfStock ? ' • Stok Habis' : (part.isLowStock ? ' • Stok Menipis' : '')}',
-                      style: textTheme.bodySmall,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: (part.isLowStock || part.isOutOfStock)
+                            ? AppColors.statusDanger
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -158,28 +152,28 @@ class PartDetailScreen extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton.icon(
+                    child: ThickBottomBorderButton(
+                      isFullWidth: true,
+                      variant: ThickButtonVariant.primary,
                       icon: Icon(AppIcons.add, size: 18),
                       onPressed: () =>
                           showStockInDialog(context, ref, partId, initialPart: part),
-                      label: const Text('Stok Masuk'),
+                      child: const Text('Stok Masuk'),
                     ),
                   ),
                   if (isAdmin) ...[
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton.icon(
+                      child: ThickBottomBorderButton(
+                        isFullWidth: true,
+                        variant: ThickButtonVariant.secondary,
                         icon: Icon(AppIcons.edit, size: 18),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.tintAction,
-                          foregroundColor: AppColors.action,
-                        ),
                         onPressed: () => showAdjustStockDialog(
                           context,
                           ref,
                           part,
                         ),
-                        label: const Text('Koreksi Stok'),
+                        child: const Text('Koreksi Stok'),
                       ),
                     ),
                   ],
@@ -215,28 +209,13 @@ class PartDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showNeoConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus suku cadang'),
-        content: const Text(
+      title: 'Hapus suku cadang',
+      message:
           'Hapus suku cadang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.action,
-              foregroundColor: AppColors.surface,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Hapus',
+      isDanger: true,
     );
     if (confirmed != true) return;
     try {

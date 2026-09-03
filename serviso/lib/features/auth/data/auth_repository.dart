@@ -127,17 +127,29 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   Future<Profile> _fetchProfile(String userId) async {
-    final data = await _client
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
-    if (data == null) {
-      throw const AuthException(
-        'Profil tidak ditemukan. Hubungi pemilik bengkel.',
-      );
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('*, shops(name, slug)')
+          .eq('id', userId)
+          .maybeSingle();
+      if (data != null) {
+        return Profile.fromMap(data);
+      }
+    } catch (_) {
+      // Fallback jika relasi schema belum termuat di cache
+      final data = await _client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+      if (data != null) {
+        return Profile.fromMap(data);
+      }
     }
-    return Profile.fromMap(data);
+    throw const AuthException(
+      'Profil tidak ditemukan. Hubungi pemilik bengkel.',
+    );
   }
 
   Future<void> _recordEvent(String event) async {

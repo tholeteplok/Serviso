@@ -11,6 +11,7 @@ class ReceiptInput {
     required this.shopName,
     this.shopAddress,
     this.shopPhone,
+    this.receiptNotes,
     required this.woNumber,
     required this.plate,
     this.vehicleDesc,
@@ -26,6 +27,7 @@ class ReceiptInput {
   final String shopName;
   final String? shopAddress;
   final String? shopPhone;
+  final String? receiptNotes;
   final String woNumber;
   final String plate;
   final String? vehicleDesc;
@@ -96,7 +98,14 @@ pw.Document _buildDocument(ReceiptInput input) {
           pw.Divider(thickness: 1),
           _plateRow(input.plate, monoBold),
           pw.SizedBox(height: 6),
-          _line('No. WO', input.woNumber, mono),
+          _line(
+            input.woNumber.startsWith('DS-') ||
+                    input.plate.toLowerCase().contains('penjualan langsung')
+                ? 'No. Transaksi'
+                : 'No. WO',
+            input.woNumber,
+            mono,
+          ),
           if (input.vehicleDesc?.isNotEmpty == true)
             _line('Kendaraan', input.vehicleDesc!, mono),
           if (input.customerName?.isNotEmpty == true)
@@ -120,6 +129,18 @@ pw.Document _buildDocument(ReceiptInput input) {
               mono,
               align: true,
             ),
+          if (input.receiptNotes?.isNotEmpty == true) ...[
+            pw.SizedBox(height: 6),
+            pw.Divider(thickness: 0.5, borderStyle: pw.BorderStyle.dashed),
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 2),
+              child: pw.Text(
+                input.receiptNotes!,
+                style: pw.TextStyle(font: mono, fontSize: 7.5),
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
+          ],
           pw.Spacer(),
           pw.Divider(thickness: 0.5),
           pw.Text(

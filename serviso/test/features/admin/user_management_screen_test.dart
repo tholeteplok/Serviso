@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/thick_bottom_border_button.dart';
 import 'package:serviso/features/admin/controllers/admin_controllers.dart';
 import 'package:serviso/features/admin/data/admin_repository.dart';
 import 'package:serviso/features/admin/screens/user_management_screen.dart';
@@ -28,6 +29,6 @@ void main() {
     expect(find.text('Kelola Pengguna'), findsOneWidget);
     expect(find.text('@admin'), findsOneWidget);
     expect(find.text('@kasir1'), findsOneWidget);
-    expect(find.widgetWithText(FloatingActionButton, 'Tambah User'), findsOneWidget);
+    expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah User'), findsOneWidget);
   });
 }

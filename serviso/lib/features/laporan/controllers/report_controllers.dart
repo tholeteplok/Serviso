@@ -141,3 +141,13 @@ final transactionsProvider = FutureProvider.family<
   final repo = ref.watch(reportRepositoryProvider);
   return repo.fetchTransactions(start: range.start, end: range.end);
 });
+
+final directSalesDetailPeriodProvider =
+    StateProvider<LaporanPeriod>((ref) => LaporanPeriod.days7);
+
+final directSalesDetailProvider = FutureProvider.family<
+    List<DirectSaleReportRow>, ({DateTime start, DateTime end})>((ref, range) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchDirectSalesDetail(start: range.start, end: range.end);
+});
+

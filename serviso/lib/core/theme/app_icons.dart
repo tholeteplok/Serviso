@@ -35,6 +35,7 @@ abstract final class AppIcons {
   static final IconData share = PhosphorIcons.shareNetwork(PhosphorIconsStyle.bold);
   static final IconData print = PhosphorIcons.printer(PhosphorIconsStyle.bold);
   static final IconData refresh = PhosphorIcons.arrowsClockwise(PhosphorIconsStyle.bold);
+  static final IconData copy = PhosphorIcons.copy(PhosphorIconsStyle.bold);
 
   // ---------------------------------------------------------------------------
   // Workshop & POS Domain
@@ -63,6 +64,8 @@ abstract final class AppIcons {
   static final IconData tag = PhosphorIcons.tag(PhosphorIconsStyle.bold);
   static final IconData caretUp = PhosphorIcons.caretUp(PhosphorIconsStyle.bold);
   static final IconData caretDown = PhosphorIcons.caretDown(PhosphorIconsStyle.bold);
+  static final IconData caretRight = PhosphorIcons.caretRight(PhosphorIconsStyle.bold);
+  static final IconData caretLeft = PhosphorIcons.caretLeft(PhosphorIconsStyle.bold);
   static final IconData truck = PhosphorIcons.truck(PhosphorIconsStyle.bold);
   static final IconData phone = PhosphorIcons.phone(PhosphorIconsStyle.bold);
   static final IconData mapPin = PhosphorIcons.mapPin(PhosphorIconsStyle.bold);
@@ -80,5 +83,9 @@ abstract final class AppIcons {
   static final IconData checkFat = PhosphorIcons.checkFat(PhosphorIconsStyle.bold);
   static final IconData calendar = PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold);
   static final IconData calendarFill = PhosphorIcons.calendarBlank(PhosphorIconsStyle.fill);
+  static final IconData lock = PhosphorIcons.lock(PhosphorIconsStyle.bold);
+  static final IconData lockFill = PhosphorIcons.lock(PhosphorIconsStyle.fill);
+  static final IconData eye = PhosphorIcons.eye(PhosphorIconsStyle.bold);
+  static final IconData eyeSlash = PhosphorIcons.eyeSlash(PhosphorIconsStyle.bold);
 }
 

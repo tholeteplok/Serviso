@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_bar_chart.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
@@ -81,12 +85,12 @@ class ProfitDetailScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Rincian Laba')),
+        appBar: const NeoAppBar(title: 'Rincian Laba'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: EmptyState(
-              icon: Icons.lock,
+              icon: AppIcons.lock,
               title: 'Akses Terbatas',
               message:
                   'Hanya pemilik dapat melihat rincian laba bersih. Hubungi pemilik bengkel.',
@@ -106,8 +110,8 @@ class ProfitDetailScreen extends ConsumerWidget {
     final rowsForExport = asyncRows.valueOrNull ?? const <ProfitBreakdownRow>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian Laba'),
+      appBar: NeoAppBar(
+        title: 'Rincian Laba',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -140,7 +144,12 @@ class ProfitDetailScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Expanded(
             child: asyncRows.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (err, _) => ErrorView(
                 message: err.toString(),
                 onRetry: () => ref.invalidate(
@@ -151,10 +160,10 @@ class ProfitDetailScreen extends ConsumerWidget {
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [
-                      SizedBox(height: 32),
+                    children: [
+                      const SizedBox(height: 32),
                       EmptyState(
-                        icon: Icons.bar_chart_rounded,
+                        icon: AppIcons.report,
                         title: 'Belum Ada Data Laba',
                         message:
                             'Tidak ada data laba pada periode ini. Coba ganti periode.',
@@ -193,6 +202,7 @@ class ProfitDetailScreen extends ConsumerWidget {
                             subtitle: 'modal part',
                             color: AppColors.inkMuted,
                             icon: Icons.inventory_2_rounded,
+                            onTap: () => context.push(AppRoutes.laporanHpp),
                           ),
                         ),
                       ],
@@ -363,6 +373,7 @@ class _ProfitSummaryCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.icon,
+    this.onTap,
   });
 
   final String title;
@@ -370,10 +381,12 @@ class _ProfitSummaryCard extends StatelessWidget {
   final String subtitle;
   final Color color;
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return NeoCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,6 +414,12 @@ class _ProfitSummaryCard extends StatelessWidget {
                       ),
                 ),
               ),
+              if (onTap != null)
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: AppColors.inkMuted,
+                ),
             ],
           ),
           const SizedBox(height: 8),

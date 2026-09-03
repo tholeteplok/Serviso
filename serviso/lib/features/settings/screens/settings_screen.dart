@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../data/settings_repository.dart';
 import '../models/app_settings.dart';
@@ -20,6 +23,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _notesController = TextEditingController();
   bool _saving = false;
   String? _error;
 
@@ -40,6 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _nameController.text = settings.shopName;
     _addressController.text = settings.address ?? '';
     _phoneController.text = settings.phone ?? '';
+    _notesController.text = settings.receiptNotes ?? '';
   }
 
   @override
@@ -47,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _nameController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -65,6 +71,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             shopName: name,
             address: _addressController.text,
             phone: _phoneController.text,
+            receiptNotes: _notesController.text,
           );
       ref.invalidate(settingsProvider);
       if (mounted) {
@@ -76,7 +83,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on SettingsException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'Pengaturan gagal diperbarui');
+      setState(() => _error = 'Pengaturan gagal diperbarui: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -88,9 +95,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isAdmin = ref.watch(isAdminProvider);
 
     if (!isAdmin) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Pengaturan Toko')),
-        body: const Center(
+      return const Scaffold(
+        appBar: NeoAppBar(title: 'Pengaturan Toko'),
+        body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
             child: Text(
@@ -103,34 +110,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan Toko')),
+      appBar: const NeoAppBar(title: 'Pengaturan Toko'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
             'Profil toko tampil di struk pembayaran',
-            style: textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           SectionCard(
             title: 'Informasi Bengkel',
             child: Column(
               children: [
-                TextFormField(
+                NeoTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Nama toko'),
+                  labelText: 'Nama toko',
+                  prefixIcon: AppIcons.storefront,
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                NeoTextField(
                   controller: _addressController,
-                  decoration: const InputDecoration(labelText: 'Alamat'),
+                  labelText: 'Alamat',
+                  prefixIcon: AppIcons.mapPin,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                NeoTextField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Telepon'),
+                  labelText: 'Telepon',
+                  prefixIcon: AppIcons.phone,
                   keyboardType: TextInputType.phone,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SectionCard(
+            title: 'Catatan Bawah Struk (Kebijakan / Garansi)',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Catatan ini akan dicetak pada bagian bawah struk/nota pembayaran (contoh: masa garansi servis, syarat klaim, atau kebijakan toko).',
+                  style:
+                      textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  key: const Key('receipt_notes_field'),
+                  controller: _notesController,
+                  labelText: 'Catatan Struk / Garansi',
+                  prefixIcon: AppIcons.notepad,
+                  hintText:
+                      'Contoh: Garansi servis 7 hari. Barang yang sudah dibeli tidak dapat ditukar.',
+                  maxLines: 3,
                 ),
               ],
             ),
@@ -141,25 +175,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 _error!,
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.action),
+                style: textTheme.bodyMedium?.copyWith(color: AppColors.statusDanger),
               ),
             ),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              icon: Icon(AppIcons.check, size: 18),
-              onPressed: _saving ? null : _save,
-              label: _saving
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.surface,
-                      ),
-                    )
-                  : const Text('Simpan Pengaturan'),
-            ),
+          ThickBottomBorderButton(
+            isFullWidth: true,
+            isLoading: _saving,
+            onPressed: _saving ? null : _save,
+            icon: Icon(AppIcons.check, size: 18, color: AppColors.ink900),
+            child: const Text('Simpan Pengaturan'),
           ),
         ],
       ),

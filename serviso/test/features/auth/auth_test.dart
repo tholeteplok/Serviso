@@ -84,6 +84,11 @@ void main() {
         'role': 'admin',
         'is_active': false,
         'phone': '0812',
+        'shop_id': 'shop-1',
+        'shops': {
+          'name': 'Bengkel Maju',
+          'slug': 'bengkel-maju',
+        },
       });
       expect(p.id, 'abc');
       expect(p.username, 'kasir1');
@@ -92,6 +97,9 @@ void main() {
       expect(p.role, UserRole.admin);
       expect(p.isActive, isFalse);
       expect(p.phone, '0812');
+      expect(p.shopId, 'shop-1');
+      expect(p.shopName, 'Bengkel Maju');
+      expect(p.shopSlug, 'bengkel-maju');
       expect(p.isAdmin, isTrue);
     });
 

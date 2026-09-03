@@ -6,10 +6,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_search_bar.dart';
+import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/models/profile.dart';
@@ -113,49 +119,54 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     final modelController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    final result = await showDialog<Vehicle>(
+    final result = await showNeoDialog<Vehicle>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Pelanggan & Kendaraan Baru'),
+      child: NeoDialog.alert(
+        title: 'Pelanggan & Kendaraan Baru',
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
+                NeoTextField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Nama pelanggan'),
+                  labelText: 'Nama pelanggan',
+                  prefixIcon: AppIcons.user,
                   validator: validateCustomerName,
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
+                const SizedBox(height: 12),
+                NeoTextField(
                   controller: phoneController,
-                  decoration: const InputDecoration(labelText: 'Telepon (opsional)'),
+                  labelText: 'Telepon (opsional)',
+                  prefixIcon: AppIcons.phone,
                   keyboardType: TextInputType.phone,
                   validator: validateCustomerPhone,
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
+                const SizedBox(height: 12),
+                NeoTextField(
                   controller: plateController,
-                  decoration: const InputDecoration(labelText: 'Plat nomor'),
+                  labelText: 'Plat nomor',
+                  prefixIcon: AppIcons.car,
                   textCapitalization: TextCapitalization.characters,
                   validator: validatePlate,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: NeoTextField(
                         controller: brandController,
-                        decoration: const InputDecoration(labelText: 'Merek'),
+                        labelText: 'Merek',
+                        prefixIcon: AppIcons.tag,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: TextFormField(
+                      child: NeoTextField(
                         controller: modelController,
-                        decoration: const InputDecoration(labelText: 'Model'),
+                        labelText: 'Model',
+                        prefixIcon: AppIcons.wrench,
                       ),
                     ),
                   ],
@@ -166,16 +177,17 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Batal'),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          ThickBottomBorderButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               final customerRepo = ref.read(customerRepositoryProvider);
               final vehicleRepo = ref.read(vehicleRepositoryProvider);
               final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(dialogContext);
+              final nav = Navigator.of(context);
               try {
                 final customer = await customerRepo.create(
                   CustomerInput(
@@ -345,19 +357,19 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     return PopScope(
       canPop: !_creating,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Work Order Baru'),
+        appBar: NeoAppBar(
+          title: 'Work Order Baru',
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(4),
             child: _creating
                 ? const LinearProgressIndicator(
-                    backgroundColor: AppColors.line,
-                    color: AppColors.teal,
+                    backgroundColor: AppColors.borderHairline,
+                    color: AppColors.pastelMint,
                   )
                 : LinearProgressIndicator(
                     value: (_step + 1) / 3,
-                    backgroundColor: AppColors.line,
-                    color: AppColors.primary,
+                    backgroundColor: AppColors.borderHairline,
+                    color: AppColors.accentPrimary,
                   ),
           ),
         ),
@@ -405,17 +417,15 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
             if (_creating)
               Positioned.fill(
                 child: Container(
-                  color: AppColors.ink900.withValues(alpha: 0.32),
+                  color: const Color(0x73111111),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                       decoration: BoxDecoration(
                         color: AppColors.bgSurface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderStrong, width: 1.5),
-                        boxShadow: const [
-                          BoxShadow(color: AppColors.borderStrong, offset: Offset(4, 4), blurRadius: 0),
-                        ],
+                        borderRadius: AppRadius.modal,
+                        border: Border.all(color: AppColors.borderInk, width: 1.5),
+                        boxShadow: AppShadow.l2,
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -590,13 +600,28 @@ class _StepVehicle extends StatelessWidget {
         const SizedBox(height: 12),
         if (results.isNotEmpty)
           ...results.map(
-            (v) => Card(
-              child: ListTile(
-                leading: PlateChip(plateText: v.plateNo),
-                title: Text(v.brand != null
-                    ? '${v.brand} ${v.model ?? ''}'.trim()
-                    : 'Kendaraan'),
+            (v) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: NeoCard.pressable(
                 onTap: () => onSelect(v),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: [
+                    PlateChip(plateText: v.plateNo),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        v.brand != null
+                            ? '${v.brand} ${v.model ?? ''}'.trim()
+                            : 'Kendaraan',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -614,24 +639,25 @@ class _StepVehicle extends StatelessWidget {
           const SizedBox(height: 20),
           Text('Terpilih', style: textTheme.labelMedium),
           const SizedBox(height: 8),
-          Card(
-            color: AppColors.tintOf(AppColors.teal),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  PlateChip(plateText: selected!.plateNo),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      selected!.brand != null
-                          ? '${selected!.brand} ${selected!.model ?? ''}'.trim()
-                          : 'Kendaraan',
-                      style: textTheme.titleMedium,
+          NeoCard.info(
+            color: AppColors.pastelMint,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                PlateChip(plateText: selected!.plateNo),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    selected!.brand != null
+                        ? '${selected!.brand} ${selected!.model ?? ''}'.trim()
+                        : 'Kendaraan',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink900,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -664,22 +690,18 @@ class _StepDetail extends StatelessWidget {
       children: [
         Text('Detail work order', style: textTheme.headlineSmall),
         const SizedBox(height: 12),
-        TextFormField(
+        NeoTextField(
           controller: complaintController,
-          decoration: InputDecoration(
-            labelText: 'Keluhan',
-            prefixIcon: Icon(AppIcons.alertCircle),
-          ),
+          labelText: 'Keluhan',
+          prefixIcon: AppIcons.alertCircle,
           maxLines: 3,
           validator: WoValidators.validateComplaint,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        NeoTextField(
           controller: odometerController,
-          decoration: InputDecoration(
-            labelText: 'Odometer masuk (KM, opsional)',
-            prefixIcon: Icon(AppIcons.speedometer),
-          ),
+          labelText: 'Odometer masuk (KM, opsional)',
+          prefixIcon: AppIcons.speedometer,
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
@@ -757,38 +779,35 @@ class _StepItems extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         for (var i = 0; i < jasaDesc.length; i++)
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: NeoCard.info(
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: NeoTextField(
                       controller: jasaDesc[i],
-                      decoration: const InputDecoration(
-                        labelText: 'Deskripsi jasa',
-                        isDense: true,
-                      ),
+                      labelText: 'Deskripsi jasa',
+                      isDense: true,
                       onChanged: (_) => onItemsChanged(),
                     ),
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
                     width: 120,
-                    child: TextFormField(
+                    child: NeoTextField(
                       controller: jasaPrice[i],
-                      decoration: const InputDecoration(
-                        labelText: 'Harga',
-                        isDense: true,
-                      ),
+                      labelText: 'Harga',
+                      prefixText: 'Rp ',
+                      isDense: true,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => onItemsChanged(),
                     ),
                   ),
                   IconButton(
                     onPressed: () => onRemoveJasa(i),
-                    icon: Icon(AppIcons.trash, color: AppColors.action),
+                    icon: Icon(AppIcons.trash, color: AppColors.statusDanger),
                   ),
                 ],
               ),
@@ -863,70 +882,64 @@ class _PartLineTile extends StatelessWidget {
     final textTheme = AppTypography.textTheme();
     final qty = double.tryParse(line.qtyController.text) ?? 0;
     final overStock = qty > line.part.stockQty;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(line.part.name, style: textTheme.titleMedium)),
-                IconButton(
-                  onPressed: onRemove,
-                  icon: Icon(AppIcons.trash, color: AppColors.action),
-                ),
-              ],
-            ),
-            Text(
-              'Stok tersedia: ${line.part.stockQty.toStringAsFixed(0)}',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                SizedBox(
-                  width: 100,
-                  child: TextFormField(
-                    controller: line.qtyController,
-                    decoration: const InputDecoration(
-                      labelText: 'Jumlah',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => onItemsChanged(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: line.priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Harga / unit',
-                      isDense: true,
-                      prefixText: 'Rp ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => onItemsChanged(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Stok dikurangi saat diselesaikan.',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
-            ),
-            if (overStock)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  'Jumlah melebihi stok tersedia. Akan divalidasi saat diselesaikan.',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.action),
+    return NeoCard.info(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(line.part.name, style: textTheme.titleMedium)),
+              IconButton(
+                onPressed: onRemove,
+                icon: Icon(AppIcons.trash, color: AppColors.statusDanger),
+              ),
+            ],
+          ),
+          Text(
+            'Stok tersedia: ${line.part.stockQty.toStringAsFixed(0)}',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              SizedBox(
+                width: 100,
+                child: NeoTextField(
+                  controller: line.qtyController,
+                  labelText: 'Jumlah',
+                  isDense: true,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => onItemsChanged(),
                 ),
               ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: NeoTextField(
+                  controller: line.priceController,
+                  labelText: 'Harga / unit',
+                  isDense: true,
+                  prefixText: 'Rp ',
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => onItemsChanged(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Stok dikurangi saat diselesaikan.',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+          if (overStock)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Jumlah melebihi stok tersedia. Akan divalidasi saat diselesaikan.',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.statusDanger),
+              ),
+            ),
+        ],
       ),
     );
   }

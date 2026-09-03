@@ -8,6 +8,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_switch.dart';
@@ -66,12 +67,12 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
     final onlyToday = ref.watch(todayFilterProvider);
 
     return board.when(
-      loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Antrian')),
-        body: const Center(child: CircularProgressIndicator()),
+      loading: () => const Scaffold(
+        appBar: NeoAppBar(title: 'Antrian', showBack: false),
+        body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Antrian')),
+        appBar: const NeoAppBar(title: 'Antrian', showBack: false),
         body: ErrorView(
           message: e.toString(),
           onRetry: () => ref.refresh(boardControllerProvider),
@@ -121,8 +122,9 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
         ];
 
         return Scaffold(
-          appBar: AppBar(
-            title: _searching
+          appBar: NeoAppBar(
+            title: _searching ? null : 'Antrian',
+            titleWidget: _searching
                 ? NeoSearchBar(
                     controller: _searchController,
                     hintText: 'Cari plat, WO, pelanggan...',
@@ -130,7 +132,8 @@ class _AntrianScreenState extends ConsumerState<AntrianScreen> {
                     onChanged: (value) =>
                         setState(() => _searchQuery = value.trim()),
                   )
-                : const Text('Antrian'),
+                : null,
+            showBack: false,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(56),
               child: Padding(

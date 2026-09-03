@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../auth/controllers/session_controller.dart';
@@ -80,12 +82,12 @@ class HppDetailScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Rincian HPP')),
+        appBar: const NeoAppBar(title: 'Rincian HPP'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: EmptyState(
-              icon: Icons.lock,
+              icon: AppIcons.lock,
               title: 'Akses Terbatas',
               message:
                   'Hanya pemilik dapat melihat rincian laba bersih. Hubungi pemilik bengkel.',
@@ -105,8 +107,8 @@ class HppDetailScreen extends ConsumerWidget {
     final rowsForExport = asyncRows.valueOrNull ?? const <HppRow>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian HPP'),
+      appBar: NeoAppBar(
+        title: 'Rincian HPP',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -139,7 +141,12 @@ class HppDetailScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Expanded(
             child: asyncRows.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (err, _) => ErrorView(
                 message: err.toString(),
                 onRetry: () => ref.invalidate(
@@ -150,10 +157,10 @@ class HppDetailScreen extends ConsumerWidget {
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [
-                      SizedBox(height: 32),
+                    children: [
+                      const SizedBox(height: 32),
                       EmptyState(
-                        icon: Icons.inventory_2_outlined,
+                        icon: AppIcons.inventory,
                         title: 'Belum Ada Data HPP',
                         message: 'Tidak ada data HPP pada periode ini',
                       ),

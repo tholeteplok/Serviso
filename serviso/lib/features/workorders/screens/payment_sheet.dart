@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_text_field.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/wo_detail_controller.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
@@ -76,44 +79,45 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     final textTheme = AppTypography.textTheme();
     final total = widget.order.total;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 20,
-      ),
+    return NeoBottomSheet(
+      title: 'Pembayaran',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Pembayaran', style: textTheme.titleLarge),
-          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total', style: textTheme.titleMedium),
+              Text('Total Tagihan', style: textTheme.titleMedium),
               Text(
                 rupiah(total),
                 style: AppTypography.mono(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
+                  color: AppColors.ink900,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          NeoTextField(
             controller: _amountController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Nominal dibayar',
-              prefixText: 'Rp ',
+            labelText: 'Nominal dibayar',
+            prefixText: 'Rp ',
+            style: AppTypography.mono(
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink900,
             ),
-            style: AppTypography.mono(),
           ),
-          const SizedBox(height: 8),
-          Text('Metode pembayaran', style: textTheme.labelMedium),
+          const SizedBox(height: 12),
+          Text(
+            'Metode pembayaran',
+            style: textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink900,
+            ),
+          ),
           const SizedBox(height: 8),
           NeoSegmentControl<PaymentMethod>(
             items: PaymentMethod.values
@@ -132,27 +136,26 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.action),
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.statusDanger),
             ),
           ],
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.surface,
-                      ),
-                    )
-                  : const Text('Simpan Pembayaran'),
-            ),
+          const SizedBox(height: 20),
+          ThickBottomBorderButton(
+            isFullWidth: true,
+            variant: ThickButtonVariant.primary,
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.ink900,
+                    ),
+                  )
+                : const Text('Simpan Pembayaran'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
         ],
       ),
     );

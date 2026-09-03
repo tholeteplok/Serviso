@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_icons.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_typography.dart';
 
 class PastelPopBottomBarItem {
   const PastelPopBottomBarItem({
@@ -86,7 +89,7 @@ class PastelPopBottomBar extends StatelessWidget {
       label: item.label,
       child: InkWell(
         onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.button,
         splashColor: AppColors.pastelMint.withValues(alpha: 0.3),
         highlightColor: Colors.transparent,
         child: Padding(
@@ -100,7 +103,7 @@ class PastelPopBottomBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.pastelMint : Colors.transparent,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: AppRadius.pill,
                 ),
                 child: Icon(
                   isSelected ? item.selectedIcon : item.icon,
@@ -113,7 +116,7 @@ class PastelPopBottomBar extends StatelessWidget {
                 item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: AppTypography.inter(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
@@ -153,8 +156,8 @@ class PastelPopBottomBar extends StatelessWidget {
               ],
             ),
             alignment: Alignment.center,
-            child: const Icon(
-              Icons.add,
+            child: Icon(
+              AppIcons.add,
               color: AppColors.ink900,
               size: 28,
             ),

@@ -4,11 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/customer_detail_controller.dart';
 import '../screens/customer_form_sheet.dart';
@@ -26,18 +30,18 @@ class CustomerDetailScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Pelanggan'),
+      appBar: NeoAppBar(
+        title: 'Detail Pelanggan',
         actions: [
           if (isAdmin)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: Icon(AppIcons.trash, color: AppColors.statusDanger),
               tooltip: 'Hapus pelanggan',
               onPressed: () => _confirmDeleteCustomer(context, ref),
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: ThickBottomBorderButton(
         onPressed: () => showVehicleForm(
           context: context,
           ref: ref,
@@ -45,8 +49,8 @@ class CustomerDetailScreen extends ConsumerWidget {
           onSaved: () =>
               ref.read(customerDetailControllerProvider(customerId).notifier).reload(),
         ),
-        icon: const Icon(Icons.directions_car_outlined),
-        label: const Text('Kendaraan Baru'),
+        icon: Icon(AppIcons.car, size: 18),
+        child: const Text('Kendaraan Baru'),
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -69,7 +73,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   TextButton.icon(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    icon: Icon(AppIcons.edit, size: 18),
                     label: const Text('Ubah'),
                     onPressed: () => showCustomerForm(
                       context,
@@ -89,28 +93,28 @@ class CustomerDetailScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _InfoRow(
-                      icon: Icons.phone_outlined,
+                      icon: AppIcons.phone,
                       label: 'Telepon',
                       value: customer.phone?.isNotEmpty == true
                           ? customer.phone!
                           : 'Belum diisi',
                     ),
                     _InfoRow(
-                      icon: Icons.home_outlined,
+                      icon: AppIcons.home,
                       label: 'Alamat',
                       value: customer.address?.isNotEmpty == true
                           ? customer.address!
                           : 'Belum diisi',
                     ),
                     _InfoRow(
-                      icon: Icons.receipt_long_outlined,
+                      icon: AppIcons.receipt,
                       label: 'Work order',
                       value: '${data.workOrderCount}',
                       mono: true,
                     ),
                     if (customer.note?.isNotEmpty == true)
                       _InfoRow(
-                        icon: Icons.notes_outlined,
+                        icon: AppIcons.notepad,
                         label: 'Catatan',
                         value: customer.note!,
                       ),
@@ -129,7 +133,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     TextButton.icon(
-                      icon: const Icon(Icons.add, size: 16),
+                      icon: Icon(AppIcons.add, size: 16),
                       label: const Text('Tambah'),
                       onPressed: () => showVehicleForm(
                         context: context,
@@ -144,10 +148,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 child: data.vehicles.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: EmptyState(
-                          icon: Icons.directions_car_outlined,
+                          icon: AppIcons.car,
                           title: 'Belum ada kendaraan',
                           message:
                               'Tambahkan kendaraan milik pelanggan ini.',
@@ -182,16 +186,16 @@ class CustomerDetailScreen extends ConsumerWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
-                                      Icons.add_task_rounded,
+                                    Icon(
+                                      AppIcons.clipboardList,
                                       size: 15,
-                                      color: AppColors.primary,
+                                      color: AppColors.ink900,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Buat Work Order',
                                       style: textTheme.bodySmall?.copyWith(
-                                        color: AppColors.primary,
+                                        color: AppColors.ink900,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -204,7 +208,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       IconButton(
-                                        icon: const Icon(Icons.edit_outlined),
+                                        icon: Icon(AppIcons.edit, size: 18),
                                         tooltip: 'Ubah kendaraan',
                                         onPressed: () => showVehicleForm(
                                           context: context,
@@ -219,9 +223,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                                         ),
                                       ),
                                       IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: AppColors.action,
+                                        icon: Icon(
+                                          AppIcons.trash,
+                                          color: AppColors.statusDanger,
+                                          size: 18,
                                         ),
                                         tooltip: 'Hapus kendaraan',
                                         onPressed: () =>
@@ -246,28 +251,13 @@ class CustomerDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDeleteCustomer(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showNeoConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus pelanggan'),
-        content: const Text(
+      title: 'Hapus pelanggan',
+      message:
           'Hapus pelanggan ini beserta seluruh datanya? Tindakan tidak dapat dibatalkan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.action,
-              foregroundColor: AppColors.surface,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Hapus',
+      isDanger: true,
     );
     if (confirmed != true) return;
     try {
@@ -289,28 +279,13 @@ class CustomerDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     vehicle,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showNeoConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus kendaraan'),
-        content: Text(
+      title: 'Hapus kendaraan',
+      message:
           'Hapus kendaraan ${vehicle.plateNo}? Tindakan tidak dapat dibatalkan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.action,
-              foregroundColor: AppColors.surface,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Hapus',
+      isDanger: true,
     );
     if (confirmed != true) return;
     try {
@@ -347,7 +322,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.inkMuted),
+          Icon(icon, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

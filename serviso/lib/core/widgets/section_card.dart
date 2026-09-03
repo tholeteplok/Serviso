@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import 'neo_card.dart';
 
 class SectionCard extends StatelessWidget {
   const SectionCard({
@@ -9,38 +11,21 @@ class SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
+    this.padding = AppSpacing.cardPadding,
+    this.color = AppColors.bgSurface,
   });
 
   final String title;
   final Widget child;
   final Widget? trailing;
+  final EdgeInsetsGeometry padding;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderStrong, width: 1.5),
-        boxShadow: const [
-          // DS v2: soft diffuse layer
-          BoxShadow(
-            color: Color(0x0F111111), // rgba(17,17,17,0.06)
-            offset: Offset(0, 8),
-            blurRadius: 24,
-            spreadRadius: 0,
-          ),
-          // DS v2: hard ink offset 4x4
-          BoxShadow(
-            color: AppColors.borderStrong,
-            offset: Offset(4, 4),
-            blurRadius: 0,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
+    return NeoCard(
+      color: color,
+      padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -49,10 +34,12 @@ class SectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
+                  style: AppTypography.textTheme()
                       .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                      ?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink900,
+                      ),
                 ),
               ),
               ?trailing,

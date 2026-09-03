@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_brand_icon.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/session_controller.dart';
 import '../data/auth_repository.dart';
 import '../models/profile.dart';
@@ -67,23 +73,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmLogout() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showNeoConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Keluar'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.action),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keluar'),
-          ),
-        ],
-      ),
+      title: 'Keluar',
+      message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+      confirmLabel: 'Keluar',
+      isDanger: true,
     );
     if (confirm != true) return;
     await ref.read(sessionProvider.notifier).logout();
@@ -95,8 +90,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = ref.watch(sessionProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
+      appBar: const NeoAppBar(
+        title: 'Profil',
+        showBack: false,
       ),
       body: profile == null
           ? const Center(child: CircularProgressIndicator())
@@ -104,16 +100,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Center(
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppColors.tintPrimary,
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.pastelMint,
+                      border: Border.all(color: AppColors.borderInk, width: 2),
+                      boxShadow: AppShadow.l1,
+                    ),
+                    alignment: Alignment.center,
                     child: Text(
                       profile.fullName.isNotEmpty
                           ? profile.fullName[0].toUpperCase()
                           : profile.username[0].toUpperCase(),
                       style: AppTypography.chakra(
-                        fontSize: 28,
-                        color: AppColors.primary,
+                        fontSize: 32,
+                        color: AppColors.ink900,
                       ),
                     ),
                   ),
@@ -171,13 +174,80 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     children: [
                       _FieldRow(
+                        label: 'Kode Toko',
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.pastelMint,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppColors.borderStrong,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                profile.shopSlug?.isNotEmpty == true
+                                    ? profile.shopSlug!
+                                    : (profile.shopName?.isNotEmpty == true
+                                        ? profile.shopName!
+                                        : '-'),
+                                style: AppTypography.mono(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.ink900,
+                                ),
+                              ),
+                            ),
+                            if (profile.shopSlug?.isNotEmpty == true) ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                key: const Key('copy_shop_slug'),
+                                icon: Icon(
+                                  AppIcons.copy,
+                                  size: 18,
+                                  color: AppColors.ink900,
+                                ),
+                                tooltip: 'Salin Kode Toko',
+                                constraints: const BoxConstraints(),
+                                padding: EdgeInsets.zero,
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: profile.shopSlug!),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Kode toko berhasil disalin'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (profile.shopName?.isNotEmpty == true) ...[
+                        const SizedBox(height: 12),
+                        _FieldRow(
+                          label: 'Nama Toko',
+                          child: Text(
+                            profile.shopName!,
+                            style: textTheme.bodyLarge,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      _FieldRow(
                         label: 'Nama lengkap',
                         child: _editing
-                            ? TextFormField(
+                            ? NeoTextField(
                                 controller: _nameController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Nama lengkap',
-                                ),
+                                hintText: 'Nama lengkap',
                               )
                             : Text(
                                 profile.fullName.isNotEmpty
@@ -190,11 +260,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _FieldRow(
                         label: 'Telepon',
                         child: _editing
-                            ? TextFormField(
+                            ? NeoTextField(
                                 controller: _phoneController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Nomor telepon',
-                                ),
+                                hintText: 'Nomor telepon',
                                 keyboardType: TextInputType.phone,
                               )
                             : Text(
@@ -220,24 +288,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: Text(
                               _error!,
                               style: textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.action),
+                                  ?.copyWith(color: AppColors.statusDanger),
                             ),
                           ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: _saving ? null : _save,
-                            child: _saving
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.surface,
-                                    ),
-                                  )
-                                : const Text('Simpan'),
-                          ),
+                        ThickBottomBorderButton(
+                          isFullWidth: true,
+                          isLoading: _saving,
+                          onPressed: _saving ? null : _save,
+                          child: const Text('Simpan'),
                         ),
                       ],
                     ],
@@ -254,7 +312,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           leading: Icon(AppIcons.usersThree),
                           title: const Text('Kelola Pengguna'),
                           subtitle: const Text('Tambah kasir/admin & reset password'),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Icon(AppIcons.caretRight, size: 16),
                           onTap: () => context.push(AppRoutes.adminUsers),
                         ),
                         const Divider(height: 1, color: AppColors.line),
@@ -263,7 +321,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           leading: Icon(AppIcons.clipboardList),
                           title: const Text('Audit Log Sistem'),
                           subtitle: const Text('Riwayat aktivitas & transaksi'),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Icon(AppIcons.caretRight, size: 16),
                           onTap: () => context.push(AppRoutes.adminAuditLogs),
                         ),
                         const Divider(height: 1, color: AppColors.line),
@@ -272,7 +330,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           leading: Icon(AppIcons.storefront),
                           title: const Text('Pengaturan Toko'),
                           subtitle: const Text('Nama, alamat, telepon'),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Icon(AppIcons.caretRight, size: 16),
                           onTap: () => context.push(AppRoutes.pengaturan),
                         ),
                       ],
@@ -290,7 +348,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           leading: Icon(AppIcons.shieldCheck),
                           title: const Text('Manajemen Toko'),
                           subtitle: const Text('Daftar & buat toko baru'),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Icon(AppIcons.caretRight, size: 16),
                           onTap: () => context.push(AppRoutes.platformAdmin),
                         ),
                       ],
@@ -298,17 +356,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: Icon(AppIcons.prohibit),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.action,
-                      side: const BorderSide(color: AppColors.action),
-                    ),
-                    onPressed: _confirmLogout,
-                    label: const Text('Keluar'),
-                  ),
+                ThickBottomBorderButton(
+                  variant: ThickButtonVariant.danger,
+                  isFullWidth: true,
+                  onPressed: _confirmLogout,
+                  icon: Icon(AppIcons.prohibit, size: 18),
+                  child: const Text('Keluar'),
                 ),
                 const SizedBox(height: 24),
                 Center(

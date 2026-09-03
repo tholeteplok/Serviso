@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/thick_bottom_border_button.dart';
@@ -22,14 +23,10 @@ class DebtPaymentSheet extends ConsumerStatefulWidget {
   });
 
   static Future<void> show(BuildContext context, WidgetRef ref, DistributorDebtItem debt) {
-    return showModalBottomSheet(
+    return showNeoBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bgSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DebtPaymentSheet(debt: debt, parentRef: ref),
+      title: 'Bayar Hutang Distributor',
+      child: DebtPaymentSheet(debt: debt, parentRef: ref),
     );
   }
 

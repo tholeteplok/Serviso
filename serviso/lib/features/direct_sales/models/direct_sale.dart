@@ -23,6 +23,23 @@ class DirectSaleItemInput {
     return raw < 0 ? 0 : raw;
   }
 
+  DirectSaleItemInput copyWith({
+    WoItemKind? kind,
+    String? partId,
+    String? description,
+    double? qty,
+    double? unitPrice,
+    double? discount,
+  }) =>
+      DirectSaleItemInput(
+        kind: kind ?? this.kind,
+        partId: partId ?? this.partId,
+        description: description ?? this.description,
+        qty: qty ?? this.qty,
+        unitPrice: unitPrice ?? this.unitPrice,
+        discount: discount ?? this.discount,
+      );
+
   Map<String, dynamic> toJson() => {
         'kind': kind == WoItemKind.part ? 'part' : 'jasa',
         'part_id': partId,
@@ -47,4 +64,21 @@ class DirectSaleDraft {
   final double paidAmount;
 
   double get total => items.fold(0.0, (s, e) => s + e.lineTotal);
+}
+
+class DirectSaleResult {
+  const DirectSaleResult({
+    required this.id,
+    required this.saleNumber,
+  });
+
+  final String id;
+  final String saleNumber;
+
+  factory DirectSaleResult.fromMap(Map<String, dynamic> map) {
+    return DirectSaleResult(
+      id: map['id'] as String? ?? '',
+      saleNumber: map['sale_number'] as String? ?? (map['id'] as String? ?? ''),
+    );
+  }
 }

@@ -875,3 +875,88 @@ Future<void> exportDebtCsv({
   final filename = _fileName('hutang', exportedAt, 'csv');
   await shareCsv(csv, filename);
 }
+
+// -----------------------------------------------------------------------------
+// Direct Sales (Penjualan Langsung) Export
+// -----------------------------------------------------------------------------
+
+Future<Uint8List> buildDirectSaleReportPdf({
+  required List<DirectSaleReportRow> rows,
+  required String periodLabel,
+  required DateTime exportedAt,
+}) async {
+  final pdf = pw.Document();
+  final mono = pw.Font.courier();
+  final monoBold = pw.Font.courierBold();
+
+  final totalOmset = rows.fold<double>(0, (s, r) => s + r.paidAmount);
+  final totalItems = rows.fold<int>(0, (s, r) => s + r.itemCount);
+
+  pdf.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(32),
+      header: (ctx) => _pdfHeader(
+        'Laporan Penjualan Langsung',
+        periodLabel,
+        exportedAt,
+      ),
+      footer: (ctx) => _footer(exportedAt, mono),
+      build: (ctx) => [
+        if (rows.isEmpty)
+          _emptyState(mono)
+        else ...[
+          _buildTable(
+            headers: const [
+              'Waktu',
+              'No. Transaksi',
+              'Pelanggan',
+              'Metode',
+              'Item',
+              'Total',
+            ],
+            data: rows.map((r) {
+              return [
+                _dateId(r.paidAt),
+                r.saleNumber,
+                r.customerName ?? 'Umum',
+                _payMethodLabel(r.payMethod),
+                '${r.itemCount} item',
+                _rupiah(r.paidAmount),
+              ];
+            }).toList(),
+            mono: mono,
+            monoBold: monoBold,
+          ),
+          pw.SizedBox(height: 12),
+          _summaryRow(
+            'Total Penjualan (${rows.length} Transaksi, $totalItems Item):',
+            _rupiah(totalOmset),
+            mono,
+            monoBold,
+          ),
+        ],
+      ],
+    ),
+  );
+
+  return pdf.save();
+}
+
+String buildDirectSaleReportCsv(List<DirectSaleReportRow> rows) {
+  final sb = StringBuffer();
+  sb.writeln('Waktu,No Transaksi,Pelanggan,Metode,Jumlah Item,Total');
+  for (final r in rows) {
+    sb.writeln(
+      '${_csvEscape(_dateId(r.paidAt))},'
+      '${_csvEscape(r.saleNumber)},'
+      '${_csvEscape(r.customerName ?? 'Umum')},'
+      '${_csvEscape(_payMethodLabel(r.payMethod))},'
+      '${r.itemCount},'
+      '${r.paidAmount.toStringAsFixed(0)}',
+    );
+  }
+  return sb.toString();
+}
+
+

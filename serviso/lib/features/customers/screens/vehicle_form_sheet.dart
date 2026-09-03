@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/widgets/neo_bottom_sheet.dart';
+import '../../../core/widgets/neo_text_field.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/vehicle_form_controller.dart';
 import '../controllers/validators.dart';
 import '../models/vehicle.dart';
@@ -13,11 +16,10 @@ void showVehicleForm({
   Vehicle? initial,
   VoidCallback? onSaved,
 }) {
-  showModalBottomSheet(
+  showNeoBottomSheet(
     context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (_) => VehicleFormSheet(
+    title: initial != null ? 'Ubah Kendaraan' : 'Tambah Kendaraan',
+    child: VehicleFormSheet(
       customerId: customerId,
       initial: initial,
       onSaved: onSaved,
@@ -104,7 +106,6 @@ class _VehicleFormSheetState extends ConsumerState<VehicleFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
     final isEdit = widget.initial != null;
     final state = ref.watch(
       vehicleFormControllerProvider(
@@ -116,91 +117,68 @@ class _VehicleFormSheetState extends ConsumerState<VehicleFormSheet> {
     );
     final saving = state.isLoading;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEdit ? 'Ubah Kendaraan' : 'Tambah Kendaraan',
-                style: textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _plateController,
-                decoration: const InputDecoration(
-                  labelText: 'Plat nomor',
-                  prefixIcon: Icon(Icons.directions_car_outlined),
-                  hintText: 'B 1234 ABC',
-                ),
-                textCapitalization: TextCapitalization.characters,
-                validator: validatePlate,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _brandController,
-                decoration: const InputDecoration(
-                  labelText: 'Merek (opsional)',
-                  prefixIcon: Icon(Icons.branding_watermark_outlined),
-                ),
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _modelController,
-                decoration: const InputDecoration(
-                  labelText: 'Model (opsional)',
-                  prefixIcon: Icon(Icons.precision_manufacturing_outlined),
-                ),
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _yearController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tahun (opsional)',
-                        prefixIcon: Icon(Icons.calendar_today_outlined),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            NeoTextField(
+              controller: _plateController,
+              labelText: 'Plat nomor',
+              prefixIcon: AppIcons.car,
+              hintText: 'B 1234 ABC',
+              textCapitalization: TextCapitalization.characters,
+              validator: validatePlate,
+            ),
+            const SizedBox(height: 12),
+            NeoTextField(
+              controller: _brandController,
+              labelText: 'Merek (opsional)',
+              prefixIcon: AppIcons.tag,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            NeoTextField(
+              controller: _modelController,
+              labelText: 'Model (opsional)',
+              prefixIcon: AppIcons.wrench,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: NeoTextField(
+                    controller: _yearController,
+                    labelText: 'Tahun (opsional)',
+                    prefixIcon: AppIcons.calendar,
+                    keyboardType: TextInputType.number,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _colorController,
-                      decoration: const InputDecoration(
-                        labelText: 'Warna (opsional)',
-                        prefixIcon: Icon(Icons.color_lens_outlined),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: saving ? null : _submit,
-                  child: saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(isEdit ? 'Simpan' : 'Tambah'),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: NeoTextField(
+                    controller: _colorController,
+                    labelText: 'Warna (opsional)',
+                    prefixIcon: AppIcons.tag,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ThickBottomBorderButton(
+              isFullWidth: true,
+              onPressed: saving ? null : _submit,
+              child: saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isEdit ? 'Simpan' : 'Tambah'),
+            ),
+          ],
         ),
       ),
     );

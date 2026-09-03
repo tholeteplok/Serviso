@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_bar_chart.dart';
+import '../../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/section_card.dart';
@@ -97,8 +100,8 @@ class OmsetDetailScreen extends ConsumerWidget {
     final rowsForExport = asyncRows.valueOrNull ?? <DailySummaryRow>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian Omset'),
+      appBar: NeoAppBar(
+        title: 'Rincian Omset',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -131,22 +134,26 @@ class OmsetDetailScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Expanded(
             child: asyncRows.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (err, _) => ErrorView(
                 message: err.toString(),
                 onRetry: () => ref.invalidate(
-                  omsetDetailRowsProvider(
-                      (start: range.start, end: range.end)),
+                  omsetDetailRowsProvider((start: range.start, end: range.end)),
                 ),
               ),
               data: (rows) {
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [
-                      SizedBox(height: 32),
+                    children: [
+                      const SizedBox(height: 32),
                       EmptyState(
-                        icon: Icons.bar_chart_rounded,
+                        icon: AppIcons.report,
                         title: 'Belum Ada Data Omset',
                         message:
                             'Tidak ada transaksi pada periode ini. Coba ganti periode atau tunggu transaksi selesai.',
@@ -361,49 +368,34 @@ class OmsetDetailScreen extends ConsumerWidget {
   void _showDayTransactions(BuildContext context, WidgetRef ref, DateTime date) {
     final start = DateTime(date.year, date.month, date.day);
     final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
-    showModalBottomSheet(
+    showNeoBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (sheetCtx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, controller) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Transaksi ${dateShortId(date)}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Consumer(
-                  builder: (ctx, ref2, _) {
-                    final async = ref2.watch(transactionsProvider((start: start, end: end)));
-                    return async.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => ErrorView(
-                          message: e.toString(),
-                          onRetry: () => ref2.invalidate(transactionsProvider((start: start, end: end)))),
-                      data: (rows) {
-                        if (rows.isEmpty) {
-                          return const EmptyState(
-                              icon: Icons.receipt_long_rounded,
-                              title: 'Tidak ada transaksi',
-                              message: 'Tidak ada WO maupun Penjualan Langsung pada tanggal ini.');
-                        }
-                        return ListView.builder(
-                          controller: controller,
-                          itemCount: rows.length,
-                          itemBuilder: (_, i) => TransactionCard(row: rows[i]),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+      title: 'Transaksi ${dateShortId(date)}',
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.65,
+        child: Consumer(
+          builder: (ctx, ref2, _) {
+            final async = ref2.watch(transactionsProvider((start: start, end: end)));
+            return async.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => ErrorView(
+                  message: e.toString(),
+                  onRetry: () => ref2.invalidate(transactionsProvider((start: start, end: end)))),
+              data: (rows) {
+                if (rows.isEmpty) {
+                  return EmptyState(
+                      icon: AppIcons.receipt,
+                      title: 'Tidak ada transaksi',
+                      message: 'Tidak ada WO maupun Penjualan Langsung pada tanggal ini.');
+                }
+                return ListView.separated(
+                  itemCount: rows.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => TransactionCard(row: rows[i]),
+                );
+              },
+            );
+          },
         ),
       ),
     );

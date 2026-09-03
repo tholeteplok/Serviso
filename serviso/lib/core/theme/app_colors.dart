@@ -24,6 +24,7 @@ abstract final class AppColors {
   // ---------------------------------------------------------------------------
   static const pastelCream = Color(0xFFFFF3EF);
   static const pastelYellow = Color(0xFFFFE59A);
+  static const pastelAmber = pastelYellow;
   static const pastelPink = Color(0xFFFFB5C1);
   static const pastelMint = Color(0xFFB7E1D0);
   static const pastelBlue = Color(0xFFA9D3FF);
@@ -47,6 +48,9 @@ abstract final class AppColors {
   /// Cancelled / Dibatalkan / Critical Alert (Pink Pastel)
   static const statusCancelled = Color(0xFFFFB5C1);
   static const statusCancelledBorder = ink900;
+
+  /// Danger / Error / Critical text or icon (#E8748A)
+  static const statusDanger = Color(0xFFE8748A);
 
   // ---------------------------------------------------------------------------
   // 2.4 Accents (Solid Mint Primary + Pastel Yellow Secondary)

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../controllers/report_controllers.dart';
@@ -84,8 +86,8 @@ class PartSoldDetailScreen extends ConsumerWidget {
     final rowsForExport = asyncRows.valueOrNull ?? const <PartSoldDetailRow>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian Part Terjual'),
+      appBar: NeoAppBar(
+        title: 'Rincian Part Terjual',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -130,10 +132,10 @@ class PartSoldDetailScreen extends ConsumerWidget {
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [
-                      SizedBox(height: 32),
+                    children: [
+                      const SizedBox(height: 32),
                       EmptyState(
-                        icon: Icons.settings_outlined,
+                        icon: AppIcons.part,
                         title: 'Belum Ada Part Terjual',
                         message:
                             'Tidak ada penjualan part pada periode ini. Coba ganti periode.',

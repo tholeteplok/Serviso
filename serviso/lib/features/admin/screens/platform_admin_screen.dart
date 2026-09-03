@@ -4,7 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_text_field.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 
 class PlatformAdminScreen extends ConsumerStatefulWidget {
   const PlatformAdminScreen({super.key});
@@ -53,33 +57,37 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
     final slugCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
-    
-    final bool? result = await showDialog<bool>(
+
+    final bool? result = await showNeoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Buat Toko Baru'),
+      child: NeoDialog.alert(
+        title: 'Buat Toko Baru',
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              NeoTextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Nama Toko (ex: Serviso Pusat)'),
+                labelText: 'Nama Toko (ex: Serviso Pusat)',
+                prefixIcon: AppIcons.storefront,
               ),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 12),
+              NeoTextField(
                 controller: slugCtrl,
-                decoration: const InputDecoration(labelText: 'Kode Toko (ex: serviso)'),
+                labelText: 'Kode Toko (ex: serviso)',
+                prefixIcon: AppIcons.tag,
               ),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 12),
+              NeoTextField(
                 controller: usernameCtrl,
-                decoration: const InputDecoration(labelText: 'Username Pemilik (ex: admin)'),
+                labelText: 'Username Pemilik (ex: admin)',
+                prefixIcon: AppIcons.user,
               ),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 12),
+              NeoTextField(
                 controller: passwordCtrl,
-                decoration: const InputDecoration(labelText: 'Password Pemilik'),
+                labelText: 'Password Pemilik',
+                prefixIcon: AppIcons.lock,
                 obscureText: true,
               ),
             ],
@@ -90,7 +98,8 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Batal'),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          ThickBottomBorderButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Buat'),
           ),
@@ -135,11 +144,11 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: const Text('Manajemen Toko (Platform)'),
+      appBar: NeoAppBar(
+        title: 'Manajemen Toko (Platform)',
         actions: [
           IconButton(
-            icon: Icon(AppIcons.add),
+            icon: Icon(AppIcons.add, color: AppColors.ink900),
             onPressed: _createShop,
             tooltip: 'Buat Toko Baru',
           ),

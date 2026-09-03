@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/neo_app_bar.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/plate_chip.dart';
@@ -85,8 +87,8 @@ class WoDoneDetailScreen extends ConsumerWidget {
     final rowsForExport = asyncRows.valueOrNull ?? const <WoDoneRow>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rincian WO Selesai'),
+      appBar: NeoAppBar(
+        title: 'Rincian WO Selesai',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -130,10 +132,10 @@ class WoDoneDetailScreen extends ConsumerWidget {
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [
-                      SizedBox(height: 32),
+                    children: [
+                      const SizedBox(height: 32),
                       EmptyState(
-                        icon: Icons.task_alt_rounded,
+                        icon: AppIcons.checkCircle,
                         title: 'Belum Ada WO Selesai',
                         message:
                             'Tidak ada work order selesai pada periode ini. Coba ganti periode.',

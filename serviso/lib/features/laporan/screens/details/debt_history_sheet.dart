@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../../core/widgets/neo_card.dart';
 import '../../controllers/report_controllers.dart';
 import '../../models/report_models.dart';
@@ -17,14 +18,10 @@ class DebtHistorySheet extends ConsumerWidget {
   });
 
   static Future<void> show(BuildContext context, DistributorDebtItem debt) {
-    return showModalBottomSheet(
+    return showNeoBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bgSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DebtHistorySheet(debt: debt),
+      title: 'Riwayat Pembayaran Hutang',
+      child: DebtHistorySheet(debt: debt),
     );
   }
 

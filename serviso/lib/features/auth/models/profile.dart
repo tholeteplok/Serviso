@@ -11,6 +11,7 @@ class Profile {
     this.phone,
     this.shopId,
     this.shopName,
+    this.shopSlug,
     this.isPlatformAdmin = false,
   });
 
@@ -23,11 +24,13 @@ class Profile {
   final String? phone;
   final String? shopId;
   final String? shopName;
+  final String? shopSlug;
   final bool isPlatformAdmin;
 
   bool get isAdmin => role == UserRole.admin;
 
   factory Profile.fromMap(Map<String, dynamic> map) {
+    final shopsMap = map['shops'] as Map?;
     return Profile(
       id: map['id'] as String,
       username: map['username'] as String,
@@ -37,7 +40,8 @@ class Profile {
       isActive: (map['is_active'] as bool?) ?? true,
       phone: map['phone'] as String?,
       shopId: map['shop_id'] as String?,
-      shopName: map['shops']?['name'] as String?,
+      shopName: (shopsMap?['name'] as String?) ?? (map['shop_name'] as String?),
+      shopSlug: (shopsMap?['slug'] as String?) ?? (map['shop_slug'] as String?),
       isPlatformAdmin: (map['is_platform_admin'] as bool?) ?? false,
     );
   }
@@ -51,6 +55,7 @@ class Profile {
         'is_active': isActive,
         'phone': phone,
         'shop_id': shopId,
+        'shop_slug': shopSlug,
         'is_platform_admin': isPlatformAdmin,
       };
 
@@ -64,6 +69,7 @@ class Profile {
     String? phone,
     String? shopId,
     String? shopName,
+    String? shopSlug,
     bool? isPlatformAdmin,
   }) =>
       Profile(
@@ -76,6 +82,7 @@ class Profile {
         phone: phone ?? this.phone,
         shopId: shopId ?? this.shopId,
         shopName: shopName ?? this.shopName,
+        shopSlug: shopSlug ?? this.shopSlug,
         isPlatformAdmin: isPlatformAdmin ?? this.isPlatformAdmin,
       );
 }

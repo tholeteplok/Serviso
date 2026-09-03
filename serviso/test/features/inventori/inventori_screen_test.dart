@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/thick_bottom_border_button.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/inventori/controllers/part_detail_controller.dart';
 import 'package:serviso/features/inventori/controllers/part_providers.dart';
@@ -69,7 +70,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Belum ada suku cadang'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Tambah Suku Cadang'),
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah Suku Cadang'),
           findsOneWidget);
     });
 
@@ -168,7 +169,7 @@ void main() {
       await h.container.read(partDetailControllerProvider(part.id).future);
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FilledButton, 'Stok Masuk'), findsWidgets);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Stok Masuk'), findsWidgets);
       expect(find.text('Koreksi Stok'), findsNothing);
     });
 

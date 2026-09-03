@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
+import 'thick_bottom_border_button.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -27,8 +29,8 @@ class EmptyState extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFBF7),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.pastelCream,
+          borderRadius: AppRadius.card,
           border: Border.all(color: AppColors.borderInk, width: 1.5),
         ),
         child: Column(
@@ -39,38 +41,37 @@ class EmptyState extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: AppColors.bgSurface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.button,
                 border: Border.all(color: AppColors.borderInk, width: 1.5),
               ),
               child: Icon(icon, size: 20, color: AppColors.ink900),
             ),
-        const SizedBox(height: 14),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: AppTypography.textTheme().bodyLarge
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: AppTypography.textTheme()
-              .bodyMedium
-              ?.copyWith(color: AppColors.inkMuted),
-        ),
-        if (actionLabel != null && onAction != null) ...[
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: onAction,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accentPrimary,
-              foregroundColor: AppColors.ink900,
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTypography.textTheme().bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
             ),
-            child: Text(actionLabel!),
-          ),
-        ],
-      ],
+            const SizedBox(height: 4),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTypography.textTheme().bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 16),
+              ThickBottomBorderButton(
+                variant: ThickButtonVariant.primary,
+                onPressed: onAction,
+                child: Text(actionLabel!),
+              ),
+            ],
+          ],
         ),
       ),
     );

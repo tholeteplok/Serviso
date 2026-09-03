@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/neo_card.dart';
@@ -69,7 +70,7 @@ class WoCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 order.complaint ?? '—',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
+                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -83,7 +84,7 @@ class WoCard extends StatelessWidget {
                         color: order.isPaid
                             ? AppColors.statusDone
                             : AppColors.pastelPink,
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: AppRadius.pill,
                         border: Border.all(
                           color: AppColors.borderInk,
                           width: 1.5,
@@ -103,7 +104,7 @@ class WoCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.bgSurface,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: AppRadius.pill,
                           border: Border.all(
                             color: AppColors.borderInk,
                             width: 1.5,

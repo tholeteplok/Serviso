@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
+import 'package:serviso/core/widgets/thick_bottom_border_button.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/auth/data/auth_repository.dart';
 import 'package:serviso/features/customers/controllers/customer_providers.dart';
@@ -42,7 +43,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Belum ada pelanggan'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Tambah Pelanggan'),
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah Pelanggan'),
           findsOneWidget);
     });
 

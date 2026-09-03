@@ -8,7 +8,10 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/distributor_autocomplete_field.dart';
+import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_text_field.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
@@ -35,49 +38,45 @@ Future<void> showStockInDialog(
   var updateCostPrice = true;
   var saving = false;
 
-  await showDialog<void>(
+  await showNeoDialog<void>(
     context: context,
-    builder: (dialogContext) {
-      final textTheme = AppTypography.textTheme();
-      final dateFormat = DateFormat('dd/MM/yyyy');
+    child: StatefulBuilder(
+      builder: (context, setState) {
+        final textTheme = AppTypography.textTheme();
+        final dateFormat = DateFormat('dd/MM/yyyy');
+        final qty = double.tryParse(qtyController.text.trim()) ?? 0;
+        final purchasePrice =
+            double.tryParse(priceController.text.trim()) ?? 0;
+        final totalCost = qty * purchasePrice;
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          final qty = double.tryParse(qtyController.text.trim()) ?? 0;
-          final purchasePrice =
-              double.tryParse(priceController.text.trim()) ?? 0;
-          final totalCost = qty * purchasePrice;
-
-          return AlertDialog(
-            title: const Text('Stok Masuk'),
-            content: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Jumlah / Qty
-                    TextFormField(
-                      controller: qtyController,
-                      decoration: InputDecoration(
-                        labelText: 'Jumlah Masuk',
-                        prefixIcon: Icon(AppIcons.tag),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      textInputAction: TextInputAction.next,
-                      autofocus: true,
-                      onChanged: (_) => setState(() {}),
-                      validator: (value) {
-                        final parsed = double.tryParse(value ?? '');
-                        if (parsed == null || parsed <= 0) {
-                          return 'Jumlah stok masuk harus lebih dari 0';
-                        }
-                        return null;
-                      },
+        return NeoDialog.alert(
+          title: 'Stok Masuk',
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Jumlah / Qty
+                  NeoTextField(
+                    controller: qtyController,
+                    labelText: 'Jumlah Masuk',
+                    prefixIcon: AppIcons.tag,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
+                    textInputAction: TextInputAction.next,
+                    autofocus: true,
+                    onChanged: (_) => setState(() {}),
+                    validator: (value) {
+                      final parsed = double.tryParse(value ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'Jumlah stok masuk harus lebih dari 0';
+                      }
+                      return null;
+                    },
+                  ),
                     const SizedBox(height: 12),
 
                     // Distributor / Pemasok — wajib jika hutang (DB hutang perlu jejak)
@@ -174,14 +173,14 @@ Future<void> showStockInDialog(
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.borderStrong, width: 1.5),
+                            border: Border.all(color: AppColors.borderInk, width: 1.5),
                             borderRadius: AppRadius.input,
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 AppIcons.calendar,
-                                color: AppColors.primary,
+                                color: AppColors.accentPrimary,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -193,7 +192,7 @@ Future<void> showStockInDialog(
                               ),
                               Icon(
                                 AppIcons.caretDown,
-                                color: AppColors.inkMuted,
+                                color: AppColors.textSecondary,
                                 size: 16,
                               ),
                             ],
@@ -210,20 +209,18 @@ Future<void> showStockInDialog(
                       Text(
                         'Informasi Finansial (Khusus Pemilik)',
                         style: textTheme.labelMedium?.copyWith(
-                          color: AppColors.primary,
+                          color: AppColors.accentPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      NeoTextField(
                         controller: priceController,
-                        decoration: InputDecoration(
-                          labelText: paymentType == 'hutang'
-                              ? 'Harga Beli Satuan *'
-                              : 'Harga Beli Satuan (Modal)',
-                          prefixText: 'Rp ',
-                          prefixIcon: Icon(AppIcons.wallet),
-                        ),
+                        labelText: paymentType == 'hutang'
+                            ? 'Harga Beli Satuan *'
+                            : 'Harga Beli Satuan (Modal)',
+                        prefixText: 'Rp ',
+                        prefixIcon: AppIcons.wallet,
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
@@ -240,7 +237,7 @@ Future<void> showStockInDialog(
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.tintOf(AppColors.primary),
+                            color: AppColors.tintOf(AppColors.accentPrimary),
                             borderRadius: AppRadius.chipSmall,
                           ),
                           child: Row(
@@ -254,7 +251,7 @@ Future<void> showStockInDialog(
                                 rupiah(totalCost),
                                 style: AppTypography.mono(
                                   fontSize: 14,
-                                  color: AppColors.primary,
+                                  color: AppColors.accentPrimary,
                                 ),
                               ),
                             ],
@@ -279,12 +276,10 @@ Future<void> showStockInDialog(
 
                     const SizedBox(height: 8),
                     // Catatan
-                    TextFormField(
+                    NeoTextField(
                       controller: noteController,
-                      decoration: InputDecoration(
-                        labelText: 'Catatan tambahan (opsional)',
-                        prefixIcon: Icon(AppIcons.notepad),
-                      ),
+                      labelText: 'Catatan tambahan (opsional)',
+                      prefixIcon: AppIcons.notepad,
                       textInputAction: TextInputAction.done,
                     ),
                   ],
@@ -296,8 +291,8 @@ Future<void> showStockInDialog(
                 onPressed: saving ? null : () => Navigator.of(context).pop(),
                 child: const Text('Batal'),
               ),
-              FilledButton.icon(
-                icon: Icon(AppIcons.check, size: 18),
+              const SizedBox(width: 8),
+              ThickBottomBorderButton(
                 onPressed: saving
                     ? null
                     : () async {
@@ -339,7 +334,7 @@ Future<void> showStockInDialog(
                           );
                         }
                       },
-                label: saving
+                child: saving
                     ? const SizedBox(
                         width: 18,
                         height: 18,
@@ -350,7 +345,6 @@ Future<void> showStockInDialog(
             ],
           );
         },
-      );
-    },
-  );
-}
+      ),
+    );
+  }

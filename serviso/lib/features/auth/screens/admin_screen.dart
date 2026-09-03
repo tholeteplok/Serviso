@@ -3,8 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_card.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -14,8 +18,8 @@ class AdminScreen extends StatelessWidget {
     final textTheme = AppTypography.textTheme();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kelola Bengkel'),
+      appBar: const NeoAppBar(
+        title: 'Kelola Bengkel',
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -26,13 +30,14 @@ class AdminScreen extends StatelessWidget {
               'Administrasi & Kontrol',
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.inkMuted,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
           _buildMenuCard(
             context,
-            icon: Icons.manage_accounts_outlined,
+            icon: AppIcons.usersThree,
+            iconBg: AppColors.pastelBlue,
             title: 'Kelola Pengguna',
             subtitle: 'Tambah akun kasir/admin, nonaktifkan, dan reset password',
             onTap: () => context.push(AppRoutes.adminUsers),
@@ -40,7 +45,8 @@ class AdminScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuCard(
             context,
-            icon: Icons.history_edu_outlined,
+            icon: AppIcons.clipboardList,
+            iconBg: AppColors.pastelYellow,
             title: 'Audit Log Sistem',
             subtitle: 'Riwayat perubahan data, transaksi, dan aktivitas login/logout',
             onTap: () => context.push(AppRoutes.adminAuditLogs),
@@ -48,7 +54,8 @@ class AdminScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuCard(
             context,
-            icon: Icons.store_outlined,
+            icon: AppIcons.storefront,
+            iconBg: AppColors.pastelMint,
             title: 'Pengaturan Bengkel',
             subtitle: 'Ubah nama bengkel, alamat, dan nomor telepon cetakan struk',
             onTap: () => context.push(AppRoutes.pengaturan),
@@ -61,42 +68,53 @@ class AdminScreen extends StatelessWidget {
   Widget _buildMenuCard(
     BuildContext context, {
     required IconData icon,
+    required Color iconBg,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppRadius.card,
-        side: BorderSide(color: AppColors.line),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-          child: Icon(icon, color: AppColors.primary, size: 24),
-        ),
-        title: Text(
-          title,
-          style: AppTypography.textTheme().titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink,
-              ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            subtitle,
-            style: AppTypography.textTheme().bodyMedium?.copyWith(
-                  color: AppColors.inkMuted,
-                ),
+    return NeoCard(
+      padding: const EdgeInsets.all(16),
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: AppRadius.button,
+              border: Border.all(color: AppColors.borderInk, width: 1.5),
+              boxShadow: AppShadow.l1,
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: AppColors.ink900, size: 24),
           ),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.inkMuted),
-        onTap: onTap,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.textTheme().titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink900,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppTypography.textTheme().bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(AppIcons.caretRight, color: AppColors.textSecondary, size: 18),
+        ],
       ),
     );
   }

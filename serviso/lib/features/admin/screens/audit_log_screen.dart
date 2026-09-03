@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_expandable_card.dart';
 import '../controllers/admin_controllers.dart';
 import '../widgets/json_diff_viewer.dart';
 
@@ -27,8 +30,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     final auditLogsAsync = ref.watch(auditLogListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Audit Log Sistem'),
+      appBar: const NeoAppBar(
+        title: 'Audit Log Sistem',
       ),
       body: Column(
         children: [
@@ -116,94 +119,70 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                       final log = logs[index];
                       final isExpanded = _expandedIds.contains(log.id);
 
-                      return Card(
-                        elevation: 0,
-                        margin: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            setState(() {
-                              if (isExpanded) {
-                                _expandedIds.remove(log.id);
-                              } else {
-                                _expandedIds.add(log.id);
-                              }
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      return NeoExpandableCard(
+                        isExpanded: isExpanded,
+                        onExpansionChanged: (val) {
+                          setState(() {
+                            if (val) {
+                              _expandedIds.add(log.id);
+                            } else {
+                              _expandedIds.remove(log.id);
+                            }
+                          });
+                        },
+                        header: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    _buildActionChip(log.action),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      log.tableName,
-                                      style: AppTypography.mono(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.ink,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Icon(
-                                      isExpanded
-                                          ? AppIcons.caretUp
-                                          : AppIcons.caretDown,
-                                      color: AppColors.inkMuted,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Oleh ${log.actorName}',
-                                      style: textTheme.bodyMedium?.copyWith(
-                                        color: AppColors.ink,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Text(
-                                      dateTimeId(log.createdAt),
-                                      style: AppTypography.mono(
-                                        fontSize: 11,
-                                        color: AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (log.recordId.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'ID Record: ${log.recordId}',
-                                    style: AppTypography.mono(
-                                      fontSize: 11,
-                                      color: AppColors.inkMuted,
-                                    ),
+                                _buildActionChip(log.action),
+                                const SizedBox(width: 8),
+                                Text(
+                                  log.tableName,
+                                  style: AppTypography.mono(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.ink900,
                                   ),
-                                ],
-                                if (isExpanded) ...[
-                                  const SizedBox(height: 12),
-                                  const Divider(height: 1, color: AppColors.line),
-                                  const SizedBox(height: 12),
-                                  JsonDiffViewer(
-                                    oldData: log.oldData,
-                                    newData: log.newData,
-                                  ),
-                                ],
+                                ),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Oleh ${log.actorName}',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.ink900,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  dateTimeId(log.createdAt),
+                                  style: AppTypography.mono(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (log.recordId.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'ID Record: ${log.recordId}',
+                                style: AppTypography.mono(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        expandedChild: JsonDiffViewer(
+                          oldData: log.oldData,
+                          newData: log.newData,
                         ),
                       );
                     },
@@ -219,26 +198,23 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
 
   Widget _buildActionChip(String action) {
     Color bg;
-    Color fg;
+    Color fg = AppColors.ink900;
 
     switch (action.toLowerCase()) {
       case 'insert':
-        bg = AppColors.teal.withValues(alpha: 0.12);
-        fg = AppColors.teal;
+        bg = AppColors.pastelMint;
         break;
       case 'update':
-        bg = AppColors.primary.withValues(alpha: 0.12);
-        fg = AppColors.primary;
+        bg = AppColors.pastelBlue;
         break;
       case 'delete':
-        bg = AppColors.action.withValues(alpha: 0.12);
-        fg = AppColors.action;
+        bg = AppColors.pastelPink;
+        fg = AppColors.statusDanger;
         break;
       case 'login':
       case 'logout':
       default:
-        bg = AppColors.inkMuted.withValues(alpha: 0.12);
-        fg = AppColors.inkMuted;
+        bg = AppColors.pastelYellow;
         break;
     }
 
@@ -246,8 +222,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: fg.withValues(alpha: 0.5), width: 1),
+        borderRadius: AppRadius.badge,
+        border: Border.all(color: AppColors.borderInk, width: 1),
       ),
       child: Text(
         action.toUpperCase(),

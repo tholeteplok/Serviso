@@ -164,6 +164,29 @@ void main() {
       final result = await buildReceiptPdf(buildSampleInput());
       expect(result.pageCount, 1);
     });
+
+    test('dokumen berhasil dibangun dengan custom receipt notes / garansi', () async {
+      final sample = buildSampleInput();
+      final withNotes = ReceiptInput(
+        shopName: sample.shopName,
+        shopAddress: sample.shopAddress,
+        shopPhone: sample.shopPhone,
+        receiptNotes: 'Garansi servis 14 hari / 500 km. Wajib bawa nota ini.',
+        woNumber: sample.woNumber,
+        plate: sample.plate,
+        vehicleDesc: sample.vehicleDesc,
+        customerName: sample.customerName,
+        items: sample.items,
+        total: sample.total,
+        payMethod: sample.payMethod,
+        paidAmount: sample.paidAmount,
+        printedBy: sample.printedBy,
+        printedAt: sample.printedAt,
+      );
+      final result = await buildReceiptPdf(withNotes);
+      expect(result.bytes, isNotEmpty);
+      expect(result.pageCount, 1);
+    });
   });
 
   group('kembalian hanya untuk Tunai', () {

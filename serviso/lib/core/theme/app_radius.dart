@@ -22,6 +22,7 @@ abstract final class AppRadius {
   static const BorderRadius modalTop = BorderRadius.vertical(top: Radius.circular(modalValue));
   static const BorderRadius badge = BorderRadius.all(Radius.circular(badgeValue));
   static const BorderRadius chipSmall = BorderRadius.all(Radius.circular(chipSmallValue));
+  static const BorderRadius sm = chipSmall;
   static const BorderRadius navBar = BorderRadius.all(Radius.circular(navBarValue));
   static const BorderRadius chartBar = BorderRadius.vertical(top: Radius.circular(chartBarValue));
 }

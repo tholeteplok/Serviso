@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/horizontal_bar_list.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_bar_chart.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_segment_control.dart';
@@ -31,8 +32,9 @@ class LaporanScreen extends ConsumerWidget {
         isAdmin ? ref.watch(ownerFinancialSummaryProvider) : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Laporan & Analisis'),
+      appBar: const NeoAppBar(
+        title: 'Laporan & Analisis',
+        showBack: false,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -83,8 +85,8 @@ class LaporanScreen extends ConsumerWidget {
               ),
               data: (rows) {
                 if (rows.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.bar_chart_rounded,
+                  return EmptyState(
+                    icon: AppIcons.report,
                     title: 'Belum Ada Data Laporan',
                     message:
                         'Transaksi selesai akan secara otomatis tercatat di sini.',
@@ -98,6 +100,10 @@ class LaporanScreen extends ConsumerWidget {
                 final totalWo = rows.fold<int>(
                   0,
                   (sum, r) => sum + r.woDoneCount,
+                );
+                final totalDirectSales = rows.fold<int>(
+                  0,
+                  (sum, r) => sum + r.directSaleCount,
                 );
                 final totalPartsOut = rows.fold<double>(
                   0.0,
@@ -164,25 +170,14 @@ class LaporanScreen extends ConsumerWidget {
                                   Expanded(
                                     child: _buildMetricCard(
                                       context,
-                                      title: 'Modal Part (HPP)',
-                                      value: rupiah(fin.totalCogs),
-                                      subtitle: 'Modal pokok barang',
-                                      icon: AppIcons.part,
-                                      color: AppColors.inkMuted,
-                                      onTap: () {
-                                        if (!isAdmin) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Hanya pemilik dapat membuka rincian ini',
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        context.push(AppRoutes.laporanHpp);
-                                      },
+                                      title: 'Penjualan Langsung',
+                                      value: '$totalDirectSales Transaksi',
+                                      subtitle: 'Penjualan kasir',
+                                      icon: AppIcons.money,
+                                      color: AppColors.pastelYellow,
+                                      onTap: () => context.push(
+                                        AppRoutes.laporanPenjualanLangsung,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -243,22 +238,39 @@ class LaporanScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                     ] else ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildMetricCard(
-                              context,
-                              title: 'Total Omset',
-                              value: rupiah(totalRevenue),
-                              subtitle: 'Pendapatan kotor',
-                              icon: AppIcons.wallet,
-                              color: AppColors.primary,
-                              onTap: () => context.push(
-                                AppRoutes.laporanOmset,
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Total Omset',
+                                value: rupiah(totalRevenue),
+                                subtitle: 'Pendapatan kotor',
+                                icon: AppIcons.wallet,
+                                color: AppColors.primary,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanOmset,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Penjualan Langsung',
+                                value: '$totalDirectSales Transaksi',
+                                subtitle: 'Penjualan kasir',
+                                icon: AppIcons.money,
+                                color: AppColors.pastelYellow,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanPenjualanLangsung,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -334,12 +346,12 @@ class LaporanScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: AppColors.action, size: 16),
+                    Icon(AppIcons.alertCircle, color: AppColors.statusDanger, size: 16),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Gagal muat top parts: ${err.toString().replaceFirst('Exception: ', '')}',
-                        style: AppTypography.textTheme().labelSmall?.copyWith(color: AppColors.action),
+                        style: AppTypography.textTheme().labelSmall?.copyWith(color: AppColors.statusDanger),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -400,10 +412,16 @@ class LaporanScreen extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(icon, color: color, size: 18),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: AppRadius.button,
+                  border: Border.all(color: AppColors.borderInk, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, color: AppColors.ink900, size: 18),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -412,7 +430,7 @@ class LaporanScreen extends ConsumerWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.textTheme().bodySmall?.copyWith(
-                        color: AppColors.inkMuted,
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                         height: 1.1,
                       ),
@@ -420,10 +438,10 @@ class LaporanScreen extends ConsumerWidget {
               ),
               if (onTap != null) ...[
                 const SizedBox(width: 6),
-                const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: AppColors.inkMuted,
+                Icon(
+                  AppIcons.caretRight,
+                  size: 16,
+                  color: AppColors.textSecondary,
                 ),
               ],
             ],

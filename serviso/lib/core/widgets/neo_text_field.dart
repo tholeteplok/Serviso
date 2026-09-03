@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -18,7 +18,9 @@ class NeoTextField extends StatefulWidget {
     this.focusNode,
     this.labelText,
     this.hintText,
+    this.helperText,
     this.prefixIcon,
+    this.prefixWidget,
     this.suffixIcon,
     this.keyboardType,
     this.textCapitalization = TextCapitalization.none,
@@ -31,17 +33,24 @@ class NeoTextField extends StatefulWidget {
     this.readOnly = false,
     this.enabled = true,
     this.isDense = false,
+    this.alignLabelWithHint = false,
+    this.autocorrect = true,
     this.prefixText,
     this.initialValue,
     this.textInputAction,
     this.obscureText = false,
+    this.inputFormatters,
+    this.style,
+    this.contentPadding,
   });
 
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final String? labelText;
   final String? hintText;
-  final PhosphorIconData? prefixIcon;
+  final String? helperText;
+  final IconData? prefixIcon;
+  final Widget? prefixWidget;
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final TextCapitalization textCapitalization;
@@ -54,10 +63,15 @@ class NeoTextField extends StatefulWidget {
   final bool readOnly;
   final bool enabled;
   final bool isDense;
+  final bool alignLabelWithHint;
+  final bool autocorrect;
   final String? prefixText;
   final String? initialValue;
   final TextInputAction? textInputAction;
   final bool obscureText;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextStyle? style;
+  final EdgeInsetsGeometry? contentPadding;
 
   @override
   State<NeoTextField> createState() => _NeoTextFieldState();
@@ -97,96 +111,103 @@ class _NeoTextFieldState extends State<NeoTextField> {
             : null,
       ),
       child: TextFormField(
-      controller: widget.controller,
-      initialValue: widget.initialValue,
-      focusNode: _focusNode,
-      keyboardType: widget.keyboardType,
-      textCapitalization: widget.textCapitalization,
-      maxLines: widget.obscureText ? 1 : widget.maxLines,
-      minLines: widget.minLines,
-      validator: widget.validator,
-      onChanged: widget.onChanged,
-      onFieldSubmitted: widget.onFieldSubmitted,
-      autofocus: widget.autofocus,
-      readOnly: widget.readOnly,
-      enabled: widget.enabled,
-      textInputAction: widget.textInputAction,
-      obscureText: widget.obscureText,
-      style: AppTypography.inter(
-        color: AppColors.ink900,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        hintText: widget.hintText,
-        prefixText: widget.prefixText,
-        prefixIcon: widget.prefixIcon != null
-            ? Icon(
-                widget.prefixIcon,
-                size: 18,
-                color: AppColors.textSecondary,
-              )
-            : null,
-        suffixIcon: widget.suffixIcon,
-        isDense: widget.isDense,
-        // DS v2: resting 1.5 ink — decision A
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(
-            color: AppColors.borderInk,
-            width: 1.5,
+        controller: widget.controller,
+        initialValue: widget.initialValue,
+        focusNode: _focusNode,
+        keyboardType: widget.keyboardType,
+        textCapitalization: widget.textCapitalization,
+        maxLines: widget.obscureText ? 1 : widget.maxLines,
+        minLines: widget.minLines,
+        validator: widget.validator,
+        onChanged: widget.onChanged,
+        onFieldSubmitted: widget.onFieldSubmitted,
+        autofocus: widget.autofocus,
+        readOnly: widget.readOnly,
+        enabled: widget.enabled,
+        autocorrect: widget.autocorrect,
+        inputFormatters: widget.inputFormatters,
+        textInputAction: widget.textInputAction,
+        obscureText: widget.obscureText,
+        style: widget.style ??
+            AppTypography.inter(
+              color: AppColors.ink900,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+        decoration: InputDecoration(
+          labelText: widget.labelText,
+          hintText: widget.hintText,
+          helperText: widget.helperText,
+          prefixText: widget.prefixText,
+          alignLabelWithHint: widget.alignLabelWithHint,
+          prefixIcon: widget.prefixWidget ??
+              (widget.prefixIcon != null
+                  ? Icon(
+                      widget.prefixIcon,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    )
+                  : null),
+          suffixIcon: widget.suffixIcon,
+          isDense: widget.isDense,
+          // DS v2: resting 1.5 ink — decision A
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(
+              color: AppColors.borderInk,
+              width: 1.5,
+            ),
           ),
-        ),
-        border: const OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(color: AppColors.borderInk, width: 1.5),
-        ),
-        // Focus: 2px ink — ring drawn by outer AnimatedContainer (amberDim)
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(
-            color: AppColors.borderInk,
-            width: 2,
+          border: const OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(color: AppColors.borderInk, width: 1.5),
           ),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(
-            color: Color(0xFFC0392B),
-            width: 1.5,
+          // Focus: 2px ink — ring drawn by outer AnimatedContainer (amberDim)
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(
+              color: AppColors.borderInk,
+              width: 2,
+            ),
           ),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(
-            color: Color(0xFFC0392B),
-            width: 2,
+          errorBorder: const OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(
+              color: Color(0xFFC0392B),
+              width: 1.5,
+            ),
           ),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.input,
-          borderSide: BorderSide(
-            color: AppColors.borderHairline.withValues(alpha: 0.5),
-            width: 1.5,
+          focusedErrorBorder: const OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(
+              color: Color(0xFFC0392B),
+              width: 2,
+            ),
           ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: AppRadius.input,
+            borderSide: BorderSide(
+              color: AppColors.borderHairline.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          filled: true,
+          fillColor: !widget.enabled
+              ? AppColors.borderHairline.withValues(alpha: 0.3)
+              : null,
+          labelStyle: AppTypography.inter(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+          hintStyle: AppTypography.inter(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+          contentPadding: widget.contentPadding ??
+              (widget.isDense
+                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
+                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 14)),
         ),
-        filled: true,
-        fillColor: !widget.enabled
-            ? AppColors.borderHairline.withValues(alpha: 0.3)
-            : null,
-        labelStyle: AppTypography.inter(
-          color: AppColors.textSecondary,
-          fontSize: 14,
-        ),
-        hintStyle: AppTypography.inter(
-          color: AppColors.textSecondary,
-          fontSize: 14,
-        ),
-        contentPadding: widget.isDense
-            ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
-            : const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      ),
       ),
     );
   }

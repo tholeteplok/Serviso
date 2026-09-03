@@ -3,8 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_bottom_sheet.dart';
+import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_text_field.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../../features/auth/models/profile.dart';
 import '../controllers/admin_controllers.dart';
 import '../models/admin_models.dart';
@@ -17,13 +25,13 @@ class UserManagementScreen extends ConsumerWidget {
     final userListAsync = ref.watch(userListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kelola Pengguna'),
+      appBar: const NeoAppBar(
+        title: 'Kelola Pengguna',
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: ThickBottomBorderButton(
         onPressed: () => _showAddUserDialog(context, ref),
-        icon: Icon(AppIcons.addPerson),
-        label: const Text('Tambah User'),
+        icon: Icon(AppIcons.addPerson, size: 18),
+        child: const Text('Tambah User'),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(userListProvider),
@@ -55,129 +63,117 @@ class UserManagementScreen extends ConsumerWidget {
   Widget _buildUserTile(BuildContext context, WidgetRef ref, Profile user) {
     final isAdmin = user.role == UserRole.admin;
 
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderHairline, width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: user.isActive
-                      ? AppColors.primary.withValues(alpha: 0.12)
-                      : AppColors.line,
-                  child: Icon(
-                    isAdmin
-                        ? AppIcons.shieldCheck
-                        : AppIcons.user,
-                    color: user.isActive ? AppColors.primary : AppColors.inkMuted,
-                  ),
+    return NeoCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: user.isActive ? AppColors.pastelMint : AppColors.canvas,
+                  borderRadius: AppRadius.button,
+                  border: Border.all(color: AppColors.borderInk, width: 1.5),
+                  boxShadow: AppShadow.l1,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.fullName.isNotEmpty ? user.fullName : user.username,
-                        style: AppTypography.textTheme().titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '@${user.username}',
-                        style: AppTypography.mono(
-                          fontSize: 12,
-                          color: AppColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ),
+                alignment: Alignment.center,
+                child: Icon(
+                  isAdmin ? AppIcons.shieldCheck : AppIcons.user,
+                  color: user.isActive ? AppColors.ink900 : AppColors.textSecondary,
+                  size: 20,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isAdmin
-                        ? AppColors.primary.withValues(alpha: 0.12)
-                        : AppColors.teal.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isAdmin
-                          ? AppColors.primary.withValues(alpha: 0.5)
-                          : AppColors.teal.withValues(alpha: 0.5),
-                      width: 1,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.fullName.isNotEmpty ? user.fullName : user.username,
+                      style: AppTypography.textTheme().titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink900,
+                          ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '@${user.username}',
+                      style: AppTypography.mono(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isAdmin ? AppColors.pastelYellow : AppColors.pastelBlue,
+                  borderRadius: AppRadius.badge,
+                  border: Border.all(color: AppColors.borderInk, width: 1),
+                ),
+                child: Text(
+                  isAdmin ? 'Admin' : 'Kasir',
+                  style: AppTypography.textTheme().bodySmall?.copyWith(
+                        color: AppColors.ink900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppColors.borderHairline),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    user.isActive
+                        ? AppIcons.checkCircle
+                        : AppIcons.prohibit,
+                    size: 16,
+                    color: user.isActive ? AppColors.teal : AppColors.statusDanger,
                   ),
-                  child: Text(
-                    isAdmin ? 'Admin' : 'Kasir',
+                  const SizedBox(width: 4),
+                  Text(
+                    user.isActive ? 'Aktif' : 'Nonaktif',
                     style: AppTypography.textTheme().bodySmall?.copyWith(
-                          color: isAdmin ? AppColors.primary : AppColors.teal,
+                          color: user.isActive ? AppColors.teal : AppColors.statusDanger,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: AppColors.line),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
+                ],
+              ),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _confirmResetPassword(context, ref, user),
+                    icon: Icon(AppIcons.lock, size: 16),
+                    label: const Text('Reset Pass'),
+                  ),
+                  IconButton(
+                    tooltip: user.isActive ? 'Nonaktifkan' : 'Aktifkan',
+                    icon: Icon(
                       user.isActive
-                          ? AppIcons.checkCircle
-                          : AppIcons.prohibit,
-                      size: 16,
-                      color: user.isActive ? AppColors.teal : AppColors.action,
+                          ? AppIcons.prohibit
+                          : AppIcons.checkCircle,
+                      color:
+                          user.isActive ? AppColors.statusDanger : AppColors.teal,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      user.isActive ? 'Aktif' : 'Nonaktif',
-                      style: AppTypography.textTheme().bodySmall?.copyWith(
-                            color:
-                                user.isActive ? AppColors.teal : AppColors.action,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => _confirmResetPassword(context, ref, user),
-                      icon: const Icon(Icons.lock_reset, size: 18),
-                      label: const Text('Reset Pass'),
-                    ),
-                    IconButton(
-                      tooltip: user.isActive ? 'Nonaktifkan' : 'Aktifkan',
-                      icon: Icon(
-                        user.isActive
-                            ? AppIcons.prohibit
-                            : AppIcons.checkCircle,
-                        color:
-                            user.isActive ? AppColors.action : AppColors.teal,
-                      ),
-                      onPressed: () => _toggleUserActive(context, ref, user),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+                    onPressed: () => _toggleUserActive(context, ref, user),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -189,168 +185,154 @@ class UserManagementScreen extends ConsumerWidget {
     UserRole selectedRole = UserRole.kasir;
     bool isLoading = false;
 
-    showModalBottomSheet(
+    showNeoBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        side: BorderSide(color: AppColors.borderStrong, width: 1.5),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tambah Pengguna Baru',
-                    style: AppTypography.textTheme().titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    key: const Key('input_username'),
-                    controller: usernameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Username *',
-                      hintText: 'mis. kasir2',
+      title: 'Tambah Pengguna Baru',
+      child: StatefulBuilder(
+        builder: (context, setState) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NeoTextField(
+                  key: const Key('input_username'),
+                  controller: usernameCtrl,
+                  labelText: 'Username *',
+                  hintText: 'mis. kasir2',
+                  prefixIcon: AppIcons.user,
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  key: const Key('input_fullname'),
+                  controller: nameCtrl,
+                  labelText: 'Nama Lengkap *',
+                  hintText: 'mis. Andi Saputra',
+                  prefixIcon: AppIcons.user,
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  key: const Key('input_email'),
+                  controller: emailCtrl,
+                  labelText: 'Email Pemulihan (Opsional)',
+                  hintText: 'andi@example.com',
+                  prefixIcon: AppIcons.notepad,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<UserRole>(
+                  initialValue: selectedRole,
+                  decoration: InputDecoration(
+                    labelText: 'Peran (Role)',
+                    prefixIcon: Icon(AppIcons.shieldCheck, color: AppColors.ink900),
+                    border: const OutlineInputBorder(
+                      borderRadius: AppRadius.button,
+                      borderSide: BorderSide(color: AppColors.borderInk, width: 1.5),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('input_fullname'),
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Lengkap *',
-                      hintText: 'mis. Andi Saputra',
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: AppRadius.button,
+                      borderSide: BorderSide(color: AppColors.borderInk, width: 1.5),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('input_email'),
-                    controller: emailCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Email Pemulihan (Opsional)',
-                      hintText: 'andi@example.com',
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: AppRadius.button,
+                      borderSide: BorderSide(color: AppColors.borderInk, width: 2),
                     ),
+                    filled: true,
+                    fillColor: AppColors.bgSurface,
                   ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<UserRole>(
-                    initialValue: selectedRole,
-                    decoration: const InputDecoration(labelText: 'Peran (Role)'),
-                    items: const [
-                      DropdownMenuItem(
-                        value: UserRole.kasir,
-                        child: Text('Kasir'),
-                      ),
-                      DropdownMenuItem(
-                        value: UserRole.admin,
-                        child: Text('Admin / Pemilik'),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setState(() => selectedRole = val);
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                              final username = usernameCtrl.text.trim();
-                              final name = nameCtrl.text.trim();
-                              if (username.isEmpty || name.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Username dan Nama Lengkap wajib diisi.',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
+                  items: const [
+                    DropdownMenuItem(
+                      value: UserRole.kasir,
+                      child: Text('Kasir'),
+                    ),
+                    DropdownMenuItem(
+                      value: UserRole.admin,
+                      child: Text('Admin / Pemilik'),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedRole = val);
+                  },
+                ),
+                const SizedBox(height: 20),
+                ThickBottomBorderButton(
+                  isFullWidth: true,
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final username = usernameCtrl.text.trim();
+                          final name = nameCtrl.text.trim();
+                          if (username.isEmpty || name.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Username dan Nama Lengkap wajib diisi.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
 
-                              setState(() => isLoading = true);
-                              try {
-                                final repo = ref.read(adminRepositoryProvider);
-                                await repo.createUser(
-                                  CreateUserPayload(
-                                    username: username,
-                                    fullName: name,
-                                    email: emailCtrl.text.trim().isEmpty
-                                        ? null
-                                        : emailCtrl.text.trim(),
-                                    role: selectedRole,
+                          setState(() => isLoading = true);
+                          try {
+                            final repo = ref.read(adminRepositoryProvider);
+                            await repo.createUser(
+                              CreateUserPayload(
+                                username: username,
+                                fullName: name,
+                                email: emailCtrl.text.trim().isEmpty
+                                    ? null
+                                    : emailCtrl.text.trim(),
+                                role: selectedRole,
+                              ),
+                            );
+                            ref.invalidate(userListProvider);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Undangan pengguna $username berhasil dibuat.',
                                   ),
-                                );
-                                ref.invalidate(userListProvider);
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Undangan pengguna $username berhasil dibuat.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                setState(() => isLoading = false);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(e.toString()),
-                                      backgroundColor: AppColors.action,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: AppColors.textOnDark)
-                          : const Text('Simpan & Undang'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                  backgroundColor: AppColors.action,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Simpan & Undang'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   void _toggleUserActive(BuildContext context, WidgetRef ref, Profile user) async {
     final actionName = user.isActive ? 'menonaktifkan' : 'mengaktifkan';
-    final confirm = await showDialog<bool>(
+    final confirm = await showNeoConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Konfirmasi ${user.isActive ? 'Nonaktifkan' : 'Aktifkan'}'),
-        content: Text(
+      title: 'Konfirmasi ${user.isActive ? 'Nonaktifkan' : 'Aktifkan'}',
+      message:
           'Apakah Anda yakin ingin $actionName pengguna @${user.username}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ya, Lanjutkan'),
-          ),
-        ],
-      ),
+      confirmLabel: user.isActive ? 'Nonaktifkan' : 'Aktifkan',
+      isDanger: user.isActive,
     );
 
     if (confirm == true) {
@@ -382,24 +364,12 @@ class UserManagementScreen extends ConsumerWidget {
 
   void _confirmResetPassword(
       BuildContext context, WidgetRef ref, Profile user) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showNeoConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Password'),
-        content: Text(
-          'Kirimkan instruksi reset password untuk @${user.username}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Kirim Email'),
-          ),
-        ],
-      ),
+      title: 'Reset Password',
+      message: 'Kirimkan instruksi reset password untuk @${user.username}?',
+      confirmLabel: 'Kirim Email',
+      isDanger: false,
     );
 
     if (confirm == true) {

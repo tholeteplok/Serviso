@@ -7,8 +7,10 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_search_bar.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/customer_list_controller.dart';
 import '../controllers/customer_providers.dart';
 import '../screens/customer_form_sheet.dart';
@@ -47,8 +49,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     final state = ref.watch(customerListControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: _searching ? null : const Text('Pelanggan'),
+      appBar: NeoAppBar(
+        title: _searching ? '' : 'Pelanggan',
+        showBack: false,
         bottom: _searching
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(64),
@@ -68,16 +71,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         actions: [
           if (!_searching)
             IconButton(
-              icon: Icon(AppIcons.search),
+              icon: Icon(AppIcons.search, color: AppColors.ink900),
               tooltip: 'Cari pelanggan',
               onPressed: _openSearch,
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: ThickBottomBorderButton(
         onPressed: () => showCustomerForm(context, ref, null),
-        icon: Icon(AppIcons.addPerson),
-        label: const Text('Tambah'),
+        icon: Icon(AppIcons.addPerson, size: 18),
+        child: const Text('Tambah'),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(customerListControllerProvider.notifier).refresh(),
@@ -96,9 +99,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(16),
-                  children: const [
+                  children: [
                     EmptyState(
-                      icon: Icons.search_off_outlined,
+                      icon: AppIcons.search,
                       title: 'Tidak ada pelanggan cocok',
                       message: 'Coba kata kunci lain untuk nama atau nomor telepon.',
                     ),
@@ -110,7 +113,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   EmptyState(
-                    icon: Icons.people_outline,
+                    icon: AppIcons.usersThree,
                     title: 'Belum ada pelanggan',
                     message:
                         'Tambahkan pelanggan untuk mencatat kendaraan dan layanan bengkel.',
@@ -173,15 +176,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                               Text(
                                 '${customer.vehicleCount} kendaraan',
                                 style: textTheme.bodySmall?.copyWith(
-                                  color: AppColors.inkMuted,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: AppColors.inkMuted,
+                        Icon(
+                          AppIcons.caretRight,
+                          color: AppColors.textSecondary,
+                          size: 16,
                         ),
                       ],
                     ),

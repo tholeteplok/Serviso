@@ -10,6 +10,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_line_chart.dart';
 import '../../../core/widgets/section_card.dart';
@@ -27,11 +28,12 @@ class BerandaScreen extends ConsumerWidget {
     final dashboardAsync = ref.watch(dashboardSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Serviso'),
+      appBar: NeoAppBar(
+        title: 'Serviso',
+        showBack: false,
         actions: [
           IconButton(
-            icon: Icon(AppIcons.user),
+            icon: Icon(AppIcons.user, color: AppColors.ink900),
             tooltip: 'Profil',
             onPressed: () => context.push(AppRoutes.profil),
           ),
@@ -128,28 +130,9 @@ class BerandaScreen extends ConsumerWidget {
   }
 
   Widget _buildRevenueCard(BuildContext context, double revenue) {
-    return Container(
-      width: double.infinity,
+    return NeoCard(
+      color: AppColors.pastelPurple,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.pastelPurple,
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderInk, width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F111111),
-            offset: Offset(0, 8),
-            blurRadius: 24,
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: AppColors.borderInk,
-            offset: Offset(4, 4),
-            blurRadius: 0,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -270,21 +253,21 @@ class BerandaScreen extends ConsumerWidget {
             context,
             icon: AppIcons.add,
             label: 'WO Baru',
-            color: AppColors.primary,
+            color: AppColors.pastelMint,
             onTap: () => context.push(AppRoutes.woBaru),
           ),
           _buildActionButton(
             context,
             icon: AppIcons.cart,
             label: 'Jual Langsung',
-            color: AppColors.ink,
+            color: AppColors.pastelYellow,
             onTap: () => context.push(AppRoutes.jualLangsung),
           ),
           _buildActionButton(
             context,
             icon: AppIcons.inventory,
             label: 'Inventori',
-            color: AppColors.teal,
+            color: AppColors.pastelBlue,
             onTap: () => context.go('/inventori'),
           ),
         ],
@@ -306,17 +289,30 @@ class BerandaScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: color.withValues(alpha: 0.12),
-              child: Icon(icon, color: color, size: 24),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: AppRadius.button,
+                border: Border.all(color: AppColors.borderInk, width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.borderInk,
+                    offset: Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: AppColors.ink900, size: 22),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: AppTypography.textTheme().bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
+                    color: AppColors.ink900,
                   ),
             ),
           ],
@@ -340,7 +336,7 @@ class _TodayMethodBreakdown extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: AppColors.action, size: 16),
+            Icon(AppIcons.alertCircle, color: AppColors.statusDanger, size: 16),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -390,7 +386,7 @@ class _TodayMethodBreakdown extends ConsumerWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.22),
           borderRadius: AppRadius.button,
-          border: Border.all(color: AppColors.borderStrong, width: 1.5),
+          border: Border.all(color: AppColors.borderInk, width: 1.5),
         ),
         child: Column(
           children: [

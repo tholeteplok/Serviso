@@ -24,6 +24,7 @@ import '../../features/inventori/screens/part_detail_screen.dart';
 import '../../features/inventori/screens/part_form_screen.dart';
 import '../../features/laporan/controllers/report_controllers.dart';
 import '../../features/laporan/screens/details/debt_detail_screen.dart';
+import '../../features/laporan/screens/details/direct_sale_detail_screen.dart';
 import '../../features/laporan/screens/details/hpp_detail_screen.dart';
 import '../../features/laporan/screens/details/omset_detail_screen.dart';
 import '../../features/laporan/screens/details/part_sold_detail_screen.dart';
@@ -46,6 +47,7 @@ abstract final class AppRoutes {
   static const laporanOmset = '/laporan/omset';
   static const laporanLaba = '/laporan/laba';
   static const laporanHpp = '/laporan/hpp';
+  static const laporanPenjualanLangsung = '/laporan/penjualan-langsung';
   static const laporanHutang = '/laporan/hutang';
   static const laporanWoSelesai = '/laporan/wo-selesai';
   static const laporanPartTerjual = '/laporan/part-terjual';
@@ -244,6 +246,10 @@ final List<RouteBase> _appRoutes = [
     GoRoute(
       path: AppRoutes.laporanHpp,
       builder: (context, state) => const HppDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanPenjualanLangsung,
+      builder: (context, state) => const DirectSaleDetailScreen(),
     ),
     GoRoute(
       path: AppRoutes.laporanHutang,

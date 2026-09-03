@@ -7,6 +7,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_brand_icon.dart';
 import '../../../core/widgets/neo_card.dart';
+import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../controllers/session_controller.dart';
 import '../data/auth_repository.dart';
@@ -108,53 +109,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Text(
                       'Masuk untuk mengelola bengkel',
                       style: textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.inkMuted),
+                          ?.copyWith(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
-                    TextFormField(
+                    NeoTextField(
                       key: const Key('shop_slug'),
                       controller: _shopSlugController,
-                      decoration: InputDecoration(
-                        labelText: 'Kode Toko',
-                        prefixIcon: Icon(AppIcons.storefront),
-                      ),
+                      labelText: 'Kode Toko',
+                      prefixIcon: AppIcons.storefront,
                       textInputAction: TextInputAction.next,
-                      autocorrect: false,
                       validator: (value) => value == null || value.trim().isEmpty
                           ? 'Kode Toko wajib diisi'
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    NeoTextField(
                       key: const Key('username'),
                       controller: _usernameController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Username atau Email',
-                        prefixIcon: Icon(AppIcons.user),
-                      ),
+                      labelText: 'Username atau Email',
+                      prefixIcon: AppIcons.user,
                       textInputAction: TextInputAction.next,
-                      autocorrect: false,
                       validator: (value) => value == null || value.trim().isEmpty
                           ? 'Username atau email wajib diisi'
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    NeoTextField(
                       key: const Key('password'),
                       controller: _passwordController,
                       obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(AppIcons.shieldCheck),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                      labelText: 'Password',
+                      prefixIcon: AppIcons.shieldCheck,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscure ? AppIcons.eye : AppIcons.eyeSlash,
+                          size: 18,
+                          color: AppColors.ink900,
                         ),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
@@ -167,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Text(
                         _error!,
                         style: textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.action),
+                            ?.copyWith(color: AppColors.statusDanger),
                       ),
                     ],
                     const SizedBox(height: 20),

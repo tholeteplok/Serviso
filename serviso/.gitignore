@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive keys and config
+*google-services.json
+*.keystore
+*.jks
+key.properties
+.env*

@@ -7,10 +7,11 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/stock_indicator_card.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../../core/router/app_router.dart';
 import '../controllers/part_list_controller.dart';
 import '../controllers/part_providers.dart';
@@ -52,8 +53,9 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
     final lowStockOnly = ref.watch(partLowStockFilterProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: _searching ? null : const Text('Inventori'),
+      appBar: NeoAppBar(
+        title: _searching ? null : 'Inventori',
+        showBack: false,
         bottom: _searching
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(60),
@@ -80,8 +82,9 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
           if (!_searching) ...[
             IconButton(
               icon: Icon(
-                PhosphorIcons.barcode(PhosphorIconsStyle.bold),
+                AppIcons.barcode,
                 size: 22,
+                color: AppColors.ink900,
               ),
               tooltip: 'Scan Barcode',
               onPressed: () async {
@@ -94,17 +97,20 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
               },
             ),
             IconButton(
-              icon: Icon(AppIcons.search),
+              icon: Icon(AppIcons.search, color: AppColors.ink900),
               tooltip: 'Cari suku cadang',
               onPressed: _openSearch,
             ),
           ],
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutes.inventoriTambah),
-        icon: Icon(AppIcons.add),
-        label: const Text('Tambah'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: ThickBottomBorderButton(
+          onPressed: () => context.push(AppRoutes.inventoriTambah),
+          icon: Icon(AppIcons.add, size: 18),
+          child: const Text('Tambah'),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(partListControllerProvider.notifier).refresh(),
@@ -148,9 +154,9 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                       return ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
-                        children: const [
+                        children: [
                           EmptyState(
-                            icon: Icons.search_off_outlined,
+                            icon: AppIcons.search,
                             title: 'Tidak ada suku cadang cocok',
                             message:
                                 'Coba kata kunci lain atau ubah filter stok menipis.',
@@ -163,7 +169,7 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         EmptyState(
-                          icon: Icons.inventory_2_outlined,
+                          icon: AppIcons.inventory,
                           title: 'Belum ada suku cadang',
                           message:
                               'Tambahkan suku cadang untuk mencatat stok bengkel.',

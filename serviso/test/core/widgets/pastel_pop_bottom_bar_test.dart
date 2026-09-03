@@ -57,7 +57,7 @@ void main() {
     expect(find.text('Laporan'), findsOneWidget);
 
     // Center circular [+] button is present
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byIcon(AppIcons.add), findsOneWidget);
 
     // Tap second item (Antrian)
     await tester.tap(find.byIcon(AppIcons.queue));
@@ -70,7 +70,7 @@ void main() {
     expect(tappedIndex, 3);
 
     // Tap center [+] button
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(AppIcons.add));
     await tester.pump();
     expect(centerTapped, true);
   });

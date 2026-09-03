@@ -11,6 +11,7 @@ abstract class SettingsRepository {
     required String shopName,
     String? address,
     String? phone,
+    String? receiptNotes,
   });
 }
 
@@ -22,18 +23,44 @@ class SupabaseSettingsRepository implements SettingsRepository {
   @override
   Future<AppSettings> getSettings() async {
     try {
+      final user = _client.auth.currentUser;
+      if (user != null) {
+        final profile = await _client
+            .from('profiles')
+            .select('shop_id')
+            .eq('id', user.id)
+            .maybeSingle();
+        final shopId = profile?['shop_id'] as String?;
+        if (shopId != null) {
+          final shop = await _client
+              .from('shops')
+              .select('name, address, phone, receipt_notes')
+              .eq('id', shopId)
+              .maybeSingle();
+          if (shop != null) {
+            return AppSettings(
+              shopName: (shop['name'] as String?) ?? 'Bengkel Serviso',
+              address: shop['address'] as String?,
+              phone: shop['phone'] as String?,
+              receiptNotes: shop['receipt_notes'] as String?,
+            );
+          }
+        }
+      }
+    } catch (_) {}
+
+    try {
       final data = await _client
           .from('app_settings')
-          .select('shop_name, address, phone')
+          .select('shop_name, address, phone, receipt_notes')
           .eq('id', 1)
           .maybeSingle();
-      if (data == null) {
-        return const AppSettings(shopName: 'Bengkel Serviso');
+      if (data != null) {
+        return AppSettings.fromMap(data);
       }
-      return AppSettings.fromMap(data);
-    } catch (e) {
-      return const AppSettings(shopName: 'Bengkel Serviso');
-    }
+    } catch (_) {}
+
+    return const AppSettings(shopName: 'Bengkel Serviso');
   }
 
   @override
@@ -41,21 +68,84 @@ class SupabaseSettingsRepository implements SettingsRepository {
     required String shopName,
     String? address,
     String? phone,
+    String? receiptNotes,
   }) async {
-    final updated = await _client
-        .from('app_settings')
-        .update({
-          'shop_name': shopName,
-          'address': address?.trim().isEmpty == true ? null : address?.trim(),
-          'phone': phone?.trim().isEmpty == true ? null : phone?.trim(),
-        })
-        .eq('id', 1)
-        .select('shop_name, address, phone')
-        .maybeSingle();
-    if (updated == null) {
-      throw const SettingsException('Pengaturan gagal diperbarui');
+    final cleanAddress =
+        address?.trim().isEmpty == true ? null : address?.trim();
+    final cleanPhone = phone?.trim().isEmpty == true ? null : phone?.trim();
+    final cleanReceiptNotes =
+        receiptNotes?.trim().isEmpty == true ? null : receiptNotes?.trim();
+
+    final user = _client.auth.currentUser;
+    String? shopId;
+    if (user != null) {
+      try {
+        final profile = await _client
+            .from('profiles')
+            .select('shop_id')
+            .eq('id', user.id)
+            .maybeSingle();
+        shopId = profile?['shop_id'] as String?;
+      } catch (_) {}
     }
-    return AppSettings.fromMap(updated);
+
+    if (shopId != null) {
+      try {
+        final updated = await _client
+            .from('shops')
+            .update({
+              'name': shopName,
+              'address': cleanAddress,
+              'phone': cleanPhone,
+              'receipt_notes': cleanReceiptNotes,
+            })
+            .eq('id', shopId)
+            .select('name, address, phone, receipt_notes')
+            .maybeSingle();
+        if (updated != null) {
+          return AppSettings(
+            shopName: (updated['name'] as String?) ?? shopName,
+            address: updated['address'] as String?,
+            phone: updated['phone'] as String?,
+            receiptNotes: updated['receipt_notes'] as String?,
+          );
+        }
+      } catch (e) {
+        throw SettingsException(
+          e is PostgrestException ? e.message : 'Pengaturan gagal diperbarui',
+        );
+      }
+    }
+
+    try {
+      final updated = await _client
+          .from('app_settings')
+          .update({
+            'shop_name': shopName,
+            'address': cleanAddress,
+            'phone': cleanPhone,
+            'receipt_notes': cleanReceiptNotes,
+          })
+          .eq('id', 1)
+          .select('shop_name, address, phone, receipt_notes')
+          .maybeSingle();
+      if (updated != null) {
+        return AppSettings.fromMap(updated);
+      }
+    } catch (e) {
+      if (shopId == null) {
+        throw SettingsException(
+          e is PostgrestException ? e.message : 'Pengaturan gagal diperbarui',
+        );
+      }
+    }
+
+    return AppSettings(
+      shopName: shopName,
+      address: cleanAddress,
+      phone: cleanPhone,
+      receiptNotes: cleanReceiptNotes,
+    );
   }
 }
 
@@ -82,8 +172,12 @@ class FakeSettingsRepository implements SettingsRepository {
     this.allowAdmin = true,
   });
 
-  AppSettings _settings =
-      const AppSettings(shopName: 'Bengkel Serviso', address: null, phone: null);
+  AppSettings _settings = const AppSettings(
+    shopName: 'Bengkel Serviso',
+    address: null,
+    phone: null,
+    receiptNotes: null,
+  );
 
   bool failUpdate;
   final bool allowAdmin;
@@ -98,6 +192,7 @@ class FakeSettingsRepository implements SettingsRepository {
     required String shopName,
     String? address,
     String? phone,
+    String? receiptNotes,
   }) async {
     if (!allowAdmin) {
       throw const SettingsException(
@@ -111,6 +206,7 @@ class FakeSettingsRepository implements SettingsRepository {
       shopName: shopName,
       address: address,
       phone: phone,
+      receiptNotes: receiptNotes,
     );
     return _settings;
   }

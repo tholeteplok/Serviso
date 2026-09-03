@@ -63,6 +63,11 @@ abstract class ReportRepository {
     required DateTime start,
     required DateTime end,
   });
+
+  Future<List<DirectSaleReportRow>> fetchDirectSalesDetail({
+    required DateTime start,
+    required DateTime end,
+  });
 }
 
 class SupabaseReportRepository implements ReportRepository {
@@ -984,6 +989,28 @@ class SupabaseReportRepository implements ReportRepository {
       return [];
     }
   }
+
+  @override
+  Future<List<DirectSaleReportRow>> fetchDirectSalesDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final startStr = start.toIso8601String().substring(0, 10);
+    final endStr = end.toIso8601String().substring(0, 10);
+    try {
+      final res = await _client
+          .from('direct_sales')
+          .select('id, sale_number, paid_amount, pay_method, paid_at, customers(name), direct_sale_items(kind, description, qty, unit_price, discount, parts(name))')
+          .gte('paid_at', '${startStr}T00:00:00')
+          .lte('paid_at', '${endStr}T23:59:59')
+          .order('paid_at', ascending: false);
+      return (res as List)
+          .map((m) => DirectSaleReportRow.fromMap(m as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
 }
 
 class FakeReportRepository implements ReportRepository {
@@ -1364,5 +1391,44 @@ class FakeReportRepository implements ReportRepository {
     }
     final all = [...woRows, ...plRows]..sort((a, b) => b.transactedAt.compareTo(a.transactedAt));
     return all;
+  }
+
+  @override
+  Future<List<DirectSaleReportRow>> fetchDirectSalesDetail({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final list = <DirectSaleReportRow>[];
+    final days = end.difference(start).inDays + 1;
+    for (int i = 0; i < days; i += 2) {
+      final d = start.add(Duration(days: i));
+      final seq = (i + 1).toString().padLeft(3, '0');
+      list.add(DirectSaleReportRow(
+        id: 'ds-fake-$i',
+        saleNumber: 'DS-260902-$seq',
+        paidAt: d,
+        paidAmount: 50000 + (i * 15000),
+        payMethod: i % 2 == 0 ? 'cash' : 'transfer',
+        customerName: i % 4 == 0 ? null : 'Pelanggan Ritel ${i + 1}',
+        itemCount: 2,
+        items: [
+          DirectSaleItemReportRow(
+            kind: 'part',
+            description: 'Oli Mesin Matic 10W-40',
+            qty: 1,
+            unitPrice: 45000 + (i * 10000),
+            partName: 'Oli Mesin Matic 10W-40',
+          ),
+          const DirectSaleItemReportRow(
+            kind: 'jasa',
+            description: 'Jasa Pasang / Ganti Oli',
+            qty: 1,
+            unitPrice: 5000,
+          ),
+        ],
+      ));
+    }
+    list.sort((a, b) => b.paidAt.compareTo(a.paidAt));
+    return list;
   }
 }

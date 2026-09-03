@@ -5,12 +5,16 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/distributor_autocomplete_field.dart';
+import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_stepper.dart';
+import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
@@ -157,25 +161,13 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
 
   Future<bool> _handlePop() async {
     if (!_hasUnsavedChanges) return true;
-    final confirm = await showDialog<bool>(
+    final confirm = await showNeoConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Batalkan Pengisian?'),
-        content: const Text(
-          'Data yang telah Anda masukkan belum disimpan dan akan hilang.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Lanjut Mengisi'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.action),
-            child: const Text('Batalkan'),
-          ),
-        ],
-      ),
+      title: 'Batalkan Pengisian?',
+      message: 'Data yang telah Anda masukkan belum disimpan dan akan hilang.',
+      confirmLabel: 'Batalkan',
+      cancelLabel: 'Lanjut Mengisi',
+      isDanger: true,
     );
     return confirm ?? false;
   }
@@ -257,15 +249,9 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
     final saving = state.isLoading || _isSubmitting;
 
     if (_loadingPart) {
-      return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(AppIcons.back),
-            onPressed: () => context.pop(),
-          ),
-          title: const Text('Memuat...'),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        appBar: NeoAppBar(title: 'Memuat...'),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -286,18 +272,14 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(AppIcons.back),
-            tooltip: 'Kembali',
-            onPressed: () async {
-              final shouldPop = await _handlePop();
-              if (shouldPop && context.mounted) {
-                context.pop();
-              }
-            },
-          ),
-          title: Text(isEdit ? 'Ubah Suku Cadang' : 'Tambah Suku Cadang'),
+        appBar: NeoAppBar(
+          title: isEdit ? 'Ubah Suku Cadang' : 'Tambah Suku Cadang',
+          onBack: () async {
+            final shouldPop = await _handlePop();
+            if (shouldPop && context.mounted) {
+              context.pop();
+            }
+          },
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -310,14 +292,12 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                   title: 'Informasi Dasar',
                   child: Column(
                     children: [
-                      TextFormField(
+                      NeoTextField(
                         key: const Key('part_name_field'),
                         controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Nama *',
-                          hintText: 'Misal: Kampas Rem Depan Vario',
-                          prefixIcon: Icon(AppIcons.tag),
-                        ),
+                        labelText: 'Nama *',
+                        hintText: 'Misal: Kampas Rem Depan Vario',
+                        prefixIcon: AppIcons.tag,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -327,25 +307,23 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                         },
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      NeoTextField(
                         key: const Key('part_code_field'),
                         controller: _codeController,
-                        decoration: InputDecoration(
-                          labelText: 'Kode (Opsional)',
-                          prefixIcon: Icon(AppIcons.barcode),
-                          helperText: 'Saran kode otomatis, atau scan barcode',
-                          suffixIcon: IconButton(
-                            icon: Icon(AppIcons.barcode),
-                            tooltip: 'Scan Barcode',
-                            onPressed: () async {
-                              final code = await showBarcodeScanner(context);
-                              if (code != null && code.isNotEmpty) {
-                                setState(() {
-                                  _codeController.text = code;
-                                });
-                              }
-                            },
-                          ),
+                        labelText: 'Kode (Opsional)',
+                        prefixIcon: AppIcons.barcode,
+                        helperText: 'Saran kode otomatis, atau scan barcode',
+                        suffixIcon: IconButton(
+                          icon: Icon(AppIcons.barcode),
+                          tooltip: 'Scan Barcode',
+                          onPressed: () async {
+                            final code = await showBarcodeScanner(context);
+                            if (code != null && code.isNotEmpty) {
+                              setState(() {
+                                _codeController.text = code;
+                              });
+                            }
+                          },
                         ),
                         textInputAction: TextInputAction.next,
                       ),
@@ -366,15 +344,13 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                             .toList(),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      NeoTextField(
                         key: const Key('part_min_stock_field'),
                         controller: _minStockController,
-                        decoration: InputDecoration(
-                          labelText: 'Batas Stok Menipis',
-                          prefixIcon: Icon(AppIcons.warning),
-                          helperText:
-                              'Peringatan otomatis muncul saat stok <= nilai ini',
-                        ),
+                        labelText: 'Batas Stok Menipis',
+                        prefixIcon: AppIcons.warning,
+                        helperText:
+                            'Peringatan otomatis muncul saat stok <= nilai ini',
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
@@ -396,14 +372,12 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextFormField(
+                        NeoTextField(
                           key: const Key('part_cost_field'),
                           controller: _costController,
-                          decoration: InputDecoration(
-                            labelText: 'Modal Beli (Rp)',
-                            hintText: 'Misal: 45000',
-                            prefixIcon: Icon(AppIcons.cart),
-                          ),
+                          labelText: 'Modal Beli (Rp)',
+                          hintText: 'Misal: 45000',
+                          prefixIcon: AppIcons.cart,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -420,14 +394,12 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(
+                        NeoTextField(
                           key: const Key('part_sell_field'),
                           controller: _sellController,
-                          decoration: InputDecoration(
-                            labelText: 'Harga Jual (Rp)',
-                            hintText: 'Misal: 60000',
-                            prefixIcon: Icon(AppIcons.money),
-                          ),
+                          labelText: 'Harga Jual (Rp)',
+                          hintText: 'Misal: 60000',
+                          prefixIcon: AppIcons.money,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -455,9 +427,9 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                               color: isNegativeMargin
                                   ? AppColors.pastelPink
                                   : AppColors.pastelMint,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: AppRadius.button,
                               border: Border.all(
-                                color: AppColors.borderStrong,
+                                color: AppColors.borderInk,
                                 width: 1.5,
                               ),
                             ),
@@ -496,15 +468,15 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.tintPrimary,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.button,
                       border: Border.all(
-                        color: AppColors.borderStrong,
+                        color: AppColors.borderInk,
                         width: 1.5,
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(AppIcons.alertCircle, size: 18, color: AppColors.inkMuted),
+                        Icon(AppIcons.alertCircle, size: 18, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -550,8 +522,8 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.canvas,
-                            borderRadius: BorderRadius.circular(10),
+                            color: AppColors.bgBase,
+                            borderRadius: AppRadius.button,
                             border: Border.all(color: AppColors.borderHairline),
                           ),
                           child: Row(
@@ -559,7 +531,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                               Icon(
                                 AppIcons.inventory,
                                 size: 16,
-                                color: AppColors.inkMuted,
+                                color: AppColors.textSecondary,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -568,7 +540,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                       ? 'Kosongkan (0) jika belum ada stok fisik. Pengadaan dapat dicatat nanti di menu Stok Masuk.'
                                       : '${_quantity.toString().replaceAll(RegExp(r'\.0$'), '')} ${_unitController.text.isEmpty ? 'pcs' : _unitController.text} akan langsung dicatat sebagai Stok Masuk.',
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: AppColors.inkMuted,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -596,7 +568,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                           Text(
                             'Metode Pembayaran Pengadaan',
                             style: textTheme.labelMedium?.copyWith(
-                              color: AppColors.inkMuted,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -636,7 +608,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                     setState(() => _dueDate = picked);
                                   }
                                 },
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: AppRadius.button,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -644,16 +616,16 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: AppColors.borderStrong,
+                                      color: AppColors.borderInk,
                                       width: 1.5,
                                     ),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: AppRadius.button,
                                   ),
                                   child: Row(
                                     children: [
                                       Icon(
                                         AppIcons.calendar,
-                                        color: AppColors.primary,
+                                        color: AppColors.accentPrimary,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -665,7 +637,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                       ),
                                       Icon(
                                         AppIcons.caretDown,
-                                        color: AppColors.inkMuted,
+                                        color: AppColors.textSecondary,
                                         size: 16,
                                       ),
                                     ],
@@ -679,9 +651,9 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: AppColors.pastelMint.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: AppRadius.button,
                                 border: Border.all(
-                                  color: AppColors.borderStrong,
+                                  color: AppColors.borderInk,
                                   width: 1.2,
                                 ),
                               ),
@@ -716,21 +688,21 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.bgSurface,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.button,
                       border: Border.all(
-                        color: AppColors.borderStrong,
+                        color: AppColors.borderInk,
                         width: 1.5,
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(AppIcons.warning, size: 18, color: AppColors.inkMuted),
+                        Icon(AppIcons.warning, size: 18, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Stok tidak diubah di sini. Gunakan menu Stok Masuk / Koreksi Stok di detail suku cadang.',
                             style: textTheme.bodySmall?.copyWith(
-                              color: AppColors.inkMuted,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ),
