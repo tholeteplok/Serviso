@@ -181,6 +181,7 @@ class UserManagementScreen extends ConsumerWidget {
   void _showAddUserDialog(BuildContext context, WidgetRef ref) {
     final usernameCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     UserRole selectedRole = UserRole.kasir;
     bool isLoading = false;
@@ -209,6 +210,15 @@ class UserManagementScreen extends ConsumerWidget {
                   labelText: 'Nama Lengkap *',
                   hintText: 'mis. Andi Saputra',
                   prefixIcon: AppIcons.user,
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  key: const Key('input_password'),
+                  controller: passwordCtrl,
+                  labelText: 'Password Awal *',
+                  hintText: 'min. 6 karakter',
+                  prefixIcon: AppIcons.lock,
+                  obscureText: true,
                 ),
                 const SizedBox(height: 12),
                 NeoTextField(
@@ -261,11 +271,23 @@ class UserManagementScreen extends ConsumerWidget {
                       : () async {
                           final username = usernameCtrl.text.trim();
                           final name = nameCtrl.text.trim();
-                          if (username.isEmpty || name.isEmpty) {
+                          final password = passwordCtrl.text.trim();
+                          if (username.isEmpty || name.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  'Username dan Nama Lengkap wajib diisi.',
+                                  'Username, Nama Lengkap, dan Password wajib diisi.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (password.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Password minimal 6 karakter.',
                                 ),
                               ),
                             );
@@ -279,6 +301,7 @@ class UserManagementScreen extends ConsumerWidget {
                               CreateUserPayload(
                                 username: username,
                                 fullName: name,
+                                password: password,
                                 email: emailCtrl.text.trim().isEmpty
                                     ? null
                                     : emailCtrl.text.trim(),
@@ -291,7 +314,7 @@ class UserManagementScreen extends ConsumerWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Undangan pengguna $username berhasil dibuat.',
+                                    'Pengguna $username berhasil dibuat.',
                                   ),
                                 ),
                               );
@@ -314,7 +337,7 @@ class UserManagementScreen extends ConsumerWidget {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Simpan & Undang'),
+                      : const Text('Simpan Pengguna'),
                 ),
               ],
             ),

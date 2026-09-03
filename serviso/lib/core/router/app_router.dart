@@ -35,6 +35,8 @@ import '../../features/direct_sales/screens/direct_sale_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
 import '../../features/admin/screens/audit_log_screen.dart';
+import '../../features/admin/screens/platform_admin_screen.dart';
+import '../../features/admin/screens/platform_shop_detail_screen.dart';
 import '../../features/admin/screens/user_management_screen.dart';
 
 abstract final class AppRoutes {
@@ -54,6 +56,7 @@ abstract final class AppRoutes {
   static const profil = '/profil';
   static const admin = '/admin';
   static const platformAdmin = '/platform';
+  static const platformShopDetail = '/platform/toko/:id';
   static const adminUsers = '/admin/users';
   static const adminAuditLogs = '/admin/audit-logs';
   static const pengaturan = '/admin/pengaturan';
@@ -85,6 +88,9 @@ String? authGuardRedirect({
   }
 
   if (location == AppRoutes.login || location == AppRoutes.splash) {
+    if (isPlatformAdmin && (profile.shopId == null || profile.shopId!.isEmpty)) {
+      return AppRoutes.platformAdmin;
+    }
     return AppRoutes.beranda;
   }
   if (location.startsWith('/admin') && !isAdmin && !isPlatformAdmin) {
@@ -181,6 +187,16 @@ final List<RouteBase> _appRoutes = [
     GoRoute(
       path: AppRoutes.adminAuditLogs,
       builder: (context, state) => const AuditLogScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.platformAdmin,
+      builder: (context, state) => const PlatformAdminScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.platformShopDetail,
+      builder: (context, state) => PlatformShopDetailScreen(
+        shopId: state.pathParameters['id'] ?? '',
+      ),
     ),
     GoRoute(
       path: AppRoutes.pengaturan,

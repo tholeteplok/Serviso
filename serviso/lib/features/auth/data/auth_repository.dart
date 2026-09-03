@@ -62,6 +62,12 @@ class SupabaseAuthRepository implements AuthRepository {
           'Akun dinonaktifkan. Hubungi pemilik bengkel.',
         );
       }
+      if (!profile.isPlatformAdmin && !profile.shopIsActive) {
+        await _client.auth.signOut();
+        throw const AuthException(
+          'Toko dinonaktifkan. Hubungi admin platform.',
+        );
+      }
       await _recordEvent('login');
       return profile;
     } on AuthException {
@@ -87,7 +93,12 @@ class SupabaseAuthRepository implements AuthRepository {
       final user = event.session?.user;
       if (user == null) return null;
       try {
-        return await _fetchProfile(user.id);
+        final profile = await _fetchProfile(user.id);
+        if (!profile.isActive || (!profile.isPlatformAdmin && !profile.shopIsActive)) {
+          await _client.auth.signOut();
+          return null;
+        }
+        return profile;
       } catch (_) {
         return null;
       }
@@ -99,7 +110,12 @@ class SupabaseAuthRepository implements AuthRepository {
     final user = _client.auth.currentUser;
     if (user == null) return null;
     try {
-      return await _fetchProfile(user.id);
+      final profile = await _fetchProfile(user.id);
+      if (!profile.isActive || (!profile.isPlatformAdmin && !profile.shopIsActive)) {
+        await _client.auth.signOut();
+        return null;
+      }
+      return profile;
     } catch (_) {
       return null;
     }
@@ -130,7 +146,7 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final data = await _client
           .from('profiles')
-          .select('*, shops(name, slug)')
+          .select('*, shops(name, slug, is_active)')
           .eq('id', userId)
           .maybeSingle();
       if (data != null) {

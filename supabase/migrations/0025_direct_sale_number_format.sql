@@ -24,6 +24,8 @@ alter table if exists public.direct_sales
   alter column sale_number set default public.gen_sale_number();
 
 -- 4. Perbarui RPC checkout_direct_sale agar mengembalikan jsonb (id & sale_number) dan mendukung multi-tenant
+drop function if exists public.checkout_direct_sale(uuid, jsonb, text, numeric);
+
 create or replace function public.checkout_direct_sale(
   p_customer_id uuid,
   p_items jsonb,

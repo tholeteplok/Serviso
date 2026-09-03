@@ -58,7 +58,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
     switch (widget.variant) {
       case ThickButtonVariant.primary:
         bg = AppColors.accentPrimary;
-        fg = AppColors.ink900;
+        fg = AppColors.onPrimary;
         break;
       case ThickButtonVariant.secondary:
         bg = AppColors.bgSurface;
@@ -99,23 +99,26 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
               valueColor: AlwaysStoppedAnimation<Color>(fg),
             ),
           )
-        : Row(
-            mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.icon != null) ...[
-                widget.icon!,
-                const SizedBox(width: 8),
-              ],
-              DefaultTextStyle(
-                style: AppTypography.inter(
-                  color: fg,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+        : IconTheme.merge(
+            data: IconThemeData(color: fg),
+            child: Row(
+              mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (widget.icon != null) ...[
+                  widget.icon!,
+                  const SizedBox(width: 8),
+                ],
+                DefaultTextStyle(
+                  style: AppTypography.inter(
+                    color: fg,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  child: widget.child,
                 ),
-                child: widget.child,
-              ),
-            ],
+              ],
+            ),
           );
 
     final disableAnim = MediaQuery.maybeOf(context)?.disableAnimations ?? false;

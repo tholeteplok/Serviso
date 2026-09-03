@@ -90,7 +90,7 @@ class PastelPopBottomBar extends StatelessWidget {
       child: InkWell(
         onTap: () => onTap(index),
         borderRadius: AppRadius.button,
-        splashColor: AppColors.pastelMint.withValues(alpha: 0.3),
+        splashColor: AppColors.accentPrimary.withValues(alpha: 0.2),
         highlightColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -102,12 +102,12 @@ class PastelPopBottomBar extends StatelessWidget {
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.pastelMint : Colors.transparent,
+                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
                   borderRadius: AppRadius.pill,
                 ),
                 child: Icon(
                   isSelected ? item.selectedIcon : item.icon,
-                  color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
+                  color: isSelected ? AppColors.onPrimary : AppColors.textSecondary,
                   size: 22,
                 ),
               ),
@@ -119,7 +119,7 @@ class PastelPopBottomBar extends StatelessWidget {
                 style: AppTypography.inter(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? AppColors.ink900 : AppColors.textSecondary,
+                  color: isSelected ? AppColors.accentPrimary : AppColors.textSecondary,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -158,7 +158,7 @@ class PastelPopBottomBar extends StatelessWidget {
             alignment: Alignment.center,
             child: Icon(
               AppIcons.add,
-              color: AppColors.ink900,
+              color: AppColors.onPrimary,
               size: 28,
             ),
           ),

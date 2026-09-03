@@ -68,12 +68,19 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, username, email, full_name, role, user_id } = body;
+    const { action, username, email, full_name, role, user_id, password } = body;
 
     if (action === "create") {
-      if (!username || !full_name) {
+      if (!username || !full_name || !password) {
         return new Response(
-          JSON.stringify({ error: "Username dan nama lengkap wajib diisi." }),
+          JSON.stringify({ error: "Username, nama lengkap, dan password wajib diisi." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (password.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "Password minimal 6 karakter." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -89,17 +96,20 @@ serve(async (req) => {
 
       if (existing) {
         return new Response(
-          JSON.stringify({ error: "Username '$cleanUsername' sudah digunakan di toko ini." }),
+          JSON.stringify({ error: `Username '${cleanUsername}' sudah digunakan di toko ini.` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const syntheticEmail = "$cleanUsername."$shopSlug@users.serviso.app";
+      const syntheticEmail = `${cleanUsername}.${shopSlug}@users.serviso.app`;
       const recoveryEmail = email?.trim() || syntheticEmail;
 
-      const { data: inviteData, error: inviteError } =
-        await supabaseAdmin.auth.admin.inviteUserByEmail(syntheticEmail, {
-          data: {
+      const { data: userData, error: createError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email: syntheticEmail,
+          password: password,
+          email_confirm: true,
+          user_metadata: {
             username: cleanUsername,
             full_name: full_name.trim(),
             role: role === "admin" ? "admin" : "kasir",
@@ -108,15 +118,15 @@ serve(async (req) => {
           },
         });
 
-      if (inviteError) {
+      if (createError) {
         return new Response(
-          JSON.stringify({ error: inviteError.message }),
+          JSON.stringify({ error: `Gagal membuat akun: ${createError.message}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ message: "Undangan terkirim untuk $cleanUsername", user: inviteData.user }),
+        JSON.stringify({ message: `Pengguna '${cleanUsername}' berhasil dibuat.`, user: userData.user }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -184,7 +194,7 @@ serve(async (req) => {
         );
       }
 
-      const targetEmail = targetProfile?.email || "$targetProfile?.username."$shopSlug@users.serviso.app";
+      const targetEmail = targetProfile?.email || `${targetProfile?.username}.${shopSlug}@users.serviso.app`;
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
         targetEmail
       );
@@ -197,7 +207,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ message: "Email reset password terkirim ke $targetEmail" }),
+        JSON.stringify({ message: `Email reset password terkirim ke ${targetEmail}` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

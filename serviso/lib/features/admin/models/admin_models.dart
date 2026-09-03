@@ -88,12 +88,14 @@ class CreateUserPayload {
   final String? email;
   final String fullName;
   final UserRole role;
+  final String password;
 
   const CreateUserPayload({
     required this.username,
     this.email,
     required this.fullName,
     required this.role,
+    required this.password,
   });
 
   Map<String, dynamic> toMap() {
@@ -103,6 +105,71 @@ class CreateUserPayload {
       'email': email?.trim(),
       'full_name': fullName.trim(),
       'role': role.name,
+      'password': password,
     };
   }
+}
+
+class ShopItem {
+  final String id;
+  final String name;
+  final String slug;
+  final bool isActive;
+  final String? address;
+  final String? phone;
+  final DateTime createdAt;
+
+  const ShopItem({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.isActive,
+    this.address,
+    this.phone,
+    required this.createdAt,
+  });
+
+  factory ShopItem.fromMap(Map<String, dynamic> map) {
+    return ShopItem(
+      id: map['id'] as String,
+      name: (map['name'] as String?) ?? '-',
+      slug: (map['slug'] as String?) ?? '-',
+      isActive: (map['is_active'] as bool?) ?? true,
+      address: map['address'] as String?,
+      phone: map['phone'] as String?,
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'].toString())
+          : DateTime.now(),
+    );
+  }
+}
+
+class PlatformSummary {
+  final int activeShopsCount;
+  final int inactiveShopsCount;
+  final int totalUsersCount;
+  final int newShopsThisMonthCount;
+
+  const PlatformSummary({
+    required this.activeShopsCount,
+    required this.inactiveShopsCount,
+    required this.totalUsersCount,
+    required this.newShopsThisMonthCount,
+  });
+
+  int get totalShopsCount => activeShopsCount + inactiveShopsCount;
+}
+
+class ShopStats {
+  final int totalWorkOrders;
+  final int totalCustomers;
+  final int totalDirectSales;
+  final int totalUsers;
+
+  const ShopStats({
+    required this.totalWorkOrders,
+    required this.totalCustomers,
+    required this.totalDirectSales,
+    required this.totalUsers,
+  });
 }

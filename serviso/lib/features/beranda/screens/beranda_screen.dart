@@ -83,9 +83,7 @@ class BerandaScreen extends ConsumerWidget {
               ),
               data: (summary) => Column(
                 children: [
-                  _buildRevenueCard(context, summary.todayRevenue),
-                  const SizedBox(height: 8),
-                  const _TodayMethodBreakdown(),
+                  _UnifiedRevenueCard(revenue: summary.todayRevenue),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -116,10 +114,10 @@ class BerandaScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   _buildChartCard(context, summary.last7Days),
-                  const SizedBox(height: 16),
-                  _buildQuickActionsCard(context),
+                  const SizedBox(height: 14),
+                  _buildQuickActions(context),
                 ],
               ),
             ),
@@ -129,44 +127,6 @@ class BerandaScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRevenueCard(BuildContext context, double revenue) {
-    return NeoCard(
-      color: AppColors.pastelPurple,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                AppIcons.wallet,
-                color: AppColors.ink900,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Pendapatan Hari Ini',
-                style: AppTypography.inter(
-                  color: AppColors.ink900,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            rupiah(revenue),
-            style: AppTypography.chakra(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatTile(
     BuildContext context, {
@@ -243,35 +203,48 @@ class BerandaScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActionsCard(BuildContext context) {
-    return SectionCard(
-      title: 'Aksi Cepat',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildActionButton(
-            context,
-            icon: AppIcons.add,
-            label: 'WO Baru',
-            color: AppColors.pastelMint,
-            onTap: () => context.push(AppRoutes.woBaru),
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 8),
+          child: Text(
+            'Aksi Cepat',
+            style: AppTypography.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink900,
+            ),
           ),
-          _buildActionButton(
-            context,
-            icon: AppIcons.cart,
-            label: 'Jual Langsung',
-            color: AppColors.pastelYellow,
-            onTap: () => context.push(AppRoutes.jualLangsung),
-          ),
-          _buildActionButton(
-            context,
-            icon: AppIcons.inventory,
-            label: 'Inventori',
-            color: AppColors.pastelBlue,
-            onTap: () => context.go('/inventori'),
-          ),
-        ],
-      ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildActionButton(
+              context,
+              icon: AppIcons.add,
+              label: 'WO Baru',
+              color: AppColors.pastelMint,
+              onTap: () => context.push(AppRoutes.woBaru),
+            ),
+            _buildActionButton(
+              context,
+              icon: AppIcons.cart,
+              label: 'Jual Langsung',
+              color: AppColors.pastelYellow,
+              onTap: () => context.push(AppRoutes.jualLangsung),
+            ),
+            _buildActionButton(
+              context,
+              icon: AppIcons.inventory,
+              label: 'Inventori',
+              color: AppColors.pastelBlue,
+              onTap: () => context.go('/inventori'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -286,12 +259,12 @@ class BerandaScreen extends ConsumerWidget {
       onTap: onTap,
       borderRadius: AppRadius.button,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         child: Column(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: AppRadius.button,
@@ -307,13 +280,14 @@ class BerandaScreen extends ConsumerWidget {
               alignment: Alignment.center,
               child: Icon(icon, color: AppColors.ink900, size: 22),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
-              style: AppTypography.textTheme().bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink900,
-                  ),
+              style: AppTypography.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink900,
+              ),
             ),
           ],
         ),
@@ -322,77 +296,114 @@ class BerandaScreen extends ConsumerWidget {
   }
 }
 
-class _TodayMethodBreakdown extends ConsumerWidget {
-  const _TodayMethodBreakdown();
+class _UnifiedRevenueCard extends ConsumerWidget {
+  const _UnifiedRevenueCard({required this.revenue});
+
+  final double revenue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final async = ref.watch(dailyRevenueByMethodProvider((start: today, end: today)));
-    return async.when(
-      loading: () => const SizedBox.shrink(),
-      error: (err, _) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Icon(AppIcons.alertCircle, color: AppColors.statusDanger, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'Gagal muat metode: ${err.toString().replaceFirst('Exception: ', '')}',
-                style: AppTypography.textTheme().labelSmall?.copyWith(color: AppColors.action),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+    final async =
+        ref.watch(dailyRevenueByMethodProvider((start: today, end: today)));
+
+    final totals = <String, double>{'cash': 0, 'transfer': 0, 'qris': 0};
+    final rows = async.valueOrNull;
+    if (rows != null) {
+      for (final r in rows) {
+        final k = r.payMethod ?? 'cash';
+        totals[k] = (totals[k] ?? 0) + r.revenue;
+      }
+    }
+
+    return NeoCard(
+      color: AppColors.pastelPurple,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                AppIcons.wallet,
+                color: AppColors.ink900,
+                size: 18,
               ),
-            ),
-            TextButton(
-              onPressed: () => ref.invalidate(dailyRevenueByMethodProvider),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              const SizedBox(width: 8),
+              Text(
+                'Pendapatan Hari Ini',
+                style: AppTypography.inter(
+                  color: AppColors.ink900,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
-              child: const Text('Coba'),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            rupiah(revenue),
+            style: AppTypography.chakra(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink900,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: AppColors.borderInk.withValues(alpha: 0.15),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _buildMethodPill('Tunai', rupiah(totals['cash'] ?? 0)),
+              const SizedBox(width: 8),
+              _buildMethodPill('Transfer', rupiah(totals['transfer'] ?? 0)),
+              const SizedBox(width: 8),
+              _buildMethodPill('QRIS', rupiah(totals['qris'] ?? 0)),
+            ],
+          ),
+        ],
       ),
-      data: (rows) {
-        if (rows.isEmpty) return const SizedBox.shrink();
-        final totals = <String, double>{'cash': 0, 'transfer': 0, 'qris': 0};
-        for (final r in rows) {
-          final k = r.payMethod ?? 'cash';
-          totals[k] = (totals[k] ?? 0) + r.revenue;
-        }
-        if (totals.values.every((v) => v == 0)) return const SizedBox.shrink();
-        return Row(
-          children: [
-            _miniMethodChip('Tunai', rupiah(totals['cash'] ?? 0), AppColors.pastelMint),
-            const SizedBox(width: 8),
-            _miniMethodChip('Transfer', rupiah(totals['transfer'] ?? 0), AppColors.pastelBlue),
-            const SizedBox(width: 8),
-            _miniMethodChip('QRIS', rupiah(totals['qris'] ?? 0), AppColors.pastelYellow),
-          ],
-        );
-      },
     );
   }
 
-  Widget _miniMethodChip(String label, String value, Color color) {
+  Widget _buildMethodPill(String label, String value) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.22),
-          borderRadius: AppRadius.button,
-          border: Border.all(color: AppColors.borderInk, width: 1.5),
+          color: Colors.white.withValues(alpha: 0.55),
+          borderRadius: AppRadius.sm,
+          border: Border.all(
+            color: AppColors.borderInk.withValues(alpha: 0.25),
+            width: 1,
+          ),
         ),
         child: Column(
           children: [
-            Text(label, style: AppTypography.textTheme().labelSmall?.copyWith(fontWeight: FontWeight.w700, fontSize: 10)),
+            Text(
+              label,
+              style: AppTypography.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink900.withValues(alpha: 0.75),
+              ),
+            ),
             const SizedBox(height: 2),
-            FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: AppTypography.mono(fontSize: 11, fontWeight: FontWeight.bold))),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: AppTypography.chakra(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink900,
+                ),
+              ),
+            ),
           ],
         ),
       ),

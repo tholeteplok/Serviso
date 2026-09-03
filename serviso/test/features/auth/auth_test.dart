@@ -66,6 +66,25 @@ void main() {
       );
       expect(target, isNull);
     });
+
+    test('platform admin di login/splash dialihkan ke /platform', () {
+      const pAdmin = Profile(
+        id: 'pa1',
+        username: 'superadmin',
+        fullName: 'Super Admin',
+        role: UserRole.admin,
+        isActive: true,
+        isPlatformAdmin: true,
+        shopId: null,
+      );
+      final target = authGuardRedirect(
+        session: const AsyncData<Profile?>(pAdmin),
+        isAdmin: true,
+        isPlatformAdmin: true,
+        location: AppRoutes.login,
+      );
+      expect(target, AppRoutes.platformAdmin);
+    });
   });
 
   group('Profile mapping & is_admin', () {
@@ -100,7 +119,24 @@ void main() {
       expect(p.shopId, 'shop-1');
       expect(p.shopName, 'Bengkel Maju');
       expect(p.shopSlug, 'bengkel-maju');
+      expect(p.shopIsActive, isTrue);
       expect(p.isAdmin, isTrue);
+    });
+
+    test('fromMap memetakan shopIsActive false saat toko nonaktif', () {
+      final p = Profile.fromMap({
+        'id': 'abc',
+        'username': 'kasir1',
+        'full_name': 'Kasir Satu',
+        'role': 'kasir',
+        'is_active': true,
+        'shops': {
+          'name': 'Bengkel Nonaktif',
+          'slug': 'bengkel-nonaktif',
+          'is_active': false,
+        },
+      });
+      expect(p.shopIsActive, isFalse);
     });
 
     test('isAdminProvider true hanya untuk admin', () {

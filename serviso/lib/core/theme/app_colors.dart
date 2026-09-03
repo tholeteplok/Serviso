@@ -55,9 +55,10 @@ abstract final class AppColors {
   // ---------------------------------------------------------------------------
   // 2.4 Accents (Solid Mint Primary + Pastel Yellow Secondary)
   // ---------------------------------------------------------------------------
-  /// Primary CTA button, active navigation (#3FBE85 - Solid Mint)
-  static const accentPrimary = Color(0xFF3FBE85);
+  /// Primary CTA button, active navigation (#705774 - Neutral Lilac)
+  static const accentPrimary = Color(0xFF705774);
   static const accentPrimaryBorder = ink900;
+  static const onPrimary = Colors.white;
 
   /// Highlights, secondary buttons, badges (#FFE59A)
   static const accentSecondary = Color(0xFFFFE59A);
@@ -99,7 +100,7 @@ abstract final class AppColors {
   static const shadowHard = ink900;
 
   static const primary = accentPrimary;
-  static const primaryDim = pastelMint;
+  static const primaryDim = pastelPurple;
   static const action = Color(0xFFE8748A);
   static const actionDim = pastelPink;
   static const teal = Color(0xFF3FBE85);

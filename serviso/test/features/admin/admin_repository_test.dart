@@ -25,6 +25,7 @@ void main() {
           username: 'kasir2',
           fullName: 'Budi Kasir Dua',
           role: UserRole.kasir,
+          password: 'password123',
         ),
       );
       final users = await repo.listUsers();

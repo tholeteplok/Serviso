@@ -57,11 +57,18 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { shop_name, shop_slug, owner_username, owner_email, owner_full_name } = body;
+    const { shop_name, shop_slug, owner_username, owner_email, owner_full_name, owner_password } = body;
 
-    if (!shop_name || !shop_slug || !owner_username || !owner_full_name) {
+    if (!shop_name || !shop_slug || !owner_username || !owner_full_name || !owner_password) {
       return new Response(
-        JSON.stringify({ error: "Semua field wajib diisi." }),
+        JSON.stringify({ error: "Semua field wajib diisi (termasuk password pemilik)." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (owner_password.length < 6) {
+      return new Response(
+        JSON.stringify({ error: "Password pemilik minimal 6 karakter." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -69,6 +76,13 @@ serve(async (req) => {
     if (!/^[a-z0-9\-]+$/.test(shop_slug)) {
       return new Response(
         JSON.stringify({ error: "Slug toko hanya boleh berisi huruf kecil, angka, dan strip." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (["platform", "admin", "default", "system"].includes(shop_slug)) {
+      return new Response(
+        JSON.stringify({ error: `Slug '${shop_slug}' adalah kata kunci khusus sistem yang tidak dapat digunakan.` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -88,12 +102,15 @@ serve(async (req) => {
     }
 
     const cleanUsername = owner_username.trim().toLowerCase();
-    const syntheticEmail = "$cleanUsername."$shop_slug@users.serviso.app";
+    const syntheticEmail = `${cleanUsername}.${shop_slug}@users.serviso.app`;
     const recoveryEmail = owner_email?.trim() || syntheticEmail;
 
-    const { data: inviteData, error: inviteError } =
-      await supabaseAdmin.auth.admin.inviteUserByEmail(syntheticEmail, {
-        data: {
+    const { data: userData, error: createError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email: syntheticEmail,
+        password: owner_password,
+        email_confirm: true,
+        user_metadata: {
           username: cleanUsername,
           full_name: owner_full_name.trim(),
           role: "admin", // Owner is always admin
@@ -102,16 +119,17 @@ serve(async (req) => {
         },
       });
 
-    if (inviteError) {
-      // Rollback shop creation? For simplicity, we just return error and let admin retry or manually fix
+    if (createError) {
+      // Rollback: hapus shop yang baru dibuat agar tidak ada orphaned shop
+      await supabaseAdmin.from("shops").delete().eq("id", shopData.id);
       return new Response(
-        JSON.stringify({ error: inviteError.message }),
+        JSON.stringify({ error: `Gagal membuat akun pemilik: ${createError.message}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ message: "Toko dan owner berhasil dibuat.", shop: shopData, user: inviteData.user }),
+      JSON.stringify({ message: "Toko dan owner berhasil dibuat.", shop: shopData, user: userData.user }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {

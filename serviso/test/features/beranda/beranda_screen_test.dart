@@ -39,9 +39,15 @@ void main() {
 
     expect(find.text('Halo, Pemilik Bengkel'), findsOneWidget);
     expect(find.text('Pendapatan Hari Ini'), findsOneWidget);
+    expect(find.text('Tunai'), findsOneWidget);
+    expect(find.text('Transfer'), findsOneWidget);
+    expect(find.text('QRIS'), findsOneWidget);
     expect(find.text('WO Aktif'), findsOneWidget);
     expect(find.text('Stok Menipis'), findsOneWidget);
     expect(find.text('Tren Pendapatan 7 Hari'), findsOneWidget);
     expect(find.text('Aksi Cepat'), findsOneWidget);
+    expect(find.text('WO Baru'), findsOneWidget);
+    expect(find.text('Jual Langsung'), findsOneWidget);
+    expect(find.text('Inventori'), findsOneWidget);
   });
 }

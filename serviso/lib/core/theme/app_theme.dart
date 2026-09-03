@@ -9,8 +9,8 @@ abstract final class AppTheme {
   static ThemeData get light {
     const scheme = ColorScheme.light(
       primary: AppColors.primary,
-      onPrimary: AppColors.ink900,
-      primaryContainer: AppColors.pastelMint,
+      onPrimary: AppColors.onPrimary,
+      primaryContainer: AppColors.primaryDim,
       onPrimaryContainer: AppColors.ink900,
       secondary: AppColors.statusProgress,
       onSecondary: AppColors.ink900,
@@ -65,7 +65,7 @@ abstract final class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accentPrimary,
-          foregroundColor: AppColors.ink900,
+          foregroundColor: AppColors.onPrimary,
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -102,7 +102,7 @@ abstract final class AppTheme {
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.accentPrimary,
-        foregroundColor: AppColors.ink900,
+        foregroundColor: AppColors.onPrimary,
         elevation: 0,
         focusElevation: 0,
         hoverElevation: 0,
