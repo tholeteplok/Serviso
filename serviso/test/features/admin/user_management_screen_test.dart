@@ -31,4 +31,75 @@ void main() {
     expect(find.text('@kasir1'), findsOneWidget);
     expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah User'), findsOneWidget);
   });
+
+  testWidgets('Add user validates short username with informative dialog', (tester) async {
+    final fakeAdminRepo = FakeAdminRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adminRepositoryProvider.overrideWithValue(fakeAdminRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const UserManagementScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Open Add User bottom sheet
+    await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah User'));
+    await tester.pumpAndSettle();
+
+    // Fill in invalid short username
+    await tester.enterText(find.byKey(const Key('input_username')), 'ab');
+    await tester.enterText(find.byKey(const Key('input_fullname')), 'Andi Budi');
+    await tester.enterText(find.byKey(const Key('input_password')), 'secret123');
+
+    // Tap Simpan Pengguna
+    await tester.tap(find.text('Simpan Pengguna'));
+    await tester.pumpAndSettle();
+
+    // Verify informative error dialog appears
+    expect(find.text('Format Username Tidak Valid'), findsOneWidget);
+    expect(find.text('Perbaiki Data'), findsOneWidget);
+  });
+
+  testWidgets('Add user duplicate username displays clear error dialog from repository', (tester) async {
+    final fakeAdminRepo = FakeAdminRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adminRepositoryProvider.overrideWithValue(fakeAdminRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const UserManagementScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Open Add User bottom sheet
+    await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah User'));
+    await tester.pumpAndSettle();
+
+    // Fill in duplicate username 'admin'
+    await tester.enterText(find.byKey(const Key('input_username')), 'admin');
+    await tester.enterText(find.byKey(const Key('input_fullname')), 'Admin Duplikat');
+    await tester.enterText(find.byKey(const Key('input_password')), 'secret123');
+
+    // Tap Simpan Pengguna
+    await tester.tap(find.text('Simpan Pengguna'));
+    await tester.pumpAndSettle();
+
+    // Verify transparent error dialog appears with exact reason
+    expect(find.text('Gagal Menambahkan Pengguna'), findsOneWidget);
+    expect(find.text("Username 'admin' sudah digunakan."), findsOneWidget);
+    expect(find.text('Perbaiki Data'), findsOneWidget);
+  });
 }

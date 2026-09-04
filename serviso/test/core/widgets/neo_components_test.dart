@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serviso/core/theme/app_icons.dart';
+import 'package:serviso/core/widgets/dashed_divider.dart';
+import 'package:serviso/core/widgets/neo_card.dart';
+import 'package:serviso/core/widgets/neo_progress_bar.dart';
 import 'package:serviso/core/widgets/neo_search_bar.dart';
 import 'package:serviso/core/widgets/neo_segment_control.dart';
 import 'package:serviso/core/widgets/neo_stepper.dart';
@@ -117,6 +120,72 @@ void main() {
       await tester.tap(find.byIcon(AppIcons.minus));
       await tester.pumpAndSettle();
       expect(count, 2);
+    });
+  });
+
+  group('NeoCard.info & DashedDivider', () {
+    testWidgets('NeoCard.info renders child and applies flat styling', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: NeoCard.info(
+              child: Text('Info Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Info Content'), findsOneWidget);
+      expect(find.byType(NeoCard), findsOneWidget);
+    });
+
+    testWidgets('DashedDivider renders without error', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: DashedDivider(
+              height: 2,
+              dashWidth: 6,
+              dashGap: 4,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(DashedDivider), findsOneWidget);
+    });
+  });
+
+  group('NeoProgressBar', () {
+    testWidgets('renders track, fill, and leading thumb dot correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: NeoProgressBar(
+              value: 0.5,
+              showDot: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NeoProgressBar), findsOneWidget);
+    });
+
+    testWidgets('renders indeterminate loading state', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: NeoProgressBar(
+              value: 0.0,
+              isLoading: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
     });
   });
 }

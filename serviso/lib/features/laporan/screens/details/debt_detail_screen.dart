@@ -145,7 +145,6 @@ class DebtDetailScreen extends ConsumerWidget {
               selectedValue: filter,
               onValueChanged: (f) =>
                   ref.read(debtFilterProvider.notifier).state = f,
-              activeColor: AppColors.pastelMint,
               items: DebtFilter.values
                   .map((f) => NeoSegmentItem<DebtFilter>(
                         value: f,

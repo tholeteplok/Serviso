@@ -31,7 +31,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
     required this.selectedValue,
     required this.onValueChanged,
     required this.items,
-    this.activeColor = AppColors.pastelMint,
+    this.activeColor = AppColors.accentPrimary,
     this.height = 46.0,
     this.containerColor = AppColors.bgSurface,
   });
@@ -68,6 +68,9 @@ class NeoSegmentControl<T> extends StatelessWidget {
         children: items.map((item) {
           final isSelected = item.value == selectedValue;
           final currentActiveColor = item.activeColor ?? activeColor;
+          final isDarkActive = isSelected &&
+              ThemeData.estimateBrightnessForColor(currentActiveColor) == Brightness.dark;
+          final textColor = isDarkActive ? Colors.white : AppColors.ink900;
 
           return Expanded(
             child: GestureDetector(
@@ -104,7 +107,10 @@ class NeoSegmentControl<T> extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                     ] else if (item.icon != null) ...[
-                      item.icon!,
+                      IconTheme.merge(
+                        data: IconThemeData(color: textColor),
+                        child: item.icon!,
+                      ),
                       const SizedBox(width: 6),
                     ],
                     Flexible(
@@ -113,7 +119,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.inter(
-                          color: AppColors.ink900,
+                          color: textColor,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w600,
                           fontSize: 13,
@@ -125,7 +131,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
                       Text(
                         '(${item.count})',
                         style: AppTypography.inter(
-                          color: AppColors.ink900,
+                          color: textColor,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w600,
                           fontSize: 12,

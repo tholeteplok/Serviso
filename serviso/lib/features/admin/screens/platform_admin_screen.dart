@@ -129,8 +129,16 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
     setState(() => _isCreatingShop = true);
     try {
       final client = Supabase.instance.client;
+      try {
+        final session = client.auth.currentSession;
+        if (session != null && session.isExpired) {
+          await client.auth.refreshSession();
+        }
+      } catch (_) {}
+      final token = client.auth.currentSession?.accessToken;
       final res = await client.functions.invoke(
         'create-shop',
+        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
         body: {
           'shop_name': shopName,
           'shop_slug': shopSlug,
@@ -150,6 +158,22 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
         final data = res.data;
         final errorMsg = data is Map ? data['error'] : 'Gagal membuat toko.';
         throw Exception(errorMsg ?? 'Gagal membuat toko.');
+      }
+    } on FunctionException catch (fe) {
+      if (mounted) {
+        final details = fe.details;
+        String? msg;
+        if (details is Map) {
+          msg = details['error']?.toString() ?? details['message']?.toString();
+        } else if (details is String && details.isNotEmpty) {
+          msg = details;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg ?? fe.reasonPhrase ?? 'Gagal membuat toko (${fe.status}).'),
+            backgroundColor: AppColors.action,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

@@ -620,12 +620,10 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                           NeoSegmentItem(
                             value: true,
                             label: 'Walk-in (Umum)',
-                            activeColor: AppColors.pastelMint,
                           ),
                           NeoSegmentItem(
                             value: false,
                             label: 'Pilih Database',
-                            activeColor: AppColors.pastelAmber,
                           ),
                         ],
                       ),
@@ -840,7 +838,6 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                       .map((m) => NeoSegmentItem(
                             value: m,
                             label: m.label,
-                            activeColor: AppColors.pastelMint,
                           ))
                       .toList(),
                 ),

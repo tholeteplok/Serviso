@@ -9,6 +9,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/dashed_divider.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
@@ -317,7 +318,7 @@ class _UnifiedRevenueCard extends ConsumerWidget {
       }
     }
 
-    return NeoCard(
+    return NeoCard.info(
       color: AppColors.pastelPurple,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
@@ -350,12 +351,13 @@ class _UnifiedRevenueCard extends ConsumerWidget {
               color: AppColors.ink900,
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: AppColors.borderInk.withValues(alpha: 0.15),
+          const DashedDivider(
+            height: 1.5,
+            dashWidth: 4.5,
+            dashGap: 3.5,
+            color: Color(0x4D111111),
+            margin: EdgeInsets.symmetric(vertical: 12),
           ),
-          const SizedBox(height: 10),
           Row(
             children: [
               _buildMethodPill('Tunai', rupiah(totals['cash'] ?? 0)),
@@ -375,8 +377,8 @@ class _UnifiedRevenueCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.55),
-          borderRadius: AppRadius.sm,
+          color: Colors.white.withValues(alpha: 0.65),
+          borderRadius: AppRadius.button,
           border: Border.all(
             color: AppColors.borderInk.withValues(alpha: 0.25),
             width: 1,

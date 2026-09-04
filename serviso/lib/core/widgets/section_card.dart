@@ -23,7 +23,7 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NeoCard(
+    return NeoCard.info(
       color: color,
       padding: padding,
       child: Column(

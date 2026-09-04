@@ -34,15 +34,38 @@ class SupabaseAdminRepository implements AdminRepository {
     }
   }
 
+  Future<Map<String, String>?> _buildAuthHeaders() async {
+    try {
+      final session = _client.auth.currentSession;
+      if (session != null && session.isExpired) {
+        await _client.auth.refreshSession();
+      }
+      final token = _client.auth.currentSession?.accessToken;
+      if (token != null && token.isNotEmpty) {
+        return {'Authorization': 'Bearer $token'};
+      }
+    } catch (_) {
+      // Abaikan jika refresh gagal, biarkan auth context bawaan klien mencoba
+    }
+    return null;
+  }
+
   @override
   Future<void> createUser(CreateUserPayload payload) async {
     try {
-      final res = await _client.functions.invoke('manage-user', body: payload.toMap());
+      final headers = await _buildAuthHeaders();
+      final res = await _client.functions.invoke(
+        'manage-user',
+        headers: headers,
+        body: payload.toMap(),
+      );
       if (res.status != 200) {
         final data = res.data;
         final errorMsg = data is Map ? data['error'] : 'Gagal membuat pengguna baru.';
         throw RepositoryException(errorMsg ?? 'Gagal membuat pengguna baru.');
       }
+    } on FunctionException catch (fe) {
+      throw RepositoryException(mapRepositoryError(fe));
     } catch (e) {
       if (e is RepositoryException) rethrow;
       throw RepositoryException(mapRepositoryError(e));
@@ -52,15 +75,22 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<void> toggleUserActive(String userId, bool active) async {
     try {
-      final res = await _client.functions.invoke('manage-user', body: {
-        'action': active ? 'activate' : 'deactivate',
-        'user_id': userId,
-      });
+      final headers = await _buildAuthHeaders();
+      final res = await _client.functions.invoke(
+        'manage-user',
+        headers: headers,
+        body: {
+          'action': active ? 'activate' : 'deactivate',
+          'user_id': userId,
+        },
+      );
       if (res.status != 200) {
         final data = res.data;
         final errorMsg = data is Map ? data['error'] : 'Gagal mengubah status pengguna.';
         throw RepositoryException(errorMsg ?? 'Gagal mengubah status pengguna.');
       }
+    } on FunctionException catch (fe) {
+      throw RepositoryException(mapRepositoryError(fe));
     } catch (e) {
       if (e is RepositoryException) rethrow;
       throw RepositoryException(mapRepositoryError(e));
@@ -70,15 +100,22 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<void> sendResetPassword(String userId) async {
     try {
-      final res = await _client.functions.invoke('manage-user', body: {
-        'action': 'reset_password',
-        'user_id': userId,
-      });
+      final headers = await _buildAuthHeaders();
+      final res = await _client.functions.invoke(
+        'manage-user',
+        headers: headers,
+        body: {
+          'action': 'reset_password',
+          'user_id': userId,
+        },
+      );
       if (res.status != 200) {
         final data = res.data;
         final errorMsg = data is Map ? data['error'] : 'Gagal mengirim instruksi reset password.';
         throw RepositoryException(errorMsg ?? 'Gagal mengirim instruksi reset password.');
       }
+    } on FunctionException catch (fe) {
+      throw RepositoryException(mapRepositoryError(fe));
     } catch (e) {
       if (e is RepositoryException) rethrow;
       throw RepositoryException(mapRepositoryError(e));

@@ -55,7 +55,6 @@ class LaporanScreen extends ConsumerWidget {
               onValueChanged: (p) {
                 ref.read(laporanPeriodProvider.notifier).state = p;
               },
-              activeColor: AppColors.pastelMint,
               items: LaporanPeriod.values
                   .map((p) => NeoSegmentItem<LaporanPeriod>(
                         value: p,
@@ -128,7 +127,7 @@ class LaporanScreen extends ConsumerWidget {
                                       value: rupiah(fin.totalRevenue),
                                       subtitle: 'Pendapatan kotor',
                                       icon: AppIcons.wallet,
-                                      color: AppColors.primary,
+                                      color: AppColors.pastelPurple,
                                       onTap: () => context.push(
                                         AppRoutes.laporanOmset,
                                       ),
@@ -142,7 +141,7 @@ class LaporanScreen extends ConsumerWidget {
                                       value: rupiah(fin.netProfit),
                                       subtitle: 'Omzet - Modal Part',
                                       icon: AppIcons.report,
-                                      color: AppColors.teal,
+                                      color: AppColors.pastelMint,
                                       onTap: () {
                                         if (!isAdmin) {
                                           ScaffoldMessenger.of(context)
@@ -189,8 +188,8 @@ class LaporanScreen extends ConsumerWidget {
                                       subtitle: 'Tagihan belum lunas',
                                       icon: AppIcons.receipt,
                                       color: fin.totalUnpaidDebt > 0
-                                          ? AppColors.action
-                                          : AppColors.teal,
+                                          ? AppColors.pastelPink
+                                          : AppColors.pastelMint,
                                       onTap: () {
                                         if (!isAdmin) {
                                           ScaffoldMessenger.of(context)
@@ -227,7 +226,7 @@ class LaporanScreen extends ConsumerWidget {
                                 value: rupiah(totalRevenue),
                                 subtitle: 'Pendapatan kotor',
                                 icon: AppIcons.wallet,
-                                color: AppColors.primary,
+                                color: AppColors.pastelPurple,
                                 onTap: () => context.push(
                                   AppRoutes.laporanOmset,
                                 ),
@@ -249,7 +248,7 @@ class LaporanScreen extends ConsumerWidget {
                                 value: rupiah(totalRevenue),
                                 subtitle: 'Pendapatan kotor',
                                 icon: AppIcons.wallet,
-                                color: AppColors.primary,
+                                color: AppColors.pastelPurple,
                                 onTap: () => context.push(
                                   AppRoutes.laporanOmset,
                                 ),
@@ -286,7 +285,7 @@ class LaporanScreen extends ConsumerWidget {
                               value: '$totalWo WO',
                               subtitle: 'Pekerjaan tuntas',
                               icon: AppIcons.checkCircle,
-                              color: AppColors.teal,
+                              color: AppColors.pastelMint,
                               onTap: () => context.push(
                                 AppRoutes.laporanWoSelesai,
                               ),
@@ -300,7 +299,7 @@ class LaporanScreen extends ConsumerWidget {
                               value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
                               subtitle: 'Item suku cadang',
                               icon: AppIcons.inventory,
-                              color: AppColors.ink,
+                              color: AppColors.pastelBlue,
                               onTap: () => context.push(
                                 AppRoutes.laporanPartTerjual,
                               ),

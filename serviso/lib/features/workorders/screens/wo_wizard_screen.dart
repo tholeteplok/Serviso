@@ -14,6 +14,7 @@ import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_progress_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/plate_chip.dart';
@@ -360,17 +361,14 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         appBar: NeoAppBar(
           title: 'Work Order Baru',
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(4),
-            child: _creating
-                ? const LinearProgressIndicator(
-                    backgroundColor: AppColors.borderHairline,
-                    color: AppColors.pastelMint,
-                  )
-                : LinearProgressIndicator(
-                    value: (_step + 1) / 3,
-                    backgroundColor: AppColors.borderHairline,
-                    color: AppColors.accentPrimary,
-                  ),
+            preferredSize: const Size.fromHeight(22),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: NeoProgressBar(
+                value: (_step + 1) / 3,
+                isLoading: _creating,
+              ),
+            ),
           ),
         ),
         body: Stack(

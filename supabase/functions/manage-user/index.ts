@@ -21,29 +21,32 @@ serve(async (req) => {
       );
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    // Client for checking calling user's JWT
-    const supabaseAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    // Admin client with service role
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
 
+    // Validate calling user's JWT explicitly with token
     const {
       data: { user: caller },
       error: userError,
-    } = await supabaseAuthClient.auth.getUser();
+    } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !caller) {
       return new Response(
-        JSON.stringify({ error: "Sesi tidak valid atau telah berakhir." }),
+        JSON.stringify({
+          error: `Sesi tidak valid atau telah berakhir: ${userError?.message || "Token tidak valid. Silakan login ulang."}`,
+        }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Admin client with service role
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify caller role in profiles
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -59,7 +62,9 @@ serve(async (req) => {
       );
     }
 
-    const shopSlug = (profile.shops as any)?.slug;
+    const shopSlug = Array.isArray(profile.shops)
+      ? (profile.shops[0] as any)?.slug
+      : (profile.shops as any)?.slug;
     if (!shopSlug) {
       return new Response(
         JSON.stringify({ error: "Toko tidak memiliki slug yang valid." }),
@@ -86,6 +91,28 @@ serve(async (req) => {
       }
 
       const cleanUsername = username.trim().toLowerCase();
+      // Username regex check: only lowercase alphanumeric, _, ., - (3 to 30 chars), no spaces
+      const usernameRegex = /^[a-z0-9_.-]{3,30}$/;
+      if (!usernameRegex.test(cleanUsername)) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Username hanya boleh menggunakan huruf kecil, angka, titik (.), strip (-), atau garis bawah (_) tanpa spasi (3-30 karakter).",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (email && email.trim().length > 0) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          return new Response(
+            JSON.stringify({ error: "Format email pemulihan tidak valid (contoh: user@gmail.com)." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
       // Check if username exists in the same shop
       const { data: existing } = await supabaseAdmin
         .from("profiles")
@@ -119,8 +146,20 @@ serve(async (req) => {
         });
 
       if (createError) {
+        let errorMsg = createError.message;
+        const lower = errorMsg.toLowerCase();
+        if (
+          lower.includes("a user with this email already exists") ||
+          lower.includes("user already registered")
+        ) {
+          errorMsg = `Username '${cleanUsername}' atau email pemulihan sudah terdaftar di sistem. Gunakan username lain.`;
+        } else if (lower.includes("password should be at least 6 characters")) {
+          errorMsg = "Password minimal 6 karakter.";
+        } else if (lower.includes("email is not valid") || lower.includes("invalid email")) {
+          errorMsg = "Format email atau username tidak valid.";
+        }
         return new Response(
-          JSON.stringify({ error: `Gagal membuat akun: ${createError.message}` }),
+          JSON.stringify({ error: `Gagal membuat akun: ${errorMsg}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

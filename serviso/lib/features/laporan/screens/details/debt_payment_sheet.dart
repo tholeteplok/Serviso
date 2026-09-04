@@ -234,7 +234,6 @@ class _DebtPaymentSheetState extends ConsumerState<DebtPaymentSheet> {
               NeoSegmentItem<String>(value: 'Transfer', label: 'Transfer'),
               NeoSegmentItem<String>(value: 'QRIS', label: 'QRIS'),
             ],
-            activeColor: AppColors.pastelMint,
           ),
           const SizedBox(height: 12),
           TextField(

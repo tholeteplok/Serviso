@@ -21,27 +21,32 @@ serve(async (req) => {
       );
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    const supabaseAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    // Admin client with service role
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
 
+    // Validate calling user's JWT explicitly with token
     const {
       data: { user: caller },
       error: userError,
-    } = await supabaseAuthClient.auth.getUser();
+    } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !caller) {
       return new Response(
-        JSON.stringify({ error: "Sesi tidak valid atau telah berakhir." }),
+        JSON.stringify({
+          error: `Sesi tidak valid atau telah berakhir: ${userError?.message || "Token tidak valid. Silakan login ulang."}`,
+        }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")

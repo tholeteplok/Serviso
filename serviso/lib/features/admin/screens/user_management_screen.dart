@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../features/auth/controllers/session_controller.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -201,7 +204,11 @@ class UserManagementScreen extends ConsumerWidget {
                   controller: usernameCtrl,
                   labelText: 'Username *',
                   hintText: 'mis. kasir2',
+                  helperText: 'Huruf kecil, angka, titik, strip tanpa spasi',
                   prefixIcon: AppIcons.user,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 NeoTextField(
@@ -269,29 +276,56 @@ class UserManagementScreen extends ConsumerWidget {
                   onPressed: isLoading
                       ? null
                       : () async {
-                          final username = usernameCtrl.text.trim();
+                          final rawUsername = usernameCtrl.text.trim().toLowerCase();
                           final name = nameCtrl.text.trim();
                           final password = passwordCtrl.text.trim();
-                          if (username.isEmpty || name.isEmpty || password.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Username, Nama Lengkap, dan Password wajib diisi.',
-                                ),
-                              ),
+                          final email = emailCtrl.text.trim();
+
+                          if (rawUsername.isEmpty || name.isEmpty || password.isEmpty) {
+                            _showErrorDialog(
+                              context,
+                              title: 'Data Belum Lengkap',
+                              message:
+                                  'Username, Nama Lengkap, dan Password awal wajib diisi untuk membuat akun pengguna.',
+                              buttonLabel: 'Perbaiki Data',
+                            );
+                            return;
+                          }
+
+                          final usernameRegex = RegExp(r'^[a-z0-9_.-]{3,30}$');
+                          if (!usernameRegex.hasMatch(rawUsername)) {
+                            _showErrorDialog(
+                              context,
+                              title: 'Format Username Tidak Valid',
+                              message:
+                                  'Username harus 3-30 karakter (hanya boleh huruf kecil, angka, titik, strip, atau garis bawah tanpa spasi).',
+                              buttonLabel: 'Perbaiki Data',
                             );
                             return;
                           }
 
                           if (password.length < 6) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Password minimal 6 karakter.',
-                                ),
-                              ),
+                            _showErrorDialog(
+                              context,
+                              title: 'Password Terlalu Pendek',
+                              message: 'Password awal minimal 6 karakter demi keamanan akun pengguna.',
+                              buttonLabel: 'Perbaiki Data',
                             );
                             return;
+                          }
+
+                          if (email.isNotEmpty) {
+                            final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                            if (!emailRegex.hasMatch(email)) {
+                              _showErrorDialog(
+                                context,
+                                title: 'Format Email Tidak Valid',
+                                message:
+                                    'Format email pemulihan tidak valid (contoh: user@gmail.com). Kosongkan jika tidak diperlukan.',
+                                buttonLabel: 'Perbaiki Data',
+                              );
+                              return;
+                            }
                           }
 
                           setState(() => isLoading = true);
@@ -299,12 +333,10 @@ class UserManagementScreen extends ConsumerWidget {
                             final repo = ref.read(adminRepositoryProvider);
                             await repo.createUser(
                               CreateUserPayload(
-                                username: username,
+                                username: rawUsername,
                                 fullName: name,
                                 password: password,
-                                email: emailCtrl.text.trim().isEmpty
-                                    ? null
-                                    : emailCtrl.text.trim(),
+                                email: email.isEmpty ? null : email,
                                 role: selectedRole,
                               ),
                             );
@@ -314,7 +346,7 @@ class UserManagementScreen extends ConsumerWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Pengguna $username berhasil dibuat.',
+                                    'Pengguna @$rawUsername berhasil dibuat.',
                                   ),
                                 ),
                               );
@@ -322,11 +354,12 @@ class UserManagementScreen extends ConsumerWidget {
                           } catch (e) {
                             setState(() => isLoading = false);
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(e.toString()),
-                                  backgroundColor: AppColors.action,
-                                ),
+                              _showErrorDialog(
+                                context,
+                                title: 'Gagal Menambahkan Pengguna',
+                                message: e.toString(),
+                                buttonLabel: 'Perbaiki Data',
+                                ref: ref,
                               );
                             }
                           }
@@ -374,11 +407,11 @@ class UserManagementScreen extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: AppColors.action,
-            ),
+          _showErrorDialog(
+            context,
+            title: 'Gagal Mengubah Status',
+            message: e.toString(),
+            ref: ref,
           );
         }
       }
@@ -410,14 +443,83 @@ class UserManagementScreen extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: AppColors.action,
-            ),
+          _showErrorDialog(
+            context,
+            title: 'Gagal Reset Password',
+            message: e.toString(),
+            ref: ref,
           );
         }
       }
     }
+  }
+
+  void _showErrorDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    String buttonLabel = 'Tutup',
+    WidgetRef? ref,
+  }) {
+    final lowerMessage = message.toLowerCase();
+    final isSessionExpired = lowerMessage.contains('sesi tidak valid') ||
+        lowerMessage.contains('telah berakhir') ||
+        lowerMessage.contains('unauthorized') ||
+        lowerMessage.contains('401');
+
+    final effectiveTitle = isSessionExpired ? 'Sesi Kedaluwarsa' : title;
+    final effectiveButtonLabel =
+        isSessionExpired ? 'Login Ulang' : buttonLabel;
+
+    showNeoDialog(
+      context: context,
+      builder: (dialogCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.pastelPink,
+              borderRadius: AppRadius.button,
+              border: Border.all(color: AppColors.borderInk, width: 1.5),
+            ),
+            alignment: Alignment.center,
+            child: Icon(AppIcons.warning, color: AppColors.ink900, size: 22),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            effectiveTitle,
+            style: AppTypography.chakra(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: AppTypography.textTheme().bodyMedium?.copyWith(
+                  color: AppColors.ink900,
+                  height: 1.4,
+                ),
+          ),
+          const SizedBox(height: 20),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ThickBottomBorderButton(
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                if (isSessionExpired && ref != null) {
+                  ref.read(sessionProvider.notifier).logout();
+                }
+              },
+              child: Text(effectiveButtonLabel),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

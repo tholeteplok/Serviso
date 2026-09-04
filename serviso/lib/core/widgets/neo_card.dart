@@ -7,9 +7,9 @@ import '../theme/app_spacing.dart';
 
 enum NeoCardVariant { pressable, info }
 
-/// DS v2 Warm Industrial — Card
+/// DS v2 Warm Industrial / Soft Brutalism — Card
 /// pressable: 1.5 ink + hard 4px + lift 1px + cursor pointer
-/// info: 1px hairline #E8E0D6 flat soft only — no lift
+/// info: 1.5 ink + 0px shadow (flat grounded) + 20px radius
 class NeoCard extends StatefulWidget {
   const NeoCard({
     super.key,
@@ -50,13 +50,13 @@ class NeoCard extends StatefulWidget {
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
+    this.borderColor = AppColors.borderInk,
+    this.borderWidth = 1.5,
     this.borderRadius = AppRadius.card,
-  })  : borderColor = AppColors.borderHairline,
-        borderWidth = 1.0,
-        showHardShadow = false,
+  })  : showHardShadow = false,
         shadowOffset = Offset.zero,
         shadowColor = AppColors.borderInk,
-        showSoftShadow = true,
+        showSoftShadow = false,
         variant = NeoCardVariant.info,
         onTap = null;
 
@@ -87,10 +87,10 @@ class _NeoCardState extends State<NeoCard> {
     // Resolve variant defaults
     final isInfo = widget.variant == NeoCardVariant.info;
     final hasTap = widget.onTap != null && !isInfo;
-    final effBorderColor = widget.borderColor ?? (isInfo ? AppColors.borderHairline : AppColors.borderInk);
-    final effBorderWidth = widget.borderWidth ?? (isInfo ? 1.0 : 1.5);
-    final effShowHard = widget.showHardShadow ?? !isInfo;
-    final effShowSoft = widget.showSoftShadow ?? true;
+    final effBorderColor = widget.borderColor ?? AppColors.borderInk;
+    final effBorderWidth = widget.borderWidth ?? 1.5;
+    final effShowHard = widget.showHardShadow ?? (hasTap && !isInfo);
+    final effShowSoft = widget.showSoftShadow ?? false;
 
     final currentOffset = effShowHard
         ? (_isPressed ? Offset.zero : widget.shadowOffset)

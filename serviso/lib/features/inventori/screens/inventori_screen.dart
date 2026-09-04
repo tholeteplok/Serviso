@@ -123,7 +123,6 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                 onValueChanged: (value) {
                   ref.read(partLowStockFilterProvider.notifier).state = value == _FilterOption.lowStock;
                 },
-                activeColor: AppColors.pastelMint,
                 items: const [
                   NeoSegmentItem<_FilterOption>(
                     value: _FilterOption.all,
@@ -132,7 +131,6 @@ class _InventoriScreenState extends ConsumerState<InventoriScreen> {
                   NeoSegmentItem<_FilterOption>(
                     value: _FilterOption.lowStock,
                     label: 'Stok Menipis',
-                    activeColor: AppColors.pastelYellow,
                   ),
                 ],
               ),

@@ -125,7 +125,6 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
                   (m) => NeoSegmentItem<PaymentMethod>(
                     value: m,
                     label: m.label,
-                    activeColor: AppColors.pastelMint,
                   ),
                 )
                 .toList(),

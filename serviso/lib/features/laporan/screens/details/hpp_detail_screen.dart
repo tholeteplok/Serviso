@@ -129,7 +129,6 @@ class HppDetailScreen extends ConsumerWidget {
               selectedValue: period,
               onValueChanged: (p) =>
                   ref.read(hppDetailPeriodProvider.notifier).state = p,
-              activeColor: AppColors.pastelMint,
               items: LaporanPeriod.values
                   .map((p) => NeoSegmentItem<LaporanPeriod>(
                         value: p,

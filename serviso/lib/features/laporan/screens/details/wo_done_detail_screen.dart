@@ -109,7 +109,6 @@ class WoDoneDetailScreen extends ConsumerWidget {
               selectedValue: period,
               onValueChanged: (p) =>
                   ref.read(woDoneDetailPeriodProvider.notifier).state = p,
-              activeColor: AppColors.pastelMint,
               items: LaporanPeriod.values
                   .map((p) => NeoSegmentItem<LaporanPeriod>(
                         value: p,

@@ -132,7 +132,6 @@ class ProfitDetailScreen extends ConsumerWidget {
               selectedValue: period,
               onValueChanged: (p) =>
                   ref.read(profitDetailPeriodProvider.notifier).state = p,
-              activeColor: AppColors.pastelMint,
               items: LaporanPeriod.values
                   .map((p) => NeoSegmentItem<LaporanPeriod>(
                         value: p,

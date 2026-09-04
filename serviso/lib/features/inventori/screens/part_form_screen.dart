@@ -581,13 +581,11 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                                 NeoSegmentItem<String>(
                                   value: 'tunai',
                                   label: 'Tunai',
-                                  activeColor: AppColors.pastelMint,
                                   icon: Icon(AppIcons.wallet, size: 16),
                                 ),
                                 NeoSegmentItem<String>(
                                   value: 'hutang',
                                   label: 'Hutang',
-                                  activeColor: AppColors.pastelYellow,
                                   icon: Icon(AppIcons.receipt, size: 16),
                                 ),
                               ],
