@@ -64,9 +64,18 @@ serve(async (req) => {
     const body = await req.json();
     const { shop_name, shop_slug, owner_username, owner_email, owner_full_name, owner_password } = body;
 
-    if (!shop_name || !shop_slug || !owner_username || !owner_full_name || !owner_password) {
+    if (!shop_name || !shop_slug || !owner_username || !owner_full_name || !owner_password || !owner_email) {
       return new Response(
-        JSON.stringify({ error: "Semua field wajib diisi (termasuk password pemilik)." }),
+        JSON.stringify({ error: "Semua field wajib diisi (termasuk email aktif dan password pemilik)." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const cleanOwnerEmail = owner_email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanOwnerEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Format email pemilik tidak valid (gunakan email aktif contoh: user@gmail.com)." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -108,7 +117,7 @@ serve(async (req) => {
 
     const cleanUsername = owner_username.trim().toLowerCase();
     const syntheticEmail = `${cleanUsername}.${shop_slug}@users.serviso.app`;
-    const recoveryEmail = owner_email?.trim() || syntheticEmail;
+    const recoveryEmail = cleanOwnerEmail;
 
     const { data: userData, error: createError } =
       await supabaseAdmin.auth.admin.createUser({

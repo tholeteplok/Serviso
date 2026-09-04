@@ -157,7 +157,7 @@ class UserManagementScreen extends ConsumerWidget {
               Row(
                 children: [
                   TextButton.icon(
-                    onPressed: () => _confirmResetPassword(context, ref, user),
+                    onPressed: () => _showResetPasswordDialog(context, ref, user),
                     icon: Icon(AppIcons.lock, size: 16),
                     label: const Text('Reset Pass'),
                   ),
@@ -418,40 +418,197 @@ class UserManagementScreen extends ConsumerWidget {
     }
   }
 
-  void _confirmResetPassword(
-      BuildContext context, WidgetRef ref, Profile user) async {
-    final confirm = await showNeoConfirmDialog(
-      context: context,
-      title: 'Reset Password',
-      message: 'Kirimkan instruksi reset password untuk @${user.username}?',
-      confirmLabel: 'Kirim Email',
-      isDanger: false,
-    );
 
-    if (confirm == true) {
-      try {
-        final repo = ref.read(adminRepositoryProvider);
-        await repo.sendResetPassword(user.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Instruksi reset password untuk @${user.username} telah dikirim.',
+  void _showResetPasswordDialog(
+      BuildContext context, WidgetRef ref, Profile user) {
+    final passwordCtrl = TextEditingController();
+    bool isLoading = false;
+    bool obscurePassword = true;
+
+    showNeoDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.pastelYellow,
+                  borderRadius: AppRadius.button,
+                  border: Border.all(color: AppColors.borderInk, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Icon(AppIcons.lock, color: AppColors.ink900, size: 22),
               ),
+              const SizedBox(height: 14),
+              Text(
+                'Setel Password Baru',
+                style: AppTypography.chakra(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Ubah langsung password untuk @${user.username} (${user.fullName}).',
+                style: AppTypography.textTheme().bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.3,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              NeoTextField(
+                key: const Key('input_reset_password'),
+                controller: passwordCtrl,
+                labelText: 'Password Baru *',
+                hintText: 'Minimal 6 karakter',
+                prefixIcon: AppIcons.lock,
+                obscureText: obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscurePassword ? AppIcons.eye : AppIcons.eyeSlash,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    setState(() => obscurePassword = !obscurePassword);
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: isLoading ? null : () => Navigator.pop(dialogCtx),
+                    child: const Text('Batal'),
+                  ),
+                  const SizedBox(width: 8),
+                  ThickBottomBorderButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final newPassword = passwordCtrl.text.trim();
+                            if (newPassword.length < 6) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password baru minimal 6 karakter.'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() => isLoading = true);
+                            try {
+                              final repo = ref.read(adminRepositoryProvider);
+                              await repo.resetUserPassword(
+                                userId: user.id,
+                                newPassword: newPassword,
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(dialogCtx);
+                                _showPasswordResetSuccessDialog(
+                                  context,
+                                  username: user.username,
+                                  newPassword: newPassword,
+                                );
+                              }
+                            } catch (e) {
+                              setState(() => isLoading = false);
+                              if (context.mounted) {
+                                _showErrorDialog(
+                                  context,
+                                  title: 'Gagal Mengubah Password',
+                                  message: e.toString(),
+                                  ref: ref,
+                                );
+                              }
+                            }
+                          },
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Simpan Password'),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showPasswordResetSuccessDialog(
+    BuildContext context, {
+    required String username,
+    required String newPassword,
+  }) {
+    showNeoDialog(
+      context: context,
+      builder: (dialogCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.pastelMint,
+              borderRadius: AppRadius.button,
+              border: Border.all(color: AppColors.borderInk, width: 1.5),
             ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          _showErrorDialog(
-            context,
-            title: 'Gagal Reset Password',
-            message: e.toString(),
-            ref: ref,
-          );
-        }
-      }
-    }
+            alignment: Alignment.center,
+            child: Icon(AppIcons.checkCircle, color: AppColors.ink900, size: 22),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Password Berhasil Diubah',
+            style: AppTypography.chakra(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Password untuk @$username berhasil diubah menjadi:\n"$newPassword"\n\nBeritahukan password baru ini kepada kasir terkait agar dapat langsung login.',
+            style: AppTypography.textTheme().bodyMedium?.copyWith(
+                  color: AppColors.ink900,
+                  height: 1.4,
+                ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: newPassword));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Password disalin ke clipboard!')),
+                  );
+                },
+                icon: Icon(AppIcons.notepad, size: 16),
+                label: const Text('Salin'),
+              ),
+              const SizedBox(width: 8),
+              ThickBottomBorderButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Selesai'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   void _showErrorDialog(

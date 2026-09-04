@@ -73,7 +73,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, username, email, full_name, role, user_id, password } = body;
+    const { action, username, email, full_name, role, user_id, password, new_password } = body;
 
     if (action === "create") {
       if (!username || !full_name || !password) {
@@ -211,42 +211,69 @@ serve(async (req) => {
       );
     }
 
-    if (action === "reset_password") {
-      if (!user_id) {
+    if (action === "reset_password" || action === "set_password") {
+      const passwordToSet = new_password || password;
+      if (!user_id || !passwordToSet) {
         return new Response(
-          JSON.stringify({ error: "user_id wajib diisi." }),
+          JSON.stringify({ error: "user_id dan password baru wajib diisi." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const { data: targetProfile } = await supabaseAdmin
+      if (typeof passwordToSet !== "string" || passwordToSet.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "Password baru minimal 6 karakter." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify target profile exists in caller's shop
+      const { data: targetProfile, error: targetError } = await supabaseAdmin
         .from("profiles")
-        .select("email, username")
+        .select("id, username, role")
         .eq("id", user_id)
         .eq("shop_id", profile.shop_id)
         .single();
         
-      if (!targetProfile) {
+      if (targetError || !targetProfile) {
         return new Response(
-          JSON.stringify({ error: "Pengguna tidak ditemukan." }),
+          JSON.stringify({ error: "Pengguna tidak ditemukan di toko ini." }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const targetEmail = targetProfile?.email || `${targetProfile?.username}.${shopSlug}@users.serviso.app`;
-      const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
-        targetEmail
+      // Execute password update directly via Supabase Auth Admin
+      const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
+        user_id,
+        { password: passwordToSet }
       );
 
-      if (resetError) {
+      if (updateAuthError) {
         return new Response(
-          JSON.stringify({ error: resetError.message }),
+          JSON.stringify({ error: `Gagal memperbarui password: ${updateAuthError.message}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      // Record in audit_logs
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: caller.id,
+          action: "update",
+          table_name: "profiles",
+          record_id: user_id,
+          old_data: { action: "password_reset", target_user: targetProfile.username },
+          new_data: { updated_by: profile.role },
+          shop_id: profile.shop_id,
+        });
+      } catch (_) {
+        // Non-blocking
+      }
+
       return new Response(
-        JSON.stringify({ message: `Email reset password terkirim ke ${targetEmail}` }),
+        JSON.stringify({
+          message: `Password untuk @${targetProfile.username} berhasil diperbarui.`,
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

@@ -39,6 +39,11 @@ void main() {
       final u2 = users.firstWhere((p) => p.id == 'u2');
       expect(u2.isActive, false);
     });
+
+    test('resetUserPassword updates password directly for user', () async {
+      await repo.resetUserPassword(userId: 'u2', newPassword: 'newPassword123');
+      expect(repo.mockPasswords['u2'], 'newPassword123');
+    });
   });
 
   group('FakeAuditLogRepository', () {

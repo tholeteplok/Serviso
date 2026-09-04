@@ -84,8 +84,9 @@ abstract final class AppIcons {
   static final IconData calendar = PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold);
   static final IconData calendarFill = PhosphorIcons.calendarBlank(PhosphorIconsStyle.fill);
   static final IconData lock = PhosphorIcons.lock(PhosphorIconsStyle.bold);
-  static final IconData lockFill = PhosphorIcons.lock(PhosphorIconsStyle.fill);
   static final IconData eye = PhosphorIcons.eye(PhosphorIconsStyle.bold);
   static final IconData eyeSlash = PhosphorIcons.eyeSlash(PhosphorIconsStyle.bold);
+  static final IconData envelope = PhosphorIcons.envelope(PhosphorIconsStyle.bold);
+  static final IconData envelopeFill = PhosphorIcons.envelope(PhosphorIconsStyle.fill);
 }
 

@@ -42,6 +42,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
     final nameCtrl = TextEditingController();
     final slugCtrl = TextEditingController();
     final fullNameCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
 
@@ -69,6 +70,14 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
                 controller: fullNameCtrl,
                 labelText: 'Nama Lengkap Pemilik',
                 prefixIcon: AppIcons.user,
+              ),
+              const SizedBox(height: 12),
+              NeoTextField(
+                controller: emailCtrl,
+                labelText: 'Email Aktif Pemilik * (Gmail/resmi)',
+                hintText: 'pemilik@gmail.com',
+                prefixIcon: AppIcons.envelope,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
               NeoTextField(
@@ -105,16 +114,26 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
     final shopName = nameCtrl.text.trim();
     final shopSlug = slugCtrl.text.trim().toLowerCase();
     final ownerFullName = fullNameCtrl.text.trim();
+    final ownerEmail = emailCtrl.text.trim().toLowerCase();
     final ownerUsername = usernameCtrl.text.trim().toLowerCase();
     final ownerPassword = passwordCtrl.text.trim();
 
     if (shopName.isEmpty ||
         shopSlug.isEmpty ||
         ownerFullName.isEmpty ||
+        ownerEmail.isEmpty ||
         ownerUsername.isEmpty ||
         ownerPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua field wajib diisi.')),
+        const SnackBar(content: Text('Semua field wajib diisi (termasuk email aktif).')),
+      );
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailRegex.hasMatch(ownerEmail)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format email pemilik tidak valid (contoh: user@gmail.com).')),
       );
       return;
     }
@@ -143,6 +162,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
           'shop_name': shopName,
           'shop_slug': shopSlug,
           'owner_full_name': ownerFullName,
+          'owner_email': ownerEmail,
           'owner_username': ownerUsername,
           'owner_password': ownerPassword,
         },

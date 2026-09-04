@@ -8,6 +8,7 @@ abstract class AdminRepository {
   Future<List<Profile>> listUsers();
   Future<void> createUser(CreateUserPayload payload);
   Future<void> toggleUserActive(String userId, bool active);
+  Future<void> resetUserPassword({required String userId, required String newPassword});
   Future<void> sendResetPassword(String userId);
 
   // Platform Admin
@@ -88,6 +89,35 @@ class SupabaseAdminRepository implements AdminRepository {
         final data = res.data;
         final errorMsg = data is Map ? data['error'] : 'Gagal mengubah status pengguna.';
         throw RepositoryException(errorMsg ?? 'Gagal mengubah status pengguna.');
+      }
+    } on FunctionException catch (fe) {
+      throw RepositoryException(mapRepositoryError(fe));
+    } catch (e) {
+      if (e is RepositoryException) rethrow;
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<void> resetUserPassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    try {
+      final headers = await _buildAuthHeaders();
+      final res = await _client.functions.invoke(
+        'manage-user',
+        headers: headers,
+        body: {
+          'action': 'reset_password',
+          'user_id': userId,
+          'new_password': newPassword,
+        },
+      );
+      if (res.status != 200) {
+        final data = res.data;
+        final errorMsg = data is Map ? data['error'] : 'Gagal memperbarui password pengguna.';
+        throw RepositoryException(errorMsg ?? 'Gagal memperbarui password pengguna.');
       }
     } on FunctionException catch (fe) {
       throw RepositoryException(mapRepositoryError(fe));
@@ -319,6 +349,22 @@ class FakeAdminRepository implements AdminRepository {
         phone: p.phone,
       );
     }
+  }
+
+  final Map<String, String> mockPasswords = {};
+
+  @override
+  Future<void> resetUserPassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    if (!mockProfiles.any((p) => p.id == userId)) {
+      throw const RepositoryException('Pengguna tidak ditemukan di toko ini.');
+    }
+    if (newPassword.length < 6) {
+      throw const RepositoryException('Password baru minimal 6 karakter.');
+    }
+    mockPasswords[userId] = newPassword;
   }
 
   @override
