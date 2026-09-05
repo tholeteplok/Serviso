@@ -104,6 +104,13 @@ void main() {
   });
 
   testWidgets('Reset pass button opens direct set password dialog and updates password', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     final fakeAdminRepo = FakeAdminRepository();
 
     await tester.pumpWidget(
@@ -151,5 +158,109 @@ void main() {
 
     // Verify password was updated in repo
     expect(fakeAdminRepo.mockPasswords['u1'], 'kasirBaru123');
+  });
+
+  testWidgets(
+      'Preview button opens user credentials dialog with shop code, warning, and copy/share',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final fakeAdminRepo = FakeAdminRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adminRepositoryProvider.overrideWithValue(fakeAdminRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const UserManagementScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify Preview button exists on cards
+    expect(find.text('Preview'), findsWidgets);
+
+    // Tap Preview on first user card
+    await tester.tap(find.text('Preview').first);
+    await tester.pumpAndSettle();
+
+    // Verify dialog appears
+    expect(find.text('Pratinjau Kredensial Akun'), findsOneWidget);
+    expect(find.text('Kode Toko'), findsOneWidget);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Peringatan & Tanggung Jawab'), findsOneWidget);
+    expect(find.textContaining('hak akses langsung terhadap pencatatan transaksi kasir'), findsOneWidget);
+    expect(find.text('Salin'), findsOneWidget);
+    expect(find.text('Bagikan'), findsOneWidget);
+    expect(find.text('Selesai'), findsOneWidget);
+
+    // Tap Selesai
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pratinjau Kredensial Akun'), findsNothing);
+  });
+
+  testWidgets(
+      'Creating user automatically opens preview credentials dialog with password and warning',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final fakeAdminRepo = FakeAdminRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adminRepositoryProvider.overrideWithValue(fakeAdminRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const UserManagementScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Tap Tambah User
+    await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah User'));
+    await tester.pumpAndSettle();
+
+    // Fill valid new user
+    await tester.enterText(find.byKey(const Key('input_username')), 'kasirbaru');
+    await tester.enterText(find.byKey(const Key('input_fullname')), 'Kasir Baru');
+    await tester.enterText(find.byKey(const Key('input_password')), 'rahasia123');
+
+    // Tap Simpan Pengguna
+    await tester.tap(find.text('Simpan Pengguna'));
+    await tester.pumpAndSettle();
+
+    // Verify preview modal auto-opens
+    expect(find.text('Akun Pengguna Berhasil Dibuat'), findsOneWidget);
+    expect(find.text('Kode Toko'), findsOneWidget);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('kasirbaru'), findsWidgets);
+    expect(find.text('Peringatan & Tanggung Jawab'), findsOneWidget);
+    expect(find.text('Salin'), findsOneWidget);
+    expect(find.text('Bagikan'), findsOneWidget);
+
+    // Tap Selesai to dismiss
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+    expect(find.text('Akun Pengguna Berhasil Dibuat'), findsNothing);
   });
 }

@@ -12,7 +12,7 @@ class AppBrandIcon extends StatelessWidget {
     super.key,
     this.size = 64.0,
     this.iconSize,
-    this.backgroundColor = AppColors.pastelMint,
+    this.backgroundColor = AppColors.accentPrimary,
     this.borderRadius,
     this.borderWidth = 1.5,
     this.shadowOffset = 3.0,

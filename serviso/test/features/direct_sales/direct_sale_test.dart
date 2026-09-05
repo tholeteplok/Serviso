@@ -331,5 +331,85 @@ void main() {
       // Modal scanner terbuka
       expect(find.text('Pindai Barcode / QR'), findsOneWidget);
     });
+
+    testWidgets(
+        'filter chip 1 baris menampilkan Semua, Suku Cadang, dan Jasa tanpa terpotong',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final partRepo = FakePartRepository();
+      await tester.pumpWidget(pumpScreen(
+        parts: partRepo,
+        directSales: FakeDirectSaleRepository(),
+      ));
+      await tester.pumpAndSettle();
+
+      // Memastikan ketiga chip filter tampil utuh
+      expect(find.text('Semua'), findsOneWidget);
+      expect(find.text('Suku Cadang'), findsOneWidget);
+      expect(find.text('Jasa'), findsOneWidget);
+    });
+
+    testWidgets(
+        'toggle icon tampilan di header beralih antara Grid View dan List View',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final partRepo = FakePartRepository();
+      await partRepo.createPart(const PartInput(
+        name: 'Kampas Kopling Racing',
+        code: 'KPL-01',
+        sellPrice: 120000,
+        initialStock: 4,
+      ));
+
+      await tester.pumpWidget(pumpScreen(
+        parts: partRepo,
+        directSales: FakeDirectSaleRepository(),
+      ));
+      await tester.pumpAndSettle();
+
+      // Secara default GridView aktif
+      expect(find.byType(GridView), findsOneWidget);
+      expect(find.byType(ListView), findsNothing);
+      expect(find.byTooltip('Tampilan List'), findsOneWidget);
+
+      // Tekan tombol toggle tampilan di header
+      await tester.tap(find.byTooltip('Tampilan List'));
+      await tester.pumpAndSettle();
+
+      // Sekarang ListView aktif
+      expect(find.byType(GridView), findsNothing);
+      expect(find.byType(ListView), findsOneWidget);
+      expect(find.byTooltip('Tampilan Grid'), findsOneWidget);
+      expect(find.text('Kampas Kopling Racing'), findsOneWidget);
+      expect(find.text('KPL-01'), findsOneWidget);
+      expect(find.text('Rp120.000'), findsOneWidget);
+
+      // Tambahkan item dari List View
+      await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah'));
+      await tester.pumpAndSettle();
+
+      // Stepper muncul di List View dan bottom bar aktif
+      expect(find.text('Total (1 item)'), findsOneWidget);
+      expect(find.text('1'), findsWidgets);
+
+      // Beralih kembali ke Grid View
+      await tester.tap(find.byTooltip('Tampilan Grid'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GridView), findsOneWidget);
+      expect(find.text('Total (1 item)'), findsOneWidget);
+    });
   });
 }

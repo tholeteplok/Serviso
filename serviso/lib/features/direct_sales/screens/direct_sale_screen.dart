@@ -62,6 +62,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'Semua'; // 'Semua', 'Suku Cadang', 'Jasa'
+  bool _isGridView = true;
 
   @override
   void dispose() {
@@ -905,6 +906,14 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
       appBar: NeoAppBar(
         title: 'Penjualan Langsung',
         actions: [
+          IconButton(
+            icon: Icon(
+              _isGridView ? AppIcons.list : AppIcons.grid,
+              color: AppColors.ink900,
+            ),
+            tooltip: _isGridView ? 'Tampilan List' : 'Tampilan Grid',
+            onPressed: () => setState(() => _isGridView = !_isGridView),
+          ),
           if (_items.isNotEmpty)
             Stack(
               alignment: Alignment.center,
@@ -978,38 +987,25 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                 ),
               ),
 
-              // Categories & Quick Jasa Action
+              // Categories Filter (Full 1 Baris)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildCategoryChip('Semua'),
-                            const SizedBox(width: 8),
-                            _buildCategoryChip('Suku Cadang'),
-                            const SizedBox(width: 8),
-                            _buildCategoryChip('Jasa'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ThickBottomBorderButton(
-                      variant: ThickButtonVariant.secondary,
-                      onPressed: _addJasaDialog,
-                      icon: Icon(AppIcons.add, size: 14),
-                      child: const Text('Jasa Custom'),
-                    ),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildCategoryChip('Semua'),
+                      const SizedBox(width: 8),
+                      _buildCategoryChip('Suku Cadang'),
+                      const SizedBox(width: 8),
+                      _buildCategoryChip('Jasa'),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Main Catalog Grid
+              // Main Catalog Grid / List
               Expanded(
                 child: _selectedCategory == 'Jasa'
                     ? _buildJasaOnlyView()
@@ -1022,21 +1018,34 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                                   'Coba ubah kata kunci pencarian atau gunakan barcode.',
                             ),
                           )
-                        : GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.80,
-                            ),
-                            itemCount: filteredParts.length,
-                            itemBuilder: (ctx, i) {
-                              final part = filteredParts[i];
-                              return _buildProductCard(part);
-                            },
-                          ),
+                        : _isGridView
+                            ? GridView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.80,
+                                ),
+                                itemCount: filteredParts.length,
+                                itemBuilder: (ctx, i) {
+                                  final part = filteredParts[i];
+                                  return _buildProductCard(part);
+                                },
+                              )
+                            : ListView.separated(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                                itemCount: filteredParts.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (ctx, i) {
+                                  final part = filteredParts[i];
+                                  return _buildProductListItem(part);
+                                },
+                              ),
               ),
             ],
           );
@@ -1317,6 +1326,193 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                     style: AppTypography.mono(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: inCartQty >= part.stockQty
+                        ? null
+                        : () => _incrementPart(part),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        AppIcons.add,
+                        size: 14,
+                        color: inCartQty >= part.stockQty
+                            ? AppColors.textSecondary
+                            : AppColors.ink900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Product Item in List View
+  // ---------------------------------------------------------------------------
+
+  Widget _buildProductListItem(Part part) {
+    final inCartQty = _getPartQtyInCart(part.id);
+
+    return NeoCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left: Info (Code, Stock, Name, Price)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top: Code badge & Stock status
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.canvas,
+                        borderRadius: AppRadius.sm,
+                        border:
+                            Border.all(color: AppColors.borderInk, width: 1),
+                      ),
+                      child: Text(
+                        part.code ?? 'PART',
+                        style: AppTypography.mono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: part.isOutOfStock
+                            ? AppColors.canvas
+                            : (part.isLowStock
+                                ? AppColors.pastelAmber
+                                : AppColors.pastelMint),
+                        borderRadius: AppRadius.sm,
+                        border: Border.all(
+                          color: part.isOutOfStock
+                              ? AppColors.statusDanger
+                              : AppColors.borderInk,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        part.isOutOfStock
+                            ? 'Habis'
+                            : (part.isLowStock
+                                ? 'Sisa ${part.stockQty.toInt()}'
+                                : 'Stok ${part.stockQty.toInt()}'),
+                        style: AppTypography.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: part.isOutOfStock
+                              ? AppColors.statusDanger
+                              : AppColors.ink900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+
+                // Name
+                Text(
+                  part.name,
+                  style: AppTypography.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+
+                // Price
+                Text(
+                  rupiah(part.sellPrice),
+                  style: AppTypography.chakra(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Right: Action Button or Stepper
+          if (part.isOutOfStock)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.canvas,
+                borderRadius: AppRadius.button,
+                border:
+                    Border.all(color: AppColors.borderHairline, width: 1.5),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'Stok Habis',
+                style: AppTypography.inter(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            )
+          else if (inCartQty == 0)
+            ThickBottomBorderButton(
+              variant: ThickButtonVariant.primary,
+              onPressed: () => _incrementPart(part),
+              icon: Icon(AppIcons.add, size: 14),
+              child: const Text('Tambah'),
+            )
+          else
+            // Tactile Stepper Row
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.canvas,
+                borderRadius: AppRadius.button,
+                border: Border.all(color: AppColors.borderInk, width: 1.5),
+                boxShadow: AppShadow.l1,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () => _decrementPart(part),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      child: Icon(AppIcons.minus,
+                          size: 14, color: AppColors.ink900),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      inCartQty.toInt().toString(),
+                      style: AppTypography.mono(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   InkWell(

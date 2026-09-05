@@ -88,5 +88,7 @@ abstract final class AppIcons {
   static final IconData eyeSlash = PhosphorIcons.eyeSlash(PhosphorIconsStyle.bold);
   static final IconData envelope = PhosphorIcons.envelope(PhosphorIconsStyle.bold);
   static final IconData envelopeFill = PhosphorIcons.envelope(PhosphorIconsStyle.fill);
+  static final IconData grid = PhosphorIcons.squaresFour(PhosphorIconsStyle.bold);
+  static final IconData list = PhosphorIcons.listBullets(PhosphorIconsStyle.bold);
 }
 

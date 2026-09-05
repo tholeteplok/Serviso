@@ -4,7 +4,7 @@ import 'package:serviso/core/theme/app_colors.dart';
 import 'package:serviso/core/widgets/app_brand_icon.dart';
 
 void main() {
-  testWidgets('AppBrandIcon renders with pastel mint container and border', (tester) async {
+  testWidgets('AppBrandIcon renders with accent primary container and border', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -19,7 +19,7 @@ void main() {
     final container = tester.widget<Container>(containerFinder);
     final decoration = container.decoration as BoxDecoration?;
     expect(decoration, isNotNull);
-    expect(decoration!.color, AppColors.pastelMint);
+    expect(decoration!.color, AppColors.accentPrimary);
     expect(decoration.border, isNotNull);
     expect(decoration.boxShadow, isNotEmpty);
   });

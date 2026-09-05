@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../features/auth/controllers/session_controller.dart';
 
@@ -20,11 +21,19 @@ import '../../../features/auth/models/profile.dart';
 import '../controllers/admin_controllers.dart';
 import '../models/admin_models.dart';
 
-class UserManagementScreen extends ConsumerWidget {
+class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserManagementScreen> createState() =>
+      _UserManagementScreenState();
+}
+
+class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
+  final Map<String, String> _sessionPasswords = {};
+
+  @override
+  Widget build(BuildContext context) {
     final userListAsync = ref.watch(userListProvider);
 
     return Scaffold(
@@ -155,9 +164,36 @@ class UserManagementScreen extends ConsumerWidget {
                 ],
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TextButton.icon(
-                    onPressed: () => _showResetPasswordDialog(context, ref, user),
+                    style: TextButton.styleFrom(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      final cachedPassword = _sessionPasswords[user.username];
+                      _showUserCredentialsPreviewDialog(
+                        context,
+                        username: user.username,
+                        fullName: user.fullName,
+                        role: user.role,
+                        password: cachedPassword,
+                        title: 'Pratinjau Kredensial Akun',
+                      );
+                    },
+                    icon: Icon(AppIcons.eye, size: 16),
+                    label: const Text('Preview'),
+                  ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () =>
+                        _showResetPasswordDialog(context, ref, user),
                     icon: Icon(AppIcons.lock, size: 16),
                     label: const Text('Reset Pass'),
                   ),
@@ -341,14 +377,16 @@ class UserManagementScreen extends ConsumerWidget {
                               ),
                             );
                             ref.invalidate(userListProvider);
+                            _sessionPasswords[rawUsername] = password;
                             if (context.mounted) {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Pengguna @$rawUsername berhasil dibuat.',
-                                  ),
-                                ),
+                              _showUserCredentialsPreviewDialog(
+                                context,
+                                username: rawUsername,
+                                fullName: name,
+                                role: selectedRole,
+                                password: password,
+                                title: 'Akun Pengguna Berhasil Dibuat',
                               );
                             }
                           } catch (e) {
@@ -509,12 +547,17 @@ class UserManagementScreen extends ConsumerWidget {
                                 userId: user.id,
                                 newPassword: newPassword,
                               );
+                              ref.invalidate(userListProvider);
+                              _sessionPasswords[user.username] = newPassword;
                               if (context.mounted) {
                                 Navigator.pop(dialogCtx);
-                                _showPasswordResetSuccessDialog(
+                                _showUserCredentialsPreviewDialog(
                                   context,
                                   username: user.username,
-                                  newPassword: newPassword,
+                                  fullName: user.fullName,
+                                  role: user.role,
+                                  password: newPassword,
+                                  title: 'Password Berhasil Diubah',
                                 );
                               }
                             } catch (e) {
@@ -546,68 +589,355 @@ class UserManagementScreen extends ConsumerWidget {
     );
   }
 
-  void _showPasswordResetSuccessDialog(
+  void _showUserCredentialsPreviewDialog(
     BuildContext context, {
     required String username,
-    required String newPassword,
+    required String fullName,
+    required UserRole role,
+    String? password,
+    String title = 'Pratinjau Kredensial Akun',
   }) {
+    final currentProfile = ref.read(sessionProvider).valueOrNull;
+    final shopSlug = currentProfile?.shopSlug?.isNotEmpty == true
+        ? currentProfile!.shopSlug!
+        : (currentProfile?.shopName?.isNotEmpty == true
+            ? currentProfile!.shopName!
+            : '');
+    final shopName = currentProfile?.shopName?.isNotEmpty == true
+        ? currentProfile!.shopName!
+        : 'Bengkel Kami';
+
+    final roleLabel = role == UserRole.admin ? 'Admin / Pemilik' : 'Kasir';
+    final passText = password ??
+        '(Tersimpan terenkripsi - gunakan Reset Pass jika kasir lupa password)';
+
+    final shareText = '''🔐 AKSES MASUK $roleLabel - SERVISO
+Bengkel: $shopName
+
+📌 Kredensial Login:
+• Kode Toko  : ${shopSlug.isNotEmpty ? shopSlug : '-'}
+• Username   : $username
+• Password   : $passText
+
+⚠️ PERINGATAN & TANGGUNG JAWAB:
+Akun ini memiliki akses langsung ke pencatatan transaksi kasir, penerimaan pembayaran, dan stok bengkel.
+- Jaga kerahasiaan password dan JANGAN membagikannya kepada siapa pun.
+- Segala aktivitas dan transaksi yang tercatat atas akun ini adalah tanggung jawab penuh pemilik akun.''';
+
+    bool isPasswordObscure = true;
+
     showNeoDialog(
       context: context,
-      builder: (dialogCtx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.pastelMint,
-              borderRadius: AppRadius.button,
-              border: Border.all(color: AppColors.borderInk, width: 1.5),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Icon
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.pastelMint,
+                    borderRadius: AppRadius.button,
+                    border: Border.all(color: AppColors.borderInk, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    role == UserRole.admin
+                        ? AppIcons.shieldCheck
+                        : AppIcons.user,
+                    color: AppColors.ink900,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Title & Subtitle
+                Text(
+                  title,
+                  style: AppTypography.chakra(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '@$username ${fullName.isNotEmpty ? "($fullName)" : ""} • $roleLabel',
+                  style: AppTypography.textTheme().bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: 12),
+
+                // Credentials Box
+                NeoCard(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    children: [
+                      // Kode Toko
+                      _buildCredentialRow(
+                        context,
+                        label: 'Kode Toko',
+                        value: shopSlug.isNotEmpty ? shopSlug : '-',
+                        icon: AppIcons.storefront,
+                        copyValue: shopSlug,
+                      ),
+                      const Divider(
+                          height: 12, color: AppColors.borderHairline),
+
+                      // Username
+                      _buildCredentialRow(
+                        context,
+                        label: 'Username',
+                        value: username,
+                        icon: AppIcons.user,
+                        copyValue: username,
+                      ),
+                      const Divider(
+                          height: 12, color: AppColors.borderHairline),
+
+                      // Password
+                      Row(
+                        children: [
+                          Icon(AppIcons.lock,
+                              size: 16, color: AppColors.ink900),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Password',
+                            style: AppTypography.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (password != null) ...[
+                            Text(
+                              isPasswordObscure ? '••••••••' : password,
+                              style: AppTypography.mono(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink900,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: isPasswordObscure
+                                  ? 'Lihat'
+                                  : 'Sembunyikan',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              icon: Icon(
+                                isPasswordObscure
+                                    ? AppIcons.eye
+                                    : AppIcons.eyeSlash,
+                                size: 16,
+                                color: AppColors.ink900,
+                              ),
+                              onPressed: () {
+                                setDialogState(() => isPasswordObscure =
+                                    !isPasswordObscure);
+                              },
+                            ),
+                            IconButton(
+                              tooltip: 'Salin Password',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              icon: Icon(AppIcons.copy,
+                                  size: 16, color: AppColors.ink900),
+                              onPressed: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: password));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Password disalin!')),
+                                );
+                              },
+                            ),
+                          ] else ...[
+                            Text(
+                              '••••••••',
+                              style: AppTypography.mono(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (password == null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Password tersimpan terenkripsi. Gunakan Reset Pass jika kasir lupa password.',
+                          style: AppTypography.inter(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ).copyWith(fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Security & Accountability Warning Box
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.pastelAmber,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(
+                        color: AppColors.borderInk, width: 1.5),
+                    boxShadow: AppShadow.l1,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(AppIcons.warning,
+                              size: 18, color: AppColors.ink900),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Peringatan & Tanggung Jawab',
+                            style: AppTypography.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Akun ini memiliki hak akses langsung terhadap pencatatan transaksi kasir, penerimaan uang tunai, dan stok suku cadang bengkel.\n• Jaga kerahasiaan password dan JANGAN membagikannya kepada siapa pun.\n• Segala aktivitas dan transaksi yang tercatat adalah tanggung jawab penuh pemilik akun.',
+                        style: AppTypography.inter(
+                          fontSize: 11,
+                          color: AppColors.ink900,
+                        ).copyWith(height: 1.35),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Actions: Salin & Bagikan (side by side), Selesai (full width)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          side: const BorderSide(
+                              color: AppColors.borderInk, width: 1.5),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: AppRadius.button,
+                          ),
+                        ),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: shareText));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Kredensial disalin ke clipboard!')),
+                          );
+                        },
+                        icon: Icon(AppIcons.copy, size: 16),
+                        label: const Text('Salin'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ThickBottomBorderButton(
+                        variant: ThickButtonVariant.secondary,
+                        onPressed: () {
+                          SharePlus.instance.share(
+                            ShareParams(
+                              text: shareText,
+                              subject:
+                                  'Akses Akun Kasir @$username - Serviso',
+                            ),
+                          );
+                        },
+                        icon: Icon(AppIcons.share, size: 16),
+                        child: const Text('Bagikan'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ThickBottomBorderButton(
+                  isFullWidth: true,
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Selesai'),
+                ),
+              ],
             ),
-            alignment: Alignment.center,
-            child: Icon(AppIcons.checkCircle, color: AppColors.ink900, size: 22),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCredentialRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required IconData icon,
+    required String copyValue,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.ink900),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTypography.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
-          const SizedBox(height: 14),
-          Text(
-            'Password Berhasil Diubah',
-            style: AppTypography.chakra(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.canvas,
+            borderRadius: AppRadius.sm,
+            border: Border.all(color: AppColors.borderInk, width: 1),
+          ),
+          child: Text(
+            value,
+            style: AppTypography.mono(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
               color: AppColors.ink900,
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Password untuk @$username berhasil diubah menjadi:\n"$newPassword"\n\nBeritahukan password baru ini kepada kasir terkait agar dapat langsung login.',
-            style: AppTypography.textTheme().bodyMedium?.copyWith(
-                  color: AppColors.ink900,
-                  height: 1.4,
-                ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: newPassword));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password disalin ke clipboard!')),
-                  );
-                },
-                icon: Icon(AppIcons.notepad, size: 16),
-                label: const Text('Salin'),
-              ),
-              const SizedBox(width: 8),
-              ThickBottomBorderButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Selesai'),
-              ),
-            ],
+        ),
+        if (copyValue.isNotEmpty && copyValue != '-') ...[
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: 'Salin $label',
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(4),
+            icon: Icon(AppIcons.copy, size: 16, color: AppColors.ink900),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: copyValue));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$label disalin!')),
+              );
+            },
           ),
         ],
-      ),
+      ],
     );
   }
 
