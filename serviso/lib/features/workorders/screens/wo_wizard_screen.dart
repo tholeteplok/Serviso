@@ -30,9 +30,11 @@ import '../../customers/models/vehicle.dart';
 import '../../inventori/controllers/part_providers.dart';
 import '../../inventori/models/part.dart';
 import '../../laporan/controllers/report_controllers.dart';
+import '../../settings/data/settings_repository.dart';
 import '../controllers/work_order_providers.dart';
 import '../logic/wo_validators.dart';
 import '../models/work_order.dart';
+import '../pdf/spk_actions.dart';
 import '../widgets/service_picker_modal.dart';
 
 class WoWizardScreen extends ConsumerStatefulWidget {
@@ -452,6 +454,14 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
       );
       return;
     }
+    if (hasManual && _selectedCustomer == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih atau tambah data pelanggan dulu — diperlukan untuk nota dan riwayat.'),
+        ),
+      );
+      return;
+    }
     setState(() => _creating = true);
     final terms = ref.read(appTermsProvider);
     try {
@@ -466,13 +476,34 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
             : int.tryParse(_odometerController.text.trim()),
         items: _buildItems(),
       );
-      await ref.read(workOrderRepositoryProvider).create(draft);
+      final createdOrder = await ref.read(workOrderRepositoryProvider).create(draft);
       ref.invalidate(boardControllerProvider);
       ref.invalidate(dashboardSummaryProvider);
       ref.invalidate(laporanDailySummariesProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Work order dibuat')));
+      setState(() => _creating = false);
+      final session = ref.read(sessionProvider).valueOrNull;
+      final settings = ref.read(settingsProvider).valueOrNull;
+      final customerPhone = _useManual
+          ? _selectedCustomer?.phone
+          : null; // jalur kendaraan: telepon pelanggan tidak selalu ter-load di step ini
+      await showSpkPrompt(
+        context: context,
+        input: buildSpkInputFromWorkOrder(
+          order: createdOrder,
+          shopName: settings?.shopName.isNotEmpty == true
+              ? settings!.shopName
+              : (session?.shopName ?? 'Toko'),
+          shopAddress: settings?.address,
+          shopPhone: settings?.phone,
+          customerPhone: customerPhone,
+          targetLabel: terms.targetLabel,
+          complaintLabel: terms.complaintLabel,
+          technicianName: _technician?.fullName,
+          printedBy: session?.fullName ?? '-',
+        ),
+      );
+      if (!mounted) return;
       context.pop();
     } catch (e) {
       if (!mounted) return;
@@ -764,7 +795,7 @@ class _StepVehicle extends StatelessWidget {
         Text(
           useManual
               ? (terms.businessType == 'keduanya'
-                  ? 'Input Jasa Non-Otomotif'
+                  ? 'Input Servis Non-Kendaraan'
                   : 'Input ${terms.manualTargetLabel}')
               : (terms.businessType == 'keduanya'
                   ? 'Pilih kendaraan'
@@ -772,15 +803,20 @@ class _StepVehicle extends StatelessWidget {
           style: textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),
-        NeoSegmentControl<bool>(
-          selectedValue: useManual,
-          onValueChanged: onToggleManual,
-          items: [
-            NeoSegmentItem(value: false, label: terms.registeredTargetTab),
-            NeoSegmentItem(value: true, label: terms.manualTargetTab),
-          ],
-        ),
-        const SizedBox(height: 16),
+        // Toggle hanya relevan untuk toko 'keduanya' — toko 'jasa' murni tidak
+        // punya konsep data kendaraan terdaftar, jadi langsung ke form manual
+        // tanpa keputusan tambahan yang tidak relevan buat mereka.
+        if (terms.businessType != 'jasa') ...[
+          NeoSegmentControl<bool>(
+            selectedValue: useManual,
+            onValueChanged: onToggleManual,
+            items: [
+              NeoSegmentItem(value: false, label: terms.registeredTargetTab),
+              NeoSegmentItem(value: true, label: terms.manualTargetTab),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
         if (!useManual) ...[
           NeoSearchBar(
             controller: searchController,
@@ -862,8 +898,13 @@ class _StepVehicle extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Pelanggan Pemilik (Opsional)',
+            'Pelanggan *',
             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Wajib diisi — dipakai untuk nota, riwayat, dan notifikasi ke pelanggan.',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           NeoSearchBar(

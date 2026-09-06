@@ -29,8 +29,10 @@ import '../controllers/work_order_providers.dart';
 import '../logic/wo_state_machine.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
+import '../../../core/theme/app_terms.dart';
 import '../../settings/data/settings_repository.dart';
 import '../pdf/receipt_actions.dart';
+import '../pdf/spk_actions.dart';
 import '../screens/payment_sheet.dart';
 import '../widgets/service_picker_modal.dart';
 
@@ -493,6 +495,29 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     );
   }
 
+  Future<void> _onSpk(WorkOrder order) async {
+    final profile = ref.read(sessionProvider).valueOrNull;
+    final fullName = profile?.fullName ?? 'Admin';
+    if (!mounted) return;
+    final settings = ref.read(settingsProvider).valueOrNull;
+    final terms = ref.read(appTermsProvider);
+    await showSpkPrompt(
+      context: context,
+      input: buildSpkInputFromWorkOrder(
+        order: order,
+        shopName: settings?.shopName.isNotEmpty == true
+            ? settings!.shopName
+            : (profile?.shopName ?? 'Toko'),
+        shopAddress: settings?.address,
+        shopPhone: settings?.phone,
+        targetLabel: terms.targetLabel,
+        complaintLabel: terms.complaintLabel,
+        technicianName: order.assignedName,
+        printedBy: fullName,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
@@ -515,6 +540,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
           onCancel: _onCancel,
           onPay: _onPay,
           onReceipt: _onReceipt,
+          onSpk: _onSpk,
           onAddJasa: _onAddJasa,
           onAddPart: _onAddPart,
           onRemoveItem: _onRemoveItem,
@@ -540,6 +566,7 @@ class _DetailBody extends StatelessWidget {
     required this.onCancel,
     required this.onPay,
     required this.onReceipt,
+    required this.onSpk,
     required this.onAddJasa,
     required this.onAddPart,
     required this.onRemoveItem,
@@ -553,6 +580,7 @@ class _DetailBody extends StatelessWidget {
   final VoidCallback onCancel;
   final Future<void> Function(WorkOrder) onPay;
   final Future<void> Function(WorkOrder) onReceipt;
+  final Future<void> Function(WorkOrder) onSpk;
   final VoidCallback onAddJasa;
   final VoidCallback onAddPart;
   final Future<void> Function(String) onRemoveItem;
@@ -806,6 +834,7 @@ class _DetailBody extends StatelessWidget {
             onCancel: onCancel,
             onPay: () => onPay(order),
             onReceipt: () => onReceipt(order),
+            onSpk: () => onSpk(order),
           ),
         ],
       ),
@@ -955,6 +984,7 @@ class _ActionButtons extends StatelessWidget {
     required this.onCancel,
     required this.onPay,
     required this.onReceipt,
+    required this.onSpk,
   });
 
   final WoStatus status;
@@ -965,6 +995,7 @@ class _ActionButtons extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onPay;
   final VoidCallback onReceipt;
+  final VoidCallback onSpk;
 
   @override
   Widget build(BuildContext context) {
@@ -979,7 +1010,7 @@ class _ActionButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (canStart)
+        if (canStart) ...[
           ThickBottomBorderButton(
             onPressed: onStart,
             isFullWidth: true,
@@ -987,6 +1018,15 @@ class _ActionButtons extends StatelessWidget {
             icon: Icon(AppIcons.wrench, color: AppColors.ink900, size: 20),
             child: const Text('Mulai Kerja'),
           ),
+          const SizedBox(height: 12),
+          ThickBottomBorderButton(
+            onPressed: onSpk,
+            isFullWidth: true,
+            variant: ThickButtonVariant.secondary,
+            icon: Icon(AppIcons.print, color: AppColors.ink900, size: 20),
+            child: const Text('Cetak SPK'),
+          ),
+        ],
         if (canComplete) ...[
           ThickBottomBorderButton(
             onPressed: onComplete,
@@ -994,6 +1034,14 @@ class _ActionButtons extends StatelessWidget {
             variant: ThickButtonVariant.primary,
             icon: Icon(AppIcons.checkCircle, color: AppColors.ink900, size: 20),
             child: const Text('Selesaikan'),
+          ),
+          const SizedBox(height: 12),
+          ThickBottomBorderButton(
+            onPressed: onSpk,
+            isFullWidth: true,
+            variant: ThickButtonVariant.secondary,
+            icon: Icon(AppIcons.print, color: AppColors.ink900, size: 20),
+            child: const Text('Cetak SPK'),
           ),
         ],
         if (status == WoStatus.selesai) ...[
