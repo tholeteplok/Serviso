@@ -34,7 +34,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(AppBar),
-          matching: find.text('Tambah Suku Cadang'),
+          matching: find.text('Tambah Barang'),
         ),
         findsOneWidget,
       );
@@ -69,7 +69,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Harga diatur oleh pemilik. Suku cadang ditambahkan tanpa harga.'),
+        find.text('Harga diatur oleh pemilik. Barang ditambahkan tanpa harga.'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('part_cost_field')), findsNothing);
@@ -136,7 +136,7 @@ void main() {
       await tester.tap(find.byKey(const Key('submit_part_button')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Nama suku cadang wajib diisi'), findsOneWidget);
+      expect(find.text('Nama barang wajib diisi'), findsOneWidget);
 
       // Enter invalid negative cost and sell
       await tester.enterText(find.byKey(const Key('part_name_field')), 'Kampas Rem');

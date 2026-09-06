@@ -9,7 +9,7 @@ class RepositoryException implements Exception {
   String toString() => message;
 }
 
-const _duplicatePartCodeMessage = 'Kode suku cadang sudah digunakan';
+const _duplicatePartCodeMessage = 'Kode barang sudah digunakan';
 const _insufficientStockMessage = 'Stok tidak cukup untuk koreksi ini';
 
 String mapRepositoryError(Object error) {

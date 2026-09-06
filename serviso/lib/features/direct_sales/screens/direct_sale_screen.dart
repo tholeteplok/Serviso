@@ -21,8 +21,10 @@ import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_filter_chip.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_stepper.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
@@ -765,39 +767,19 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                               ),
                               Row(
                                 children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      AppIcons.minus,
-                                      size: 16,
-                                      color: AppColors.ink900,
-                                    ),
-                                    onPressed: () {
+                                  NeoStepper(
+                                    value: item.qty,
+                                    min: 1,
+                                    size: NeoStepperSize.compact,
+                                    fixedWidth: 96,
+                                    onChanged: (newQty) {
                                       setModalState(() {
-                                        _updateItemQty(i, item.qty - 1);
+                                        _updateItemQty(i, newQty.toDouble());
                                       });
                                       setState(() {});
                                     },
                                   ),
-                                  Text(
-                                    item.qty.toInt().toString(),
-                                    style: AppTypography.mono(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      AppIcons.add,
-                                      size: 16,
-                                      color: AppColors.ink900,
-                                    ),
-                                    onPressed: () {
-                                      setModalState(() {
-                                        _updateItemQty(i, item.qty + 1);
-                                      });
-                                      setState(() {});
-                                    },
-                                  ),
+                                  const SizedBox(width: 4),
                                   IconButton(
                                     icon: Icon(
                                       AppIcons.trash,
@@ -1054,6 +1036,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
       bottomNavigationBar: _items.isEmpty
           ? const SizedBox.shrink()
           : SafeArea(
+              top: false,
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 padding: const EdgeInsets.all(12),
@@ -1151,27 +1134,10 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildCategoryChip(String category) {
-    final isSelected = _selectedCategory == category;
-    return InkWell(
+    return NeoFilterChip(
+      label: category,
+      isSelected: _selectedCategory == category,
       onTap: () => setState(() => _selectedCategory = category),
-      borderRadius: AppRadius.button,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.pastelMint : AppColors.canvas,
-          borderRadius: AppRadius.button,
-          border: Border.all(color: AppColors.borderInk, width: 1.5),
-          boxShadow: isSelected ? AppShadow.l1 : null,
-        ),
-        child: Text(
-          category,
-          style: AppTypography.inter(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: AppColors.ink900,
-          ),
-        ),
-      ),
     );
   }
 
@@ -1276,10 +1242,10 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
           if (part.isOutOfStock)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              height: 36,
               decoration: BoxDecoration(
                 color: AppColors.canvas,
-                borderRadius: AppRadius.button,
+                borderRadius: AppRadius.pill,
                 border: Border.all(color: AppColors.borderHairline, width: 1.5),
               ),
               alignment: Alignment.center,
@@ -1294,59 +1260,26 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
           else if (inCartQty == 0)
             ThickBottomBorderButton(
               isFullWidth: true,
+              size: ThickButtonSize.compact,
               variant: ThickButtonVariant.primary,
               onPressed: () => _incrementPart(part),
               icon: Icon(AppIcons.add, size: 14),
               child: const Text('Tambah'),
             )
           else
-            // Tactile Stepper Row
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.canvas,
-                borderRadius: AppRadius.button,
-                border: Border.all(color: AppColors.borderInk, width: 1.5),
-                boxShadow: AppShadow.l1,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(
-                    onTap: () => _decrementPart(part),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      child: Icon(AppIcons.minus,
-                          size: 14, color: AppColors.ink900),
-                    ),
-                  ),
-                  Text(
-                    inCartQty.toInt().toString(),
-                    style: AppTypography.mono(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: inCartQty >= part.stockQty
-                        ? null
-                        : () => _incrementPart(part),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        AppIcons.add,
-                        size: 14,
-                        color: inCartQty >= part.stockQty
-                            ? AppColors.textSecondary
-                            : AppColors.ink900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            NeoStepper(
+              value: inCartQty,
+              min: 0,
+              max: part.stockQty,
+              size: NeoStepperSize.compact,
+              isFullWidth: true,
+              onChanged: (newQty) {
+                if (newQty < inCartQty) {
+                  _decrementPart(part);
+                } else {
+                  _incrementPart(part);
+                }
+              },
             ),
         ],
       ),
@@ -1459,11 +1392,11 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
           // Right: Action Button or Stepper
           if (part.isOutOfStock)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              width: 104,
+              height: 36,
               decoration: BoxDecoration(
                 color: AppColors.canvas,
-                borderRadius: AppRadius.button,
+                borderRadius: AppRadius.pill,
                 border:
                     Border.all(color: AppColors.borderHairline, width: 1.5),
               ),
@@ -1478,62 +1411,27 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
             )
           else if (inCartQty == 0)
             ThickBottomBorderButton(
+              size: ThickButtonSize.compact,
+              fixedWidth: 104,
               variant: ThickButtonVariant.primary,
               onPressed: () => _incrementPart(part),
               icon: Icon(AppIcons.add, size: 14),
               child: const Text('Tambah'),
             )
           else
-            // Tactile Stepper Row
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.canvas,
-                borderRadius: AppRadius.button,
-                border: Border.all(color: AppColors.borderInk, width: 1.5),
-                boxShadow: AppShadow.l1,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    onTap: () => _decrementPart(part),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      child: Icon(AppIcons.minus,
-                          size: 14, color: AppColors.ink900),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      inCartQty.toInt().toString(),
-                      style: AppTypography.mono(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: inCartQty >= part.stockQty
-                        ? null
-                        : () => _incrementPart(part),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        AppIcons.add,
-                        size: 14,
-                        color: inCartQty >= part.stockQty
-                            ? AppColors.textSecondary
-                            : AppColors.ink900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            NeoStepper(
+              value: inCartQty,
+              min: 0,
+              max: part.stockQty,
+              size: NeoStepperSize.compact,
+              fixedWidth: 104,
+              onChanged: (newQty) {
+                if (newQty < inCartQty) {
+                  _decrementPart(part);
+                } else {
+                  _incrementPart(part);
+                }
+              },
             ),
         ],
       ),

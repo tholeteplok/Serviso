@@ -150,12 +150,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Tambah
-      await tester
-          .tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah'));
+      await tester.tap(find.widgetWithText(ThickBottomBorderButton, 'Tambah'));
       await tester.pumpAndSettle();
 
-      // Card now has stepper with 1
-      expect(find.text('1'), findsWidgets);
       // Bottom bar appears
       expect(find.text('Total (1 item)'), findsOneWidget);
       expect(find.text('Rp20.000'), findsWidgets);

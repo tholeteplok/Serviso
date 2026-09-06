@@ -84,10 +84,10 @@ class FakePartRepository implements PartRepository {
   @override
   Future<Part> updatePart(PartInput input) async {
     if (input.id == null) {
-      throw const RepositoryException('ID suku cadang tidak ditemukan');
+      throw const RepositoryException('ID barang tidak ditemukan');
     }
     final index = _parts.indexWhere((p) => p.id == input.id);
-    if (index < 0) throw const RepositoryException('Suku cadang tidak ditemukan');
+    if (index < 0) throw const RepositoryException('Barang tidak ditemukan');
     final updated = _parts[index].copyWith(
       name: input.name.trim(),
       code: input.code?.trim().isEmpty == true ? null : input.code?.trim(),

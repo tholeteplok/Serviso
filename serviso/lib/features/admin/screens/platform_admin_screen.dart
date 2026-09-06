@@ -7,9 +7,12 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
+import '../../../core/widgets/neo_filter_chip.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
@@ -45,67 +48,94 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
     final emailCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
+    String selectedBusinessType = 'keduanya';
 
     final bool? result = await showNeoDialog<bool>(
       context: context,
-      child: NeoDialog.alert(
-        title: 'Buat Toko Baru',
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NeoTextField(
-                controller: nameCtrl,
-                labelText: 'Nama Toko (ex: Serviso Pusat)',
-                prefixIcon: AppIcons.storefront,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          return NeoDialog.alert(
+            title: 'Buat Toko Baru',
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NeoTextField(
+                    controller: nameCtrl,
+                    labelText: 'Nama Toko (ex: Serviso Pusat)',
+                    prefixIcon: AppIcons.storefront,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: slugCtrl,
+                    labelText: 'Kode Toko (ex: serviso)',
+                    prefixIcon: AppIcons.tag,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Jenis Usaha',
+                    style: AppTypography.inter(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: AppColors.ink900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  NeoSegmentControl<String>(
+                    selectedValue: selectedBusinessType,
+                    items: const [
+                      NeoSegmentItem(value: 'barang', label: 'Barang'),
+                      NeoSegmentItem(value: 'jasa', label: 'Jasa'),
+                      NeoSegmentItem(value: 'keduanya', label: 'Bengkel'),
+                    ],
+                    onValueChanged: (val) {
+                      setDialogState(() => selectedBusinessType = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: fullNameCtrl,
+                    labelText: 'Nama Lengkap Pemilik',
+                    prefixIcon: AppIcons.user,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: emailCtrl,
+                    labelText: 'Email Aktif Pemilik * (Gmail/resmi)',
+                    hintText: 'pemilik@gmail.com',
+                    prefixIcon: AppIcons.envelope,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: usernameCtrl,
+                    labelText: 'Username Pemilik (ex: admin)',
+                    prefixIcon: AppIcons.user,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: passwordCtrl,
+                    labelText: 'Password Pemilik (min 6 karakter)',
+                    prefixIcon: AppIcons.lock,
+                    obscureText: true,
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              NeoTextField(
-                controller: slugCtrl,
-                labelText: 'Kode Toko (ex: serviso)',
-                prefixIcon: AppIcons.tag,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
               ),
-              const SizedBox(height: 12),
-              NeoTextField(
-                controller: fullNameCtrl,
-                labelText: 'Nama Lengkap Pemilik',
-                prefixIcon: AppIcons.user,
-              ),
-              const SizedBox(height: 12),
-              NeoTextField(
-                controller: emailCtrl,
-                labelText: 'Email Aktif Pemilik * (Gmail/resmi)',
-                hintText: 'pemilik@gmail.com',
-                prefixIcon: AppIcons.envelope,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              NeoTextField(
-                controller: usernameCtrl,
-                labelText: 'Username Pemilik (ex: admin)',
-                prefixIcon: AppIcons.user,
-              ),
-              const SizedBox(height: 12),
-              NeoTextField(
-                controller: passwordCtrl,
-                labelText: 'Password Pemilik (min 6 karakter)',
-                prefixIcon: AppIcons.lock,
-                obscureText: true,
+              const SizedBox(width: 8),
+              ThickBottomBorderButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Buat'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          const SizedBox(width: 8),
-          ThickBottomBorderButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Buat'),
-          ),
-        ],
+          );
+        },
       ),
     );
 
@@ -161,6 +191,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
         body: {
           'shop_name': shopName,
           'shop_slug': shopSlug,
+          'business_type': selectedBusinessType,
           'owner_full_name': ownerFullName,
           'owner_email': ownerEmail,
           'owner_username': ownerUsername,
@@ -422,7 +453,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
-            _buildFilterChip(
+            NeoFilterChip(
               label: 'Semua',
               isSelected: activeFilter == null,
               onTap: () {
@@ -430,7 +461,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
               },
             ),
             const SizedBox(width: 8),
-            _buildFilterChip(
+            NeoFilterChip(
               label: 'Aktif',
               isSelected: activeFilter == true,
               activeColor: AppColors.pastelMint,
@@ -439,7 +470,7 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
               },
             ),
             const SizedBox(width: 8),
-            _buildFilterChip(
+            NeoFilterChip(
               label: 'Nonaktif',
               isSelected: activeFilter == false,
               activeColor: AppColors.pastelPink,
@@ -450,43 +481,6 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildFilterChip({
-    required String label,
-    required bool isSelected,
-    Color activeColor = AppColors.pastelYellow,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.badge,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : AppColors.bgSurface,
-          borderRadius: AppRadius.badge,
-          border: Border.all(color: AppColors.borderInk, width: 1.5),
-          boxShadow: isSelected
-              ? const [
-                  BoxShadow(
-                    color: AppColors.borderInk,
-                    offset: Offset(1.5, 1.5),
-                    blurRadius: 0,
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: AppColors.ink900,
-          ),
-        ),
-      ),
     );
   }
 

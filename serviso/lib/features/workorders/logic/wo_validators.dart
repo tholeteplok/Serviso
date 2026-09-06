@@ -35,7 +35,9 @@ abstract final class WoValidators {
     if (draft.complaint == null || draft.complaint!.trim().isEmpty) {
       return false;
     }
-    if (draft.vehicleId.trim().isEmpty) return false;
+    final hasTarget = (draft.vehicleId?.trim().isNotEmpty ?? false) ||
+        (draft.serviceLabel?.trim().isNotEmpty ?? false);
+    if (!hasTarget) return false;
     if (draft.odometerIn != null && draft.odometerIn! < 0) return false;
     if (draft.items.isEmpty) return false;
     for (final item in draft.items) {

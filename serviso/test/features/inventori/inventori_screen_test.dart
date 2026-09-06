@@ -10,16 +10,21 @@ import 'package:serviso/features/inventori/controllers/part_detail_controller.da
 import 'package:serviso/features/inventori/controllers/part_providers.dart';
 import 'package:serviso/features/inventori/data/fakes.dart';
 import 'package:serviso/features/inventori/models/part.dart';
+import 'package:serviso/features/inventori/controllers/service_providers.dart';
+import 'package:serviso/features/inventori/data/service_repository.dart';
+import 'package:serviso/features/inventori/models/service_item.dart';
 import 'package:serviso/features/inventori/screens/inventori_screen.dart';
 import 'package:serviso/features/inventori/screens/part_detail_screen.dart';
 
 Widget _pumpList({
   required FakePartRepository parts,
+  FakeServiceRepository? services,
   bool isAdmin = false,
 }) {
   final container = ProviderContainer(
     overrides: [
       partRepositoryProvider.overrideWithValue(parts),
+      serviceRepositoryProvider.overrideWithValue(services ?? FakeServiceRepository()),
       isAdminProvider.overrideWithValue(isAdmin),
     ],
   );
@@ -64,13 +69,13 @@ Future<_Harness> _pumpDetail({
 
 void main() {
   group('InventoriScreen', () {
-    testWidgets('empty state menampilkan ajakan Tambah Suku Cadang',
+    testWidgets('empty state menampilkan ajakan Tambah Barang',
         (tester) async {
       await tester.pumpWidget(_pumpList(parts: FakePartRepository()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Belum ada suku cadang'), findsOneWidget);
-      expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah Suku Cadang'),
+      expect(find.text('Belum ada barang di inventori'), findsOneWidget);
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah Barang'),
           findsOneWidget);
     });
 
@@ -114,6 +119,44 @@ void main() {
 
       expect(find.text('Oli'), findsOneWidget);
       expect(find.text('Busi'), findsNothing);
+    });
+
+    testWidgets('pindah ke tab Jasa menampilkan daftar master jasa dan tarif',
+        (tester) async {
+      final fakeParts = FakePartRepository();
+      final fakeServices = FakeServiceRepository();
+      await fakeServices.create(const ServiceInput(
+        name: 'Ganti Oli Mesin',
+        code: 'JS-OLI',
+        price: 20000,
+      ));
+
+      await tester.pumpWidget(_pumpList(
+        parts: fakeParts,
+        services: fakeServices,
+        isAdmin: true,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap tab Jasa
+      final jasaTabFinder = find.ancestor(
+        of: find.text('Jasa'),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(jasaTabFinder.first);
+      await tester.pumpAndSettle();
+
+      // Jasa muncul beserta tarif
+      expect(find.text('Ganti Oli Mesin'), findsOneWidget);
+      expect(find.text('JS-OLI'), findsOneWidget);
+      expect(find.text('Tarif Tetap'), findsOneWidget);
+
+      // Admin melihat tombol Tambah Jasa
+      expect(find.widgetWithText(ThickBottomBorderButton, 'Tambah Jasa'),
+          findsOneWidget);
+
+      // Sub-filter Stok Menipis TIDAK muncul di tab Jasa
+      expect(find.text('Stok Menipis'), findsNothing);
     });
   });
 

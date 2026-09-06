@@ -18,6 +18,7 @@ import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/plate_chip.dart';
+import '../../../core/widgets/service_label_chip.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../inventori/controllers/part_providers.dart';
@@ -31,6 +32,7 @@ import '../models/work_order.dart';
 import '../../settings/data/settings_repository.dart';
 import '../pdf/receipt_actions.dart';
 import '../screens/payment_sheet.dart';
+import '../widgets/service_picker_modal.dart';
 
 class WoDetailScreen extends ConsumerStatefulWidget {
   const WoDetailScreen({super.key, required this.workOrderId});
@@ -93,10 +95,10 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     String message;
     if (hasParts && hasJasa) {
       message =
-          'Pekerjaan selesai & stok suku cadang akan dikurangi otomatis. Total tagihan: ${rupiah(order.total)}.';
+          'Pekerjaan selesai & stok barang akan dikurangi otomatis. Total tagihan: ${rupiah(order.total)}.';
     } else if (hasParts) {
       message =
-          'Stok suku cadang akan dikurangi otomatis dari inventori. Total tagihan: ${rupiah(order.total)}.';
+          'Stok barang akan dikurangi otomatis dari inventori. Total tagihan: ${rupiah(order.total)}.';
     } else if (hasJasa) {
       message =
           'Pekerjaan jasa telah selesai. Total tagihan: ${rupiah(order.total)}.';
@@ -201,13 +203,30 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Tambah Jasa',
-              style: AppTypography.chakra(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink900,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Tambah Jasa',
+                  style: AppTypography.chakra(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
+                ),
+                TextButton.icon(
+                  icon: Icon(AppIcons.search, size: 16),
+                  label: const Text('Pilih dari Katalog'),
+                  onPressed: () async {
+                    final s = await showServicePicker(dialogCtx, ref);
+                    if (s != null) {
+                      descCtrl.text = s.name;
+                      priceCtrl.text =
+                          s.price > 0 ? s.price.toStringAsFixed(0) : '';
+                    }
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             NeoTextField(
@@ -611,13 +630,19 @@ class _DetailBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    if (order.plateNo != null) ...[
+                    if (order.plateNo != null && order.plateNo!.isNotEmpty) ...[
                       PlateChip(plateText: order.plateNo!),
+                      const SizedBox(width: 8),
+                    ] else if (order.serviceLabel != null && order.serviceLabel!.isNotEmpty) ...[
+                      ServiceLabelChip(label: order.serviceLabel!),
                       const SizedBox(width: 8),
                     ],
                     Expanded(
                       child: Text(
-                        order.vehicleDesc ?? 'Kendaraan',
+                        order.vehicleDesc ??
+                            (order.serviceLabel != null && order.serviceLabel!.isNotEmpty
+                                ? 'Layanan Umum'
+                                : 'Kendaraan'),
                         style: textTheme.titleMedium,
                       ),
                     ),
@@ -1083,12 +1108,12 @@ class _DetailPartPickerSheetState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Pilih Suku Cadang', style: textTheme.titleLarge),
+            Text('Pilih Barang', style: textTheme.titleLarge),
             const SizedBox(height: 12),
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Cari nama atau kode part...',
+                hintText: 'Cari nama atau kode barang...',
                 prefixIcon: Icon(AppIcons.search),
                 suffixIcon: IconButton(
                   icon: Icon(AppIcons.barcode),
@@ -1123,7 +1148,7 @@ class _DetailPartPickerSheetState
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Tidak ada suku cadang ditemukan',
+                  'Tidak ada barang ditemukan',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
                     color: AppColors.inkMuted,

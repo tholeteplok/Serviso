@@ -33,6 +33,7 @@ import '../../features/laporan/screens/details/wo_done_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
 import '../../features/direct_sales/screens/direct_sale_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/settings/screens/shop_settings_screen.dart';
 
 import '../../features/admin/screens/audit_log_screen.dart';
 import '../../features/admin/screens/platform_admin_screen.dart';
@@ -59,7 +60,8 @@ abstract final class AppRoutes {
   static const platformShopDetail = '/platform/toko/:id';
   static const adminUsers = '/admin/users';
   static const adminAuditLogs = '/admin/audit-logs';
-  static const pengaturan = '/admin/pengaturan';
+  static const pengaturan = '/pengaturan';
+  static const pengaturanToko = '/admin/pengaturan-toko';
   static const pelanggan = '/pelanggan';
   static const pelangganDetail = '/pelanggan/:id';
   static const woBaru = '/antrian/baru';
@@ -203,6 +205,10 @@ final List<RouteBase> _appRoutes = [
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
+      path: AppRoutes.pengaturanToko,
+      builder: (context, state) => const ShopSettingsScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.pelanggan,
       builder: (context, state) => const CustomerListScreen(),
     ),
@@ -321,6 +327,9 @@ class HomeShell extends ConsumerWidget {
     final canPop = GoRouter.of(context).canPop();
     final isHome = navigationShell.currentIndex == 0;
 
+    final profile = ref.watch(sessionProvider).valueOrNull;
+    final isBarang = profile?.shopBusinessType == 'barang';
+
     return PopScope(
       canPop: isHome && !canPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -334,8 +343,13 @@ class HomeShell extends ConsumerWidget {
         body: navigationShell,
         bottomNavigationBar: PastelPopBottomBar(
           currentIndex: navigationShell.currentIndex,
-          onCenterActionTap: () => context.push(AppRoutes.woBaru),
+          onCenterActionTap: () =>
+              context.push(isBarang ? AppRoutes.jualLangsung : AppRoutes.woBaru),
           onTap: (index) {
+            if (isBarang && index == 1) {
+              context.push(AppRoutes.jualLangsung);
+              return;
+            }
             if (index == 0) {
               ref.invalidate(dashboardSummaryProvider);
             } else if (index == 3) {
@@ -355,9 +369,9 @@ class HomeShell extends ConsumerWidget {
               label: 'Beranda',
             ),
             PastelPopBottomBarItem(
-              icon: AppIcons.queue,
-              selectedIcon: AppIcons.queueFill,
-              label: 'Antrian',
+              icon: isBarang ? AppIcons.cart : AppIcons.queue,
+              selectedIcon: isBarang ? AppIcons.cart : AppIcons.queueFill,
+              label: isBarang ? 'Kasir' : 'Antrian',
             ),
             PastelPopBottomBarItem(
               icon: AppIcons.inventory,

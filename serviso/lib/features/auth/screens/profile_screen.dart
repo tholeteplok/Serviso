@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_brand_icon.dart';
 import '../../../core/widgets/neo_app_bar.dart';
-import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
@@ -72,18 +68,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _confirmLogout() async {
-    final confirm = await showNeoConfirmDialog(
-      context: context,
-      title: 'Keluar',
-      message: 'Apakah Anda yakin ingin keluar dari akun ini?',
-      confirmLabel: 'Keluar',
-      isDanger: true,
-    );
-    if (confirm != true) return;
-    await ref.read(sessionProvider.notifier).logout();
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
@@ -91,8 +75,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: const NeoAppBar(
-        title: 'Profil',
-        showBack: false,
+        title: 'Profil Saya',
+        showBack: true,
       ),
       body: profile == null
           ? const Center(child: CircularProgressIndicator())
@@ -300,68 +284,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ],
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                if (profile.isAdmin) ...[
-                  SectionCard(
-                    title: 'Administrasi',
-                    child: Column(
-                      children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(AppIcons.usersThree),
-                          title: const Text('Kelola Pengguna'),
-                          subtitle: const Text('Tambah kasir/admin & reset password'),
-                          trailing: Icon(AppIcons.caretRight, size: 16),
-                          onTap: () => context.push(AppRoutes.adminUsers),
-                        ),
-                        const Divider(height: 1, color: AppColors.line),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(AppIcons.clipboardList),
-                          title: const Text('Audit Log Sistem'),
-                          subtitle: const Text('Riwayat aktivitas & transaksi'),
-                          trailing: Icon(AppIcons.caretRight, size: 16),
-                          onTap: () => context.push(AppRoutes.adminAuditLogs),
-                        ),
-                        const Divider(height: 1, color: AppColors.line),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(AppIcons.storefront),
-                          title: const Text('Pengaturan Toko'),
-                          subtitle: const Text('Nama, alamat, telepon'),
-                          trailing: Icon(AppIcons.caretRight, size: 16),
-                          onTap: () => context.push(AppRoutes.pengaturan),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (profile.isPlatformAdmin) ...[
-                  SectionCard(
-                    title: 'Platform Admin',
-                    child: Column(
-                      children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(AppIcons.shieldCheck),
-                          title: const Text('Manajemen Toko'),
-                          subtitle: const Text('Daftar & buat toko baru'),
-                          trailing: Icon(AppIcons.caretRight, size: 16),
-                          onTap: () => context.push(AppRoutes.platformAdmin),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                ThickBottomBorderButton(
-                  variant: ThickButtonVariant.danger,
-                  isFullWidth: true,
-                  onPressed: _confirmLogout,
-                  icon: Icon(AppIcons.prohibit, size: 18),
-                  child: const Text('Keluar'),
                 ),
                 const SizedBox(height: 24),
                 Center(

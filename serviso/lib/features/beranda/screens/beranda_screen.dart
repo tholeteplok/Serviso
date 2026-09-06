@@ -34,9 +34,9 @@ class BerandaScreen extends ConsumerWidget {
         showBack: false,
         actions: [
           IconButton(
-            icon: Icon(AppIcons.user, color: AppColors.ink900),
-            tooltip: 'Profil',
-            onPressed: () => context.push(AppRoutes.profil),
+            icon: Icon(AppIcons.settings, color: AppColors.ink900),
+            tooltip: 'Pengaturan',
+            onPressed: () => context.push(AppRoutes.pengaturan),
           ),
         ],
       ),
@@ -105,7 +105,7 @@ class BerandaScreen extends ConsumerWidget {
                           context,
                           title: 'Stok Menipis',
                           value: '${summary.lowStockCount}',
-                          unit: 'suku cadang',
+                          unit: 'barang',
                           icon: AppIcons.warning,
                           color: summary.lowStockCount > 0
                               ? AppColors.action

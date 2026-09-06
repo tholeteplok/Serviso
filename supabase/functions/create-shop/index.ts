@@ -62,7 +62,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { shop_name, shop_slug, owner_username, owner_email, owner_full_name, owner_password } = body;
+    const { shop_name, shop_slug, owner_username, owner_email, owner_full_name, owner_password, business_type } = body;
 
     if (!shop_name || !shop_slug || !owner_username || !owner_full_name || !owner_password || !owner_email) {
       return new Response(
@@ -104,7 +104,11 @@ serve(async (req) => {
     // Insert shop
     const { data: shopData, error: shopError } = await supabaseAdmin
       .from("shops")
-      .insert({ slug: shop_slug, name: shop_name })
+      .insert({
+        slug: shop_slug,
+        name: shop_name,
+        business_type: business_type ?? "keduanya",
+      })
       .select()
       .single();
 

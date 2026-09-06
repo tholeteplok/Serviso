@@ -47,21 +47,38 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
   final SupabaseClient _client;
 
   static const _boardColumns =
+      '*, vehicles(plate_no, brand, model, customers(name)), customers(name), assignee:assigned_to(full_name)';
+
+  static const _boardColumnsLegacy =
       '*, vehicles(plate_no, brand, model, customers(name)), assignee:assigned_to(full_name)';
 
   static const _detailColumns =
+      '*, vehicles(plate_no, brand, model, customers(name)), customers(name), assignee:assigned_to(full_name), wo_items(*, parts(name, code))';
+
+  static const _detailColumnsLegacy =
       '*, vehicles(plate_no, brand, model, customers(name)), assignee:assigned_to(full_name), wo_items(*, parts(name, code))';
 
   Future<List<WorkOrder>> _fetchBoard() async {
-    final result = await _client
-        .from('work_orders')
-        .select(_boardColumns)
-        .order('created_at', ascending: false);
-    return (result as List)
-        .map((m) => WorkOrder.fromBoardMap(m))
-        .toList();
-
-
+    try {
+      final result = await _client
+          .from('work_orders')
+          .select(_boardColumns)
+          .order('created_at', ascending: false);
+      return (result as List)
+          .map((m) => WorkOrder.fromBoardMap(m))
+          .toList();
+    } catch (e) {
+      if (e.toString().contains('customers') || e.toString().contains('schema cache')) {
+        final fallbackResult = await _client
+            .from('work_orders')
+            .select(_boardColumnsLegacy)
+            .order('created_at', ascending: false);
+        return (fallbackResult as List)
+            .map((m) => WorkOrder.fromBoardMap(m))
+            .toList();
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -104,11 +121,24 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
   @override
   Future<WorkOrder?> getById(String id) async {
     try {
-      final data = await _client
-          .from('work_orders')
-          .select(_detailColumns)
-          .eq('id', id)
-          .maybeSingle();
+      Map<String, dynamic>? data;
+      try {
+        data = await _client
+            .from('work_orders')
+            .select(_detailColumns)
+            .eq('id', id)
+            .maybeSingle();
+      } catch (e) {
+        if (e.toString().contains('customers') || e.toString().contains('schema cache')) {
+          data = await _client
+              .from('work_orders')
+              .select(_detailColumnsLegacy)
+              .eq('id', id)
+              .maybeSingle();
+        } else {
+          rethrow;
+        }
+      }
       if (data == null) return null;
       return WorkOrder.fromDetailMap(data);
     } catch (e) {
@@ -119,12 +149,25 @@ class SupabaseWorkOrderRepository implements WorkOrderRepository {
   @override
   Future<WorkOrder> create(WorkOrderDraft draft) async {
     try {
-      final created = await _client
-          .from('work_orders')
-          .insert(draft.toInsertMap())
-          .select(_detailColumns)
-          .single();
-      final order = WorkOrder.fromDetailMap(created);
+      dynamic created;
+      try {
+        created = await _client
+            .from('work_orders')
+            .insert(draft.toInsertMap())
+            .select(_detailColumns)
+            .single();
+      } catch (e) {
+        if (e.toString().contains('customers') || e.toString().contains('schema cache')) {
+          created = await _client
+              .from('work_orders')
+              .insert(draft.toInsertMap())
+              .select(_detailColumnsLegacy)
+              .single();
+        } else {
+          rethrow;
+        }
+      }
+      final order = WorkOrder.fromDetailMap(created as Map<String, dynamic>);
       if (draft.items.isNotEmpty) {
         await _client.from('wo_items').insert(
               draft.items.map((i) => i.toInsertMap(order.id)).toList(),

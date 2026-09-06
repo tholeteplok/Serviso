@@ -263,7 +263,7 @@ Future<void> showStockInDialog(
                           setState(() => updateCostPrice = val ?? true);
                         },
                         title: Text(
-                          'Perbarui harga modal suku cadang ini',
+                          'Perbarui harga modal barang ini',
                           style: textTheme.bodySmall,
                         ),
                         contentPadding: EdgeInsets.zero,

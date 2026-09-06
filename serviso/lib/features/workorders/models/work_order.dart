@@ -77,7 +77,9 @@ class WorkOrder {
     required this.id,
     required this.woNumber,
     required this.status,
-    required this.vehicleId,
+    this.vehicleId,
+    this.serviceLabel,
+    this.customerId,
     this.plateNo,
     this.vehicleDesc,
     this.customerName,
@@ -99,7 +101,9 @@ class WorkOrder {
   final String id;
   final String woNumber;
   final WoStatus status;
-  final String vehicleId;
+  final String? vehicleId;
+  final String? serviceLabel;
+  final String? customerId;
   final String? plateNo;
   final String? vehicleDesc;
   final String? customerName;
@@ -136,6 +140,14 @@ class WorkOrder {
       final cust = vehicles['customers'];
       if (cust is Map) customerName = cust['name'] as String?;
     }
+    final directCust = map['customers'];
+    if (directCust is Map && (customerName == null || customerName.isEmpty)) {
+      customerName = directCust['name'] as String?;
+    }
+    if (customerName == null && map['customer_name'] is String) {
+      customerName = map['customer_name'] as String;
+    }
+
     final assignee = map['assignee'];
     final assignedName = assignee is Map ? assignee['full_name'] as String? : null;
 
@@ -143,7 +155,9 @@ class WorkOrder {
       id: map['id'] as String,
       woNumber: (map['wo_number'] as String?) ?? '',
       status: _statusFromString(map['status'] as String?),
-      vehicleId: map['vehicle_id'] as String,
+      vehicleId: map['vehicle_id'] as String?,
+      serviceLabel: map['service_label'] as String?,
+      customerId: map['customer_id'] as String?,
       plateNo: plateNo,
       vehicleDesc: vehicleDesc?.isNotEmpty == true ? vehicleDesc : null,
       customerName: customerName,
@@ -187,6 +201,8 @@ class WorkOrder {
     String? woNumber,
     WoStatus? status,
     String? vehicleId,
+    String? serviceLabel,
+    String? customerId,
     String? plateNo,
     String? vehicleDesc,
     String? customerName,
@@ -209,6 +225,8 @@ class WorkOrder {
         woNumber: woNumber ?? this.woNumber,
         status: status ?? this.status,
         vehicleId: vehicleId ?? this.vehicleId,
+        serviceLabel: serviceLabel ?? this.serviceLabel,
+        customerId: customerId ?? this.customerId,
         plateNo: plateNo ?? this.plateNo,
         vehicleDesc: vehicleDesc ?? this.vehicleDesc,
         customerName: customerName ?? this.customerName,
@@ -228,7 +246,9 @@ class WorkOrder {
       );
 
   Map<String, dynamic> toInsertMap() => {
-        'vehicle_id': vehicleId,
+        if (vehicleId != null) 'vehicle_id': vehicleId,
+        if (serviceLabel != null) 'service_label': serviceLabel?.trim(),
+        if (customerId != null) 'customer_id': customerId,
         'assigned_to': assignedTo,
         'complaint': complaint?.trim().isEmpty == true ? null : complaint?.trim(),
         'odometer_in': odometerIn,
@@ -268,21 +288,27 @@ class WoItemInput {
 
 class WorkOrderDraft {
   const WorkOrderDraft({
-    required this.vehicleId,
+    this.vehicleId,
+    this.serviceLabel,
+    this.customerId,
     this.assignedTo,
     this.complaint,
     this.odometerIn,
     required this.items,
   });
 
-  final String vehicleId;
+  final String? vehicleId;
+  final String? serviceLabel;
+  final String? customerId;
   final String? assignedTo;
   final String? complaint;
   final int? odometerIn;
   final List<WoItemInput> items;
 
   Map<String, dynamic> toInsertMap() => {
-        'vehicle_id': vehicleId,
+        if (vehicleId != null) 'vehicle_id': vehicleId,
+        if (serviceLabel != null) 'service_label': serviceLabel?.trim(),
+        if (customerId != null) 'customer_id': customerId,
         'assigned_to': assignedTo,
         'complaint':
             complaint?.trim().isEmpty == true ? null : complaint?.trim(),

@@ -121,6 +121,28 @@ void main() {
       await tester.pumpAndSettle();
       expect(count, 2);
     });
+
+    testWidgets('renders 2-digit and 3-digit values with unit without disappearing', (tester) async {
+      num count = 10;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => NeoStepper(
+                value: count,
+                unit: 'pcs',
+                size: NeoStepperSize.standard,
+                onChanged: (val) => setState(() => count = val),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('pcs'), findsOneWidget);
+    });
   });
 
   group('NeoCard.info & DashedDivider', () {

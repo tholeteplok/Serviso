@@ -24,7 +24,7 @@ class PartDetailController
     final repo = ref.watch(partRepositoryProvider);
     final part = await repo.getById(arg);
     if (part == null) {
-      throw const RepositoryException('Suku cadang tidak ditemukan');
+      throw const RepositoryException('Barang tidak ditemukan');
     }
     final movements = await repo.movements(arg);
     return PartDetailData(part: part, movements: movements);

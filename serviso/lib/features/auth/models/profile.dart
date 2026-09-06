@@ -13,6 +13,7 @@ class Profile {
     this.shopName,
     this.shopSlug,
     this.shopIsActive = true,
+    this.shopBusinessType = 'keduanya',
     this.isPlatformAdmin = false,
   });
 
@@ -27,6 +28,7 @@ class Profile {
   final String? shopName;
   final String? shopSlug;
   final bool shopIsActive;
+  final String shopBusinessType;
   final bool isPlatformAdmin;
 
   bool get isAdmin => role == UserRole.admin;
@@ -45,6 +47,10 @@ class Profile {
       shopName: (shopsMap?['name'] as String?) ?? (map['shop_name'] as String?),
       shopSlug: (shopsMap?['slug'] as String?) ?? (map['shop_slug'] as String?),
       shopIsActive: (shopsMap?['is_active'] as bool?) ?? (map['shop_is_active'] as bool?) ?? true,
+      shopBusinessType: (shopsMap?['business_type'] as String?) ??
+          (map['shop_business_type'] as String?) ??
+          (map['business_type'] as String?) ??
+          'keduanya',
       isPlatformAdmin: (map['is_platform_admin'] as bool?) ?? false,
     );
   }
@@ -60,6 +66,7 @@ class Profile {
         'shop_id': shopId,
         'shop_slug': shopSlug,
         'shop_is_active': shopIsActive,
+        'shop_business_type': shopBusinessType,
         'is_platform_admin': isPlatformAdmin,
       };
 
@@ -75,6 +82,7 @@ class Profile {
     String? shopName,
     String? shopSlug,
     bool? shopIsActive,
+    String? shopBusinessType,
     bool? isPlatformAdmin,
   }) =>
       Profile(
@@ -89,6 +97,7 @@ class Profile {
         shopName: shopName ?? this.shopName,
         shopSlug: shopSlug ?? this.shopSlug,
         shopIsActive: shopIsActive ?? this.shopIsActive,
+        shopBusinessType: shopBusinessType ?? this.shopBusinessType,
         isPlatformAdmin: isPlatformAdmin ?? this.isPlatformAdmin,
       );
 }

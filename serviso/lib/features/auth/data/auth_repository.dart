@@ -146,7 +146,7 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final data = await _client
           .from('profiles')
-          .select('*, shops(name, slug, is_active)')
+          .select('*, shops(name, slug, is_active, business_type)')
           .eq('id', userId)
           .maybeSingle();
       if (data != null) {

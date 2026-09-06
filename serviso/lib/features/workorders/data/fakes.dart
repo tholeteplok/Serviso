@@ -97,6 +97,8 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
       woNumber: _nextWoNumber(),
       status: WoStatus.menunggu,
       vehicleId: draft.vehicleId,
+      serviceLabel: draft.serviceLabel,
+      customerId: draft.customerId,
       assignedTo: draft.assignedTo,
       complaint: draft.complaint,
       odometerIn: draft.odometerIn,

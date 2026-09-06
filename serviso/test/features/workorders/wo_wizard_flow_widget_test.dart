@@ -123,8 +123,8 @@ void main() {
     // Verifikasi awal Total Rp0
     expect(find.text('Rp0'), findsOneWidget);
 
-    // Tambah jasa
-    await tester.tap(find.text('Tambah jasa'));
+    // Tambah jasa secara manual
+    await tester.tap(find.text('Tulis manual'));
     await tester.pumpAndSettle();
 
     // Input deskripsi jasa & harga 25000

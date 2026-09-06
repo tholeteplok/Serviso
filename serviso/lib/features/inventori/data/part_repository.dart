@@ -154,7 +154,7 @@ class SupabasePartRepository implements PartRepository {
   @override
   Future<Part> updatePart(PartInput input) async {
     if (input.id == null) {
-      throw const RepositoryException('ID suku cadang tidak ditemukan');
+      throw const RepositoryException('ID barang tidak ditemukan');
     }
     try {
       final data = await _client

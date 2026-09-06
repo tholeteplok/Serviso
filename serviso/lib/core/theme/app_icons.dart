@@ -90,5 +90,8 @@ abstract final class AppIcons {
   static final IconData envelopeFill = PhosphorIcons.envelope(PhosphorIconsStyle.fill);
   static final IconData grid = PhosphorIcons.squaresFour(PhosphorIconsStyle.bold);
   static final IconData list = PhosphorIcons.listBullets(PhosphorIconsStyle.bold);
+  static final IconData settings = PhosphorIcons.gear(PhosphorIconsStyle.bold);
+  static final IconData gear = PhosphorIcons.gear(PhosphorIconsStyle.bold);
+  static final IconData signOut = PhosphorIcons.signOut(PhosphorIconsStyle.bold);
 }
 

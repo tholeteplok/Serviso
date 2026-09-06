@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_terms.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
@@ -216,12 +217,13 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
         ref.invalidate(partDetailControllerProvider(widget.partId!));
       }
       if (context.mounted) {
+        final terms = ref.read(appTermsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isEdit
-                  ? 'Suku cadang berhasil diperbarui'
-                  : 'Suku cadang berhasil ditambahkan',
+                  ? '${terms.partNoun} berhasil diperbarui'
+                  : '${terms.partNoun} berhasil ditambahkan',
             ),
           ),
         );
@@ -243,6 +245,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = AppTypography.textTheme();
+    final terms = ref.watch(appTermsProvider);
     final isEdit = _isEdit;
     final isAdmin = ref.watch(isAdminProvider);
     final state = ref.watch(partFormControllerProvider(_effectiveInitial));
@@ -273,7 +276,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
       },
       child: Scaffold(
         appBar: NeoAppBar(
-          title: isEdit ? 'Ubah Suku Cadang' : 'Tambah Suku Cadang',
+          title: isEdit ? terms.editPartLabel : terms.addPartLabel,
           onBack: () async {
             final shouldPop = await _handlePop();
             if (shouldPop && context.mounted) {
@@ -296,12 +299,12 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                         key: const Key('part_name_field'),
                         controller: _nameController,
                         labelText: 'Nama *',
-                        hintText: 'Misal: Kampas Rem Depan Vario',
+                        hintText: 'Misal: Oli Mesin, Kampas Rem, Beras, dll',
                         prefixIcon: AppIcons.tag,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Nama suku cadang wajib diisi';
+                            return 'Nama ${terms.partNoun.toLowerCase()} wajib diisi';
                           }
                           return null;
                         },
@@ -480,7 +483,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Harga diatur oleh pemilik. Suku cadang ditambahkan tanpa harga.',
+                            'Harga diatur oleh pemilik. ${terms.partNoun} ditambahkan tanpa harga.',
                             style: textTheme.bodySmall,
                           ),
                         ),
@@ -698,7 +701,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Stok tidak diubah di sini. Gunakan menu Stok Masuk / Koreksi Stok di detail suku cadang.',
+                            'Stok tidak diubah di sini. Gunakan menu Stok Masuk / Koreksi Stok di detail ${terms.partNoun.toLowerCase()}.',
                             style: textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -717,7 +720,7 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
                   variant: ThickButtonVariant.primary,
                   icon: Icon(AppIcons.check, size: 18),
                   child: Text(
-                    isEdit ? 'Simpan Perubahan' : 'Tambah Suku Cadang',
+                    isEdit ? 'Simpan Perubahan' : terms.addPartLabel,
                     style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),

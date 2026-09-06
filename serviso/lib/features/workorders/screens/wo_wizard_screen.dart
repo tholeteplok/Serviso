@@ -10,15 +10,18 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_shadow.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/theme/app_terms.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_progress_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
+import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
+import '../../auth/controllers/session_controller.dart';
 import '../../auth/models/profile.dart';
 import '../../customers/controllers/customer_providers.dart';
 import '../../customers/controllers/validators.dart';
@@ -30,6 +33,7 @@ import '../../laporan/controllers/report_controllers.dart';
 import '../controllers/work_order_providers.dart';
 import '../logic/wo_validators.dart';
 import '../models/work_order.dart';
+import '../widgets/service_picker_modal.dart';
 
 class WoWizardScreen extends ConsumerStatefulWidget {
   const WoWizardScreen({super.key, this.initialVehicle});
@@ -48,6 +52,13 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   final _searchController = TextEditingController();
   List<Vehicle> _vehicleResults = [];
 
+  bool _useManual = false;
+  final _serviceLabelController = TextEditingController();
+  Customer? _selectedCustomer;
+  final _customerSearchController = TextEditingController();
+  List<Customer> _customerResults = [];
+  Timer? _customerSearchDebounce;
+
   final _complaintController = TextEditingController();
   final _odometerController = TextEditingController();
   Profile? _technician;
@@ -64,12 +75,20 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     super.initState();
     if (widget.initialVehicle != null) {
       _vehicle = widget.initialVehicle;
+    } else {
+      final businessType = ref.read(sessionProvider).valueOrNull?.shopBusinessType;
+      if (businessType == 'jasa') {
+        _useManual = true;
+      }
     }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _serviceLabelController.dispose();
+    _customerSearchController.dispose();
+    _customerSearchDebounce?.cancel();
     _complaintController.dispose();
     _odometerController.dispose();
     _vehicleSearchDebounce?.cancel();
@@ -110,6 +129,100 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
       _vehicleResults = [];
       _searchController.clear();
     });
+  }
+
+  Future<void> _searchCustomers(String query) async {
+    _customerSearchDebounce?.cancel();
+    if (query.trim().isEmpty) {
+      setState(() => _customerResults = []);
+      return;
+    }
+    _customerSearchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      try {
+        final results = await ref
+            .read(customerRepositoryProvider)
+            .search(query, limit: 10);
+        if (mounted) setState(() => _customerResults = results);
+      } catch (_) {
+        if (mounted) setState(() => _customerResults = []);
+      }
+    });
+  }
+
+  Future<void> _createOnlyCustomer() async {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final result = await showNeoDialog<Customer>(
+      context: context,
+      child: NeoDialog.alert(
+        title: 'Pelanggan Baru',
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                NeoTextField(
+                  controller: nameController,
+                  labelText: 'Nama pelanggan *',
+                  prefixIcon: AppIcons.user,
+                  validator: validateCustomerName,
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  controller: phoneController,
+                  labelText: 'Telepon (opsional)',
+                  prefixIcon: AppIcons.phone,
+                  keyboardType: TextInputType.phone,
+                  validator: validateCustomerPhone,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Batal'),
+          ),
+          const SizedBox(width: 8),
+          ThickBottomBorderButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final customerRepo = ref.read(customerRepositoryProvider);
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(context);
+              try {
+                final customer = await customerRepo.create(
+                  CustomerInput(
+                    name: nameController.text,
+                    phone: phoneController.text.trim().isEmpty
+                        ? null
+                        : phoneController.text.trim(),
+                  ),
+                );
+                nav.pop(customer);
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Gagal membuat pelanggan: $e')),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedCustomer = result;
+        _customerResults = [];
+        _customerSearchController.clear();
+      });
+    }
   }
 
   Future<void> _createCustomerAndVehicle() async {
@@ -229,10 +342,12 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     if (result != null) _selectVehicle(result);
   }
 
-  void _addJasa() {
+  void _addJasa({String? desc, double? price}) {
     setState(() {
-      _jasaDesc.add(TextEditingController());
-      _jasaPrice.add(TextEditingController());
+      _jasaDesc.add(TextEditingController(text: desc ?? ''));
+      _jasaPrice.add(TextEditingController(
+        text: (price != null && price > 0) ? price.toStringAsFixed(0) : '',
+      ));
     });
   }
 
@@ -322,18 +437,33 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
           .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
-    if (_vehicle == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Pilih kendaraan dulu')));
+    final hasVehicle = _vehicle != null;
+    final hasManual = _useManual && _serviceLabelController.text.trim().isNotEmpty;
+    if (!hasVehicle && !hasManual) {
+      final terms = ref.read(appTermsProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_useManual
+              ? 'Masukkan nama ${terms.manualTargetLabel.toLowerCase()} terlebih dahulu'
+              : (terms.businessType == 'keduanya'
+                  ? 'Pilih kendaraan dulu'
+                  : 'Pilih data terdaftar dulu')),
+        ),
+      );
       return;
     }
     setState(() => _creating = true);
+    final terms = ref.read(appTermsProvider);
     try {
       final draft = WorkOrderDraft(
-        vehicleId: _vehicle!.id,
+        vehicleId: _useManual ? null : _vehicle?.id,
+        serviceLabel: _useManual ? _serviceLabelController.text.trim() : null,
+        customerId: _useManual ? _selectedCustomer?.id : _vehicle?.customerId,
         assignedTo: _technician?.id,
-        complaint: _complaintController.text,
-        odometerIn: int.tryParse(_odometerController.text.trim()),
+        complaint: _complaintController.text.trim(),
+        odometerIn: (_useManual || !terms.hasOdometer)
+            ? null
+            : int.tryParse(_odometerController.text.trim()),
         items: _buildItems(),
       );
       await ref.read(workOrderRepositoryProvider).create(draft);
@@ -379,12 +509,26 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                 Form(
                   key: _formKeys[0],
                   child: _StepVehicle(
+                    useManual: _useManual,
+                    onToggleManual: (v) => setState(() => _useManual = v),
+                    serviceLabelController: _serviceLabelController,
+                    selectedCustomer: _selectedCustomer,
+                    customerSearchController: _customerSearchController,
+                    customerResults: _customerResults,
+                    onSearchCustomer: _searchCustomers,
+                    onSelectCustomer: (c) => setState(() {
+                      _selectedCustomer = c;
+                      _customerResults = [];
+                      _customerSearchController.clear();
+                    }),
+                    onCreateCustomer: _createOnlyCustomer,
                     searchController: _searchController,
                     results: _vehicleResults,
                     selected: _vehicle,
                     onSearch: _searchVehicles,
                     onSelect: _selectVehicle,
                     onCreateNew: _createCustomerAndVehicle,
+                    terms: ref.watch(appTermsProvider),
                   ),
                 ),
                 Form(
@@ -395,6 +539,8 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                     technician: _technician,
                     ref: ref,
                     onTechnicianChanged: (p) => setState(() => _technician = p),
+                    terms: ref.watch(appTermsProvider),
+                    showOdometer: !_useManual && ref.watch(appTermsProvider).hasOdometer,
                   ),
                 ),
                 Form(
@@ -440,7 +586,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Menyimpan kendaraan & item',
+                            'Menyimpan order & item',
                             style: AppTypography.textTheme().bodySmall?.copyWith(color: AppColors.inkMuted),
                           ),
                         ],
@@ -458,9 +604,18 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
         onBack: () => setState(() => _step = (_step - 1).clamp(0, 2)),
         onNext: () {
           if (_step == 0) {
-            if (_vehicle == null) {
+            final hasVehicle = _vehicle != null;
+            final hasManual = _useManual && _serviceLabelController.text.trim().isNotEmpty;
+            if (!hasVehicle && !hasManual) {
+              final terms = ref.read(appTermsProvider);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pilih atau buat kendaraan dulu')),
+                SnackBar(
+                  content: Text(_useManual
+                      ? 'Masukkan nama ${terms.manualTargetLabel.toLowerCase()} terlebih dahulu'
+                      : (terms.businessType == 'keduanya'
+                          ? 'Pilih atau buat kendaraan dulu'
+                          : 'Pilih data terdaftar dulu')),
+                ),
               );
               return;
             }
@@ -564,13 +719,33 @@ class _BottomBar extends StatelessWidget {
 
 class _StepVehicle extends StatelessWidget {
   const _StepVehicle({
+    required this.useManual,
+    required this.onToggleManual,
+    required this.serviceLabelController,
+    required this.selectedCustomer,
+    required this.customerSearchController,
+    required this.customerResults,
+    required this.onSearchCustomer,
+    required this.onSelectCustomer,
+    required this.onCreateCustomer,
     required this.searchController,
     required this.results,
     required this.selected,
     required this.onSearch,
     required this.onSelect,
     required this.onCreateNew,
+    required this.terms,
   });
+
+  final bool useManual;
+  final ValueChanged<bool> onToggleManual;
+  final TextEditingController serviceLabelController;
+  final Customer? selectedCustomer;
+  final TextEditingController customerSearchController;
+  final List<Customer> customerResults;
+  final Future<void> Function(String) onSearchCustomer;
+  final void Function(Customer) onSelectCustomer;
+  final Future<void> Function() onCreateCustomer;
 
   final TextEditingController searchController;
   final List<Vehicle> results;
@@ -578,6 +753,7 @@ class _StepVehicle extends StatelessWidget {
   final Future<void> Function(String) onSearch;
   final void Function(Vehicle) onSelect;
   final Future<void> Function() onCreateNew;
+  final AppTerms terms;
 
   @override
   Widget build(BuildContext context) {
@@ -586,78 +762,180 @@ class _StepVehicle extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Pilih kendaraan',
+          useManual
+              ? (terms.businessType == 'keduanya'
+                  ? 'Input Jasa Non-Otomotif'
+                  : 'Input ${terms.manualTargetLabel}')
+              : (terms.businessType == 'keduanya'
+                  ? 'Pilih kendaraan'
+                  : 'Pilih ${terms.targetLabel.toLowerCase()}'),
           style: textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),
-        NeoSearchBar(
-          controller: searchController,
-          hintText: 'Cari plat atau nama pelanggan',
-          onChanged: onSearch,
+        NeoSegmentControl<bool>(
+          selectedValue: useManual,
+          onValueChanged: onToggleManual,
+          items: [
+            NeoSegmentItem(value: false, label: terms.registeredTargetTab),
+            NeoSegmentItem(value: true, label: terms.manualTargetTab),
+          ],
         ),
-        const SizedBox(height: 12),
-        if (results.isNotEmpty)
-          ...results.map(
-            (v) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: NeoCard.pressable(
-                onTap: () => onSelect(v),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    PlateChip(plateText: v.plateNo),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        v.brand != null
-                            ? '${v.brand} ${v.model ?? ''}'.trim()
-                            : 'Kendaraan',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.ink900,
+        const SizedBox(height: 16),
+        if (!useManual) ...[
+          NeoSearchBar(
+            controller: searchController,
+            hintText: 'Cari plat atau nama pelanggan',
+            onChanged: onSearch,
+          ),
+          const SizedBox(height: 12),
+          if (results.isNotEmpty)
+            ...results.map(
+              (v) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: NeoCard.pressable(
+                  onTap: () => onSelect(v),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      PlateChip(plateText: v.plateNo),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          v.brand != null
+                              ? '${v.brand} ${v.model ?? ''}'.trim()
+                              : 'Kendaraan',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink900,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        const SizedBox(height: 16),
-        const Divider(),
-        const SizedBox(height: 8),
-        ThickBottomBorderButton(
-          variant: ThickButtonVariant.secondary,
-          icon: Icon(AppIcons.add, size: 16),
-          onPressed: onCreateNew,
-          isFullWidth: true,
-          child: const Text('Buat pelanggan & kendaraan baru'),
-        ),
-        if (selected != null) ...[
-          const SizedBox(height: 20),
-          Text('Terpilih', style: textTheme.labelMedium),
+          const SizedBox(height: 16),
+          const Divider(),
           const SizedBox(height: 8),
-          NeoCard.info(
-            color: AppColors.pastelMint,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                PlateChip(plateText: selected!.plateNo),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    selected!.brand != null
-                        ? '${selected!.brand} ${selected!.model ?? ''}'.trim()
-                        : 'Kendaraan',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
+          ThickBottomBorderButton(
+            variant: ThickButtonVariant.secondary,
+            icon: Icon(AppIcons.add, size: 16),
+            onPressed: onCreateNew,
+            isFullWidth: true,
+            child: Text(terms.businessType == 'keduanya'
+                ? 'Buat pelanggan & kendaraan baru'
+                : 'Buat pelanggan baru'),
+          ),
+          if (selected != null) ...[
+            const SizedBox(height: 20),
+            Text('Terpilih', style: textTheme.labelMedium),
+            const SizedBox(height: 8),
+            NeoCard.info(
+              color: AppColors.pastelMint,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  PlateChip(plateText: selected!.plateNo),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      selected!.brand != null
+                          ? '${selected!.brand} ${selected!.model ?? ''}'.trim()
+                          : 'Kendaraan',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink900,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          ],
+        ] else ...[
+          NeoTextField(
+            controller: serviceLabelController,
+            labelText: '${terms.manualTargetLabel} *',
+            hintText: terms.manualTargetHint,
+            prefixIcon: AppIcons.tag,
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Pelanggan Pemilik (Opsional)',
+            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          NeoSearchBar(
+            controller: customerSearchController,
+            hintText: 'Cari nama atau telepon pelanggan',
+            onChanged: onSearchCustomer,
+          ),
+          const SizedBox(height: 8),
+          if (customerResults.isNotEmpty)
+            ...customerResults.map(
+              (c) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: NeoCard.pressable(
+                  onTap: () => onSelectCustomer(c),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(AppIcons.user, size: 18, color: AppColors.inkMuted),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.name,
+                              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            if (c.phone != null && c.phone!.isNotEmpty)
+                              Text(
+                                c.phone!,
+                                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          ThickBottomBorderButton(
+            variant: ThickButtonVariant.secondary,
+            icon: Icon(AppIcons.add, size: 16),
+            onPressed: onCreateCustomer,
+            isFullWidth: true,
+            child: const Text('Buat Pelanggan Baru'),
+          ),
+          if (selectedCustomer != null) ...[
+            const SizedBox(height: 16),
+            Text('Pelanggan Terpilih', style: textTheme.labelMedium),
+            const SizedBox(height: 8),
+            NeoCard.info(
+              color: AppColors.pastelMint,
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(AppIcons.user, size: 20, color: AppColors.ink900),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${selectedCustomer!.name}${selectedCustomer!.phone != null ? ' (${selectedCustomer!.phone})' : ''}',
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ],
     );
@@ -671,6 +949,8 @@ class _StepDetail extends StatelessWidget {
     required this.technician,
     required this.ref,
     required this.onTechnicianChanged,
+    required this.terms,
+    this.showOdometer = true,
   });
 
   final TextEditingController complaintController;
@@ -678,6 +958,8 @@ class _StepDetail extends StatelessWidget {
   final Profile? technician;
   final WidgetRef ref;
   final void Function(Profile?) onTechnicianChanged;
+  final AppTerms terms;
+  final bool showOdometer;
 
   @override
   Widget build(BuildContext context) {
@@ -690,18 +972,21 @@ class _StepDetail extends StatelessWidget {
         const SizedBox(height: 12),
         NeoTextField(
           controller: complaintController,
-          labelText: 'Keluhan',
+          labelText: terms.complaintLabel,
+          hintText: terms.complaintHint,
           prefixIcon: AppIcons.alertCircle,
           maxLines: 3,
           validator: WoValidators.validateComplaint,
         ),
-        const SizedBox(height: 12),
-        NeoTextField(
-          controller: odometerController,
-          labelText: 'Odometer masuk (KM, opsional)',
-          prefixIcon: AppIcons.speedometer,
-          keyboardType: TextInputType.number,
-        ),
+        if (showOdometer) ...[
+          const SizedBox(height: 12),
+          NeoTextField(
+            controller: odometerController,
+            labelText: 'Odometer masuk (KM, opsional)',
+            prefixIcon: AppIcons.speedometer,
+            keyboardType: TextInputType.number,
+          ),
+        ],
         const SizedBox(height: 12),
         techniciansAsync.when(
           loading: () => const LinearProgressIndicator(),
@@ -747,7 +1032,7 @@ class _StepItems extends ConsumerWidget {
   final List<TextEditingController> jasaDesc;
   final List<TextEditingController> jasaPrice;
   final List<_PartLine> partLines;
-  final VoidCallback onAddJasa;
+  final void Function({String? desc, double? price}) onAddJasa;
   final void Function(int) onRemoveJasa;
   final void Function(Part) onAddPart;
   final void Function(int) onRemovePart;
@@ -766,12 +1051,27 @@ class _StepItems extends ConsumerWidget {
             Expanded(child: Text('Jasa', style: textTheme.titleMedium)),
             ThickBottomBorderButton(
               variant: ThickButtonVariant.secondary,
-              icon: Icon(AppIcons.add, size: 16),
+              size: ThickButtonSize.compact,
+              icon: Icon(AppIcons.search, size: 14),
+              onPressed: () async {
+                final service = await showServicePicker(context, ref);
+                if (service != null) {
+                  onAddJasa(desc: service.name, price: service.price);
+                  onItemsChanged();
+                }
+              },
+              child: const Text('Pilih jasa'),
+            ),
+            const SizedBox(width: 8),
+            ThickBottomBorderButton(
+              variant: ThickButtonVariant.secondary,
+              size: ThickButtonSize.compact,
+              icon: Icon(AppIcons.add, size: 14),
               onPressed: () {
                 onAddJasa();
                 onItemsChanged();
               },
-              child: const Text('Tambah jasa'),
+              child: const Text('Tulis manual'),
             ),
           ],
         ),
@@ -817,6 +1117,7 @@ class _StepItems extends ConsumerWidget {
             Expanded(child: Text('Part', style: textTheme.titleMedium)),
             ThickBottomBorderButton(
               variant: ThickButtonVariant.secondary,
+              size: ThickButtonSize.compact,
               onPressed: () async {
                 final code = await showBarcodeScanner(context);
                 if (code != null && code.isNotEmpty) {
@@ -831,12 +1132,13 @@ class _StepItems extends ConsumerWidget {
                   }
                 }
               },
-              child: Icon(AppIcons.barcode, size: 18),
+              child: Icon(AppIcons.barcode, size: 16),
             ),
             const SizedBox(width: 8),
             ThickBottomBorderButton(
               variant: ThickButtonVariant.secondary,
-              icon: Icon(AppIcons.add, size: 16),
+              size: ThickButtonSize.compact,
+              icon: Icon(AppIcons.add, size: 14),
               onPressed: () async {
                 await showModalBottomSheet<void>(
                   context: context,

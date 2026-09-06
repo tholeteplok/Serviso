@@ -817,7 +817,7 @@ Akun ini memiliki akses langsung ke pencatatan transaksi kasir, penerimaan pemba
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Akun ini memiliki hak akses langsung terhadap pencatatan transaksi kasir, penerimaan uang tunai, dan stok suku cadang bengkel.\n• Jaga kerahasiaan password dan JANGAN membagikannya kepada siapa pun.\n• Segala aktivitas dan transaksi yang tercatat adalah tanggung jawab penuh pemilik akun.',
+                        'Akun ini memiliki hak akses langsung terhadap pencatatan transaksi kasir, penerimaan uang tunai, dan stok barang toko/bengkel.\n• Jaga kerahasiaan password dan JANGAN membagikannya kepada siapa pun.\n• Segala aktivitas dan transaksi yang tercatat adalah tanggung jawab penuh pemilik akun.',
                         style: AppTypography.inter(
                           fontSize: 11,
                           color: AppColors.ink900,

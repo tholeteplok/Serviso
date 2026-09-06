@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../theme/app_colors.dart';
@@ -213,7 +213,7 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
                 border: Border.all(color: Colors.white12),
               ),
               child: Text(
-                'Arahkan kotak bidik ke barcode atau kode QR suku cadang',
+                'Arahkan kotak bidik ke barcode atau kode QR barang',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(
                   color: Colors.white,

@@ -15,6 +15,12 @@ enum ThickButtonVariant {
   amber,  // DS v2: solid #FFC526 for secondary CTAs
 }
 
+enum ThickButtonSize {
+  compact,  // Tinggi 36px, font 12.5px, padding ringkas (untuk in-card actions)
+  standard, // Tinggi 44px, font 14px (default untuk dialog/form)
+  large,    // Tinggi 52px, font 16px (untuk bottom bar checkout/submit)
+}
+
 /// A tactile Neo-Brutalist button with solid 1.5px black border,
 /// pastel/dark fill, and solid black hard pop shadow.
 /// Sesuai referensi gambar *Order Tracker* dan *Stay Healthy*.
@@ -24,9 +30,11 @@ class ThickBottomBorderButton extends StatefulWidget {
     required this.onPressed,
     required this.child,
     this.variant = ThickButtonVariant.primary,
+    this.size = ThickButtonSize.standard,
+    this.fixedWidth,
     this.icon,
     this.isFullWidth = false,
-    this.padding = AppSpacing.buttonPadding,
+    this.padding,
     this.borderRadius,
     this.isLoading = false,
   });
@@ -34,9 +42,11 @@ class ThickBottomBorderButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final Widget child;
   final ThickButtonVariant variant;
+  final ThickButtonSize size;
+  final double? fixedWidth;
   final Widget? icon;
   final bool isFullWidth;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final BorderRadius? borderRadius;
   final bool isLoading;
 
@@ -86,36 +96,74 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
         break;
     }
 
-    final double shadowDistance = isEnabled && !_isPressed ? 3.5 : 1.0;
-    final double translateY = isEnabled && _isPressed ? 2.5 : 0.0;
-    final radius = widget.borderRadius ?? (widget.isFullWidth ? AppRadius.card : AppRadius.pill);
+    final double defaultFontSize;
+    final double targetHeight;
+    final double shadowDistance;
+    final double translateY;
+    final EdgeInsetsGeometry resolvedPadding;
+
+    switch (widget.size) {
+      case ThickButtonSize.compact:
+        defaultFontSize = 12.5;
+        targetHeight = 36.0;
+        shadowDistance = isEnabled && !_isPressed ? 2.0 : 0.5;
+        translateY = isEnabled && _isPressed ? 1.5 : 0.0;
+        resolvedPadding = widget.padding ?? const EdgeInsets.symmetric(horizontal: 8);
+        break;
+      case ThickButtonSize.standard:
+        defaultFontSize = 14.0;
+        targetHeight = 44.0;
+        shadowDistance = isEnabled && !_isPressed ? 3.5 : 1.0;
+        translateY = isEnabled && _isPressed ? 2.5 : 0.0;
+        resolvedPadding = widget.padding ?? AppSpacing.buttonPadding;
+        break;
+      case ThickButtonSize.large:
+        defaultFontSize = 16.0;
+        targetHeight = 52.0;
+        shadowDistance = isEnabled && !_isPressed ? 4.0 : 1.0;
+        translateY = isEnabled && _isPressed ? 3.0 : 0.0;
+        resolvedPadding = widget.padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 14);
+        break;
+    }
+
+    final radius = widget.borderRadius ??
+        (widget.size == ThickButtonSize.compact
+            ? AppRadius.pill
+            : (widget.isFullWidth ? AppRadius.card : AppRadius.pill));
 
     Widget content = widget.isLoading
         ? SizedBox(
-            width: 20,
-            height: 20,
+            width: widget.size == ThickButtonSize.compact ? 16 : 20,
+            height: widget.size == ThickButtonSize.compact ? 16 : 20,
             child: CircularProgressIndicator(
-              strokeWidth: 2.5,
+              strokeWidth: 2.0,
               valueColor: AlwaysStoppedAnimation<Color>(fg),
             ),
           )
         : IconTheme.merge(
-            data: IconThemeData(color: fg),
+            data: IconThemeData(
+              color: fg,
+              size: widget.size == ThickButtonSize.compact ? 14 : 18,
+            ),
             child: Row(
-              mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (widget.icon != null) ...[
                   widget.icon!,
-                  const SizedBox(width: 8),
+                  SizedBox(width: widget.size == ThickButtonSize.compact ? 6 : 8),
                 ],
-                DefaultTextStyle(
-                  style: AppTypography.inter(
-                    color: fg,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                Flexible(
+                  child: DefaultTextStyle(
+                    style: AppTypography.inter(
+                      color: fg,
+                      fontWeight: FontWeight.bold,
+                      fontSize: defaultFontSize,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    child: widget.child,
                   ),
-                  child: widget.child,
                 ),
               ],
             ),
@@ -126,8 +174,12 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
       duration: Duration(milliseconds: disableAnim ? 0 : 70),
       curve: Curves.easeOut,
       transform: Matrix4.translationValues(translateY, translateY, 0),
-      width: widget.isFullWidth ? double.infinity : null,
-      padding: widget.padding,
+      width: widget.fixedWidth ?? (widget.isFullWidth ? double.infinity : null),
+      height: targetHeight,
+      alignment: (widget.isFullWidth || widget.fixedWidth != null)
+          ? Alignment.center
+          : null,
+      padding: resolvedPadding,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: radius,
@@ -151,7 +203,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
     if (!isEnabled) {
       btn = Opacity(opacity: 0.45, child: IgnorePointer(ignoring: !widget.isLoading, child: btn));
     }
-    // Focus ring amber 2px offset 2 + 44px min constraint
+    // Focus ring amber 2px offset 2 + min constraint
     btn = Semantics(
       button: true,
       enabled: isEnabled,
@@ -173,7 +225,11 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
             onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
             onTap: isEnabled ? widget.onPressed : null,
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: 44, minWidth: widget.isFullWidth ? 0 : 44),
+              constraints: BoxConstraints(
+                minHeight: targetHeight,
+                minWidth: widget.fixedWidth ?? (widget.isFullWidth ? 0 : targetHeight),
+                maxWidth: widget.fixedWidth ?? double.infinity,
+              ),
               child: btn,
             ),
           ),

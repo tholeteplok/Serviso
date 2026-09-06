@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_terms.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -29,17 +30,18 @@ class PartDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = AppTypography.textTheme();
+    final terms = ref.watch(appTermsProvider);
     final state = ref.watch(partDetailControllerProvider(partId));
     final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
       appBar: NeoAppBar(
-        title: 'Detail Suku Cadang',
+        title: terms.detailPartLabel,
         actions: [
           if (isAdmin) ...[
             IconButton(
               icon: Icon(AppIcons.edit, color: AppColors.ink900),
-              tooltip: 'Ubah suku cadang',
+              tooltip: terms.editPartLabel,
               onPressed: () {
                 final currentPart = state.valueOrNull?.part;
                 if (currentPart != null) {
@@ -49,7 +51,7 @@ class PartDetailScreen extends ConsumerWidget {
             ),
             IconButton(
               icon: Icon(AppIcons.trash, color: AppColors.statusDanger),
-              tooltip: 'Hapus suku cadang',
+              tooltip: terms.deletePartTitle,
               onPressed: () => _confirmDelete(context, ref),
             ),
           ],
@@ -209,11 +211,11 @@ class PartDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final terms = ref.read(appTermsProvider);
     final confirmed = await showNeoConfirmDialog(
       context: context,
-      title: 'Hapus suku cadang',
-      message:
-          'Hapus suku cadang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
+      title: terms.deletePartTitle,
+      message: terms.deletePartConfirm,
       confirmLabel: 'Hapus',
       isDanger: true,
     );

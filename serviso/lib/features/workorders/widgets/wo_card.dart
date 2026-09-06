@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/plate_chip.dart';
+import '../../../core/widgets/service_label_chip.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
 
@@ -34,7 +35,12 @@ class WoCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  PlateChip(plateText: order.plateNo ?? '—'),
+                  if (order.plateNo != null && order.plateNo!.isNotEmpty)
+                    PlateChip(plateText: order.plateNo!)
+                  else if (order.serviceLabel != null && order.serviceLabel!.isNotEmpty)
+                    ServiceLabelChip(label: order.serviceLabel!)
+                  else
+                    const ServiceLabelChip(label: 'Jasa / Servis'),
                   const Spacer(),
                   Container(
                     width: 32,

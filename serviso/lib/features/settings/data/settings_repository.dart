@@ -12,6 +12,7 @@ abstract class SettingsRepository {
     String? address,
     String? phone,
     String? receiptNotes,
+    String? businessType,
   });
 }
 
@@ -34,7 +35,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
         if (shopId != null) {
           final shop = await _client
               .from('shops')
-              .select('name, address, phone, receipt_notes')
+              .select('name, address, phone, receipt_notes, business_type')
               .eq('id', shopId)
               .maybeSingle();
           if (shop != null) {
@@ -43,6 +44,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
               address: shop['address'] as String?,
               phone: shop['phone'] as String?,
               receiptNotes: shop['receipt_notes'] as String?,
+              businessType: (shop['business_type'] as String?) ?? 'keduanya',
             );
           }
         }
@@ -69,6 +71,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
     String? address,
     String? phone,
     String? receiptNotes,
+    String? businessType,
   }) async {
     final cleanAddress =
         address?.trim().isEmpty == true ? null : address?.trim();
@@ -98,9 +101,10 @@ class SupabaseSettingsRepository implements SettingsRepository {
               'address': cleanAddress,
               'phone': cleanPhone,
               'receipt_notes': cleanReceiptNotes,
+              'business_type': ?businessType,
             })
             .eq('id', shopId)
-            .select('name, address, phone, receipt_notes')
+            .select('name, address, phone, receipt_notes, business_type')
             .maybeSingle();
         if (updated != null) {
           return AppSettings(
@@ -108,6 +112,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
             address: updated['address'] as String?,
             phone: updated['phone'] as String?,
             receiptNotes: updated['receipt_notes'] as String?,
+            businessType: (updated['business_type'] as String?) ?? (businessType ?? 'keduanya'),
           );
         }
       } catch (e) {
@@ -193,6 +198,7 @@ class FakeSettingsRepository implements SettingsRepository {
     String? address,
     String? phone,
     String? receiptNotes,
+    String? businessType,
   }) async {
     if (!allowAdmin) {
       throw const SettingsException(
@@ -207,6 +213,7 @@ class FakeSettingsRepository implements SettingsRepository {
       address: address,
       phone: phone,
       receiptNotes: receiptNotes,
+      businessType: businessType ?? _settings.businessType,
     );
     return _settings;
   }
