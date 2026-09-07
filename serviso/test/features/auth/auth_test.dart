@@ -134,9 +134,34 @@ void main() {
           'name': 'Bengkel Nonaktif',
           'slug': 'bengkel-nonaktif',
           'is_active': false,
+          'service_mode': 'umum',
         },
       });
       expect(p.shopIsActive, isFalse);
+      expect(p.shopServiceMode, 'umum');
+    });
+
+    test('fromMap tahan terhadap shops dalam bentuk List (PostgREST array)', () {
+      final p = Profile.fromMap({
+        'id': 'abc',
+        'username': 'kasir1',
+        'full_name': 'Kasir Satu',
+        'role': 'admin',
+        'is_active': true,
+        'shops': [
+          {
+            'name': 'Laundry Berkah',
+            'slug': 'laundry-berkah',
+            'is_active': true,
+            'business_type': 'jasa',
+            'service_mode': 'umum',
+          }
+        ],
+      });
+      expect(p.shopName, 'Laundry Berkah');
+      expect(p.shopSlug, 'laundry-berkah');
+      expect(p.shopBusinessType, 'jasa');
+      expect(p.shopServiceMode, 'umum');
     });
 
     test('isAdminProvider true hanya untuk admin', () {

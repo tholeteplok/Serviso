@@ -14,6 +14,9 @@ class NeoCard extends StatefulWidget {
   const NeoCard({
     super.key,
     required this.child,
+    this.header,
+    this.headerColor,
+    this.headerPadding,
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
@@ -21,8 +24,8 @@ class NeoCard extends StatefulWidget {
     this.borderWidth,
     this.borderRadius = AppRadius.card,
     this.showHardShadow,
-    this.shadowOffset = const Offset(4, 4),
-    this.shadowColor = AppColors.borderInk,
+    this.shadowOffset = const Offset(3, 3),
+    this.shadowColor = AppColors.shadowWarm,
     this.showSoftShadow,
     this.onTap,
     this.variant,
@@ -31,6 +34,9 @@ class NeoCard extends StatefulWidget {
   const NeoCard.pressable({
     super.key,
     required this.child,
+    this.header,
+    this.headerColor,
+    this.headerPadding,
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
@@ -39,28 +45,34 @@ class NeoCard extends StatefulWidget {
   })  : borderColor = AppColors.borderInk,
         borderWidth = 1.5,
         showHardShadow = true,
-        shadowOffset = const Offset(4, 4),
-        shadowColor = AppColors.borderInk,
-        showSoftShadow = true,
+        shadowOffset = const Offset(3, 3),
+        shadowColor = AppColors.shadowWarm,
+        showSoftShadow = false,
         variant = NeoCardVariant.pressable;
 
   const NeoCard.info({
     super.key,
     required this.child,
+    this.header,
+    this.headerColor,
+    this.headerPadding,
     this.padding = AppSpacing.cardPadding,
     this.margin = EdgeInsets.zero,
     this.color = AppColors.bgSurface,
     this.borderColor = AppColors.borderInk,
-    this.borderWidth = 1.5,
+    this.borderWidth = 1.2,
     this.borderRadius = AppRadius.card,
   })  : showHardShadow = false,
         shadowOffset = Offset.zero,
-        shadowColor = AppColors.borderInk,
+        shadowColor = AppColors.shadowWarm,
         showSoftShadow = false,
         variant = NeoCardVariant.info,
         onTap = null;
 
   final Widget child;
+  final Widget? header;
+  final Color? headerColor;
+  final EdgeInsetsGeometry? headerPadding;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
   final Color color;
@@ -93,10 +105,10 @@ class _NeoCardState extends State<NeoCard> {
     final effShowSoft = widget.showSoftShadow ?? false;
 
     final currentOffset = effShowHard
-        ? (_isPressed ? Offset.zero : widget.shadowOffset)
+        ? (_isPressed ? const Offset(1.0, 1.0) : widget.shadowOffset)
         : Offset.zero;
     // Info never lifts
-    final translateY = hasTap && _isPressed ? 1.0 : 0.0;
+    final translateY = hasTap && _isPressed ? 2.0 : 0.0;
 
     final List<BoxShadow> shadows = [
       if (effShowSoft && !_isPressed) AppShadow.cardSoft,
@@ -108,13 +120,44 @@ class _NeoCardState extends State<NeoCard> {
         ),
     ];
 
+    final innerContent = widget.header != null
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: widget.headerPadding ??
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: widget.headerColor ?? AppColors.pastelYellow,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: effBorderColor,
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+                child: widget.header!,
+              ),
+              Container(
+                color: widget.color,
+                padding: widget.padding,
+                child: widget.child,
+              ),
+            ],
+          )
+        : Padding(
+            padding: widget.padding,
+            child: widget.child,
+          );
+
     final disableAnim = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     Widget container = AnimatedContainer(
       duration: Duration(milliseconds: disableAnim ? 0 : 160),
       curve: Curves.easeOut,
       transform: Matrix4.translationValues(translateY, translateY, 0),
       margin: widget.margin,
-      padding: widget.padding,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: widget.color,
         borderRadius: widget.borderRadius,
@@ -124,7 +167,7 @@ class _NeoCardState extends State<NeoCard> {
         ),
         boxShadow: shadows.isEmpty ? null : shadows,
       ),
-      child: widget.child,
+      child: innerContent,
     );
 
     if (hasTap) {

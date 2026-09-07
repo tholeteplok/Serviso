@@ -20,6 +20,7 @@ import '../../../workorders/pdf/receipt_builder.dart';
 import '../../controllers/report_controllers.dart';
 import '../../models/report_models.dart';
 import '../../pdf/laporan_export.dart';
+import '../../../direct_sales/widgets/continuous_sale_ticket_card.dart';
 
 ({DateTime start, DateTime end}) _directSaleRange(LaporanPeriod period) {
   final now = DateTime.now();
@@ -36,6 +37,36 @@ import '../../pdf/laporan_export.dart';
 
 class DirectSaleDetailScreen extends ConsumerWidget {
   const DirectSaleDetailScreen({super.key});
+
+  Map<String, List<DirectSaleReportRow>> _groupByDay(
+      List<DirectSaleReportRow> list) {
+    final Map<String, List<DirectSaleReportRow>> map = {};
+    for (final sale in list) {
+      final d = sale.paidAt.toLocal();
+      final dateKey =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      map.putIfAbsent(dateKey, () => []).add(sale);
+    }
+    return map;
+  }
+
+  String _formatDateTitle(DateTime date, int count, double totalRevenue) {
+    final d = date.toLocal();
+    final now = DateTime.now();
+    final isToday =
+        d.year == now.year && d.month == now.month && d.day == now.day;
+    final isYesterday =
+        d.year == now.year && d.month == now.month && d.day == now.day - 1;
+
+    final dayName = isToday
+        ? 'HARI INI'
+        : (isYesterday
+            ? 'KEMARIN'
+            : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}');
+    final revenueStr =
+        totalRevenue > 0 ? ' · Total ${rupiah(totalRevenue)}' : '';
+    return '$dayName · $count PENJUALAN$revenueStr';
+  }
 
   Future<void> _handleExport(
     BuildContext context,
@@ -268,17 +299,42 @@ class DirectSaleDetailScreen extends ConsumerWidget {
                     // Section Title
                     Text(
                       'Riwayat Transaksi (${rows.length})',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style: AppTypography.kalam(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink900,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
-                    // Transaction Cards
-                    ...rows.map((sale) => _DirectSaleCard(
-                          sale: sale,
-                          onReprint: () => _reprintReceipt(context, ref, sale),
-                        )),
+                    // Daily Grouped Continuous Ticket Cards
+                    ...() {
+                      final grouped = _groupByDay(rows);
+                      final sortedDateKeys = grouped.keys.toList()
+                        ..sort((a, b) => b.compareTo(a));
+                      return [
+                        for (final dateKey in sortedDateKeys) ...[
+                          Builder(
+                            builder: (context) {
+                              final daySales = grouped[dateKey]!;
+                              final firstDate = daySales.first.paidAt;
+                              final dayTotal = daySales.fold<double>(
+                                0.0,
+                                (s, r) => s + r.paidAmount,
+                              );
+                              return ContinuousSaleTicketCard(
+                                sales: daySales,
+                                headerTitle: _formatDateTitle(
+                                    firstDate, daySales.length, dayTotal),
+                                headerColor: AppColors.statusDone,
+                                onReprint: (sale) =>
+                                    _reprintReceipt(context, ref, sale),
+                              );
+                            },
+                          ),
+                        ],
+                      ];
+                    }(),
                   ],
                 );
               },
@@ -370,195 +426,3 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _DirectSaleCard extends StatefulWidget {
-  const _DirectSaleCard({
-    required this.sale,
-    required this.onReprint,
-  });
-
-  final DirectSaleReportRow sale;
-  final VoidCallback onReprint;
-
-  @override
-  State<_DirectSaleCard> createState() => _DirectSaleCardState();
-}
-
-class _DirectSaleCardState extends State<_DirectSaleCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final sale = widget.sale;
-    final payMethod = PaymentMethodX.fromValue(sale.payMethod);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: NeoCard(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Row 1: Header (Number + Date + Payment Method Badge)
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        sale.saleNumber,
-                        style: AppTypography.mono(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        dateTimeId(sale.paidAt),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.inkMuted,
-                              fontSize: 10,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.pastelMint.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.borderStrong, width: 1),
-                  ),
-                  child: Text(
-                    payMethod.label,
-                    style: AppTypography.textTheme().labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 10,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Row 2: Customer info + Total amount
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  sale.customerName?.isNotEmpty == true
-                      ? 'Pelanggan: ${sale.customerName}'
-                      : 'Pelanggan: Umum',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.inkMuted,
-                      ),
-                ),
-                Text(
-                  rupiah(sale.paidAmount),
-                  style: AppTypography.mono(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ],
-            ),
-
-            if (sale.items.isNotEmpty) ...[
-              const Divider(height: 16),
-              InkWell(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${sale.items.length} Rincian Item',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                    Icon(
-                      _expanded
-                          ? AppIcons.caretUp
-                          : AppIcons.caretDown,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ),
-              if (_expanded) ...[
-                const SizedBox(height: 6),
-                ...sale.items.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.description,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 11.5,
-                                    ),
-                              ),
-                              Text(
-                                '${item.qty.toStringAsFixed(0)} x ${rupiah(item.unitPrice)}${item.discount > 0 ? ' (diskon -${rupiah(item.discount)})' : ''}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 10,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          rupiah(item.subtotal),
-                          style: AppTypography.mono(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: widget.onReprint,
-                icon: Icon(AppIcons.share, size: 14, color: AppColors.ink900),
-                label: const Text('Cetak / Bagikan Struk',
-                    style: TextStyle(fontSize: 11)),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: AppColors.ink,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

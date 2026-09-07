@@ -17,7 +17,6 @@ import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_progress_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
-import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
@@ -55,6 +54,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
   List<Vehicle> _vehicleResults = [];
 
   bool _useManual = false;
+  bool _userToggledManual = false;
   final _serviceLabelController = TextEditingController();
   Customer? _selectedCustomer;
   final _customerSearchController = TextEditingController();
@@ -78,10 +78,8 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     if (widget.initialVehicle != null) {
       _vehicle = widget.initialVehicle;
     } else {
-      final businessType = ref.read(sessionProvider).valueOrNull?.shopBusinessType;
-      if (businessType == 'jasa') {
-        _useManual = true;
-      }
+      final terms = ref.read(appTermsProvider);
+      _useManual = !terms.primaryPathIsVehicle;
     }
   }
 
@@ -516,6 +514,14 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AppTerms>(appTermsProvider, (previous, next) {
+      if (!_userToggledManual && widget.initialVehicle == null) {
+        setState(() {
+          _useManual = !next.primaryPathIsVehicle;
+        });
+      }
+    });
+
     return PopScope(
       canPop: !_creating,
       child: Scaffold(
@@ -541,7 +547,10 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                   key: _formKeys[0],
                   child: _StepVehicle(
                     useManual: _useManual,
-                    onToggleManual: (v) => setState(() => _useManual = v),
+                    onToggleManual: (v) => setState(() {
+                      _userToggledManual = true;
+                      _useManual = v;
+                    }),
                     serviceLabelController: _serviceLabelController,
                     selectedCustomer: _selectedCustomer,
                     customerSearchController: _customerSearchController,
@@ -802,21 +811,7 @@ class _StepVehicle extends StatelessWidget {
                   : 'Pilih ${terms.targetLabel.toLowerCase()}'),
           style: textTheme.headlineSmall,
         ),
-        const SizedBox(height: 12),
-        // Toggle hanya relevan untuk toko 'keduanya' — toko 'jasa' murni tidak
-        // punya konsep data kendaraan terdaftar, jadi langsung ke form manual
-        // tanpa keputusan tambahan yang tidak relevan buat mereka.
-        if (terms.businessType != 'jasa') ...[
-          NeoSegmentControl<bool>(
-            selectedValue: useManual,
-            onValueChanged: onToggleManual,
-            items: [
-              NeoSegmentItem(value: false, label: terms.registeredTargetTab),
-              NeoSegmentItem(value: true, label: terms.manualTargetTab),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
+        const SizedBox(height: 16),
         if (!useManual) ...[
           NeoSearchBar(
             controller: searchController,
@@ -977,6 +972,23 @@ class _StepVehicle extends StatelessWidget {
               ),
             ),
           ],
+        ],
+        if (terms.alternatePathLinkLabel != null) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: TextButton(
+              onPressed: () => onToggleManual(!useManual),
+              child: Text(
+                useManual
+                    ? '+ Ada data kendaraan terdaftar?'
+                    : '+ Servis tanpa kendaraan terdaftar',
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
         ],
       ],
     );

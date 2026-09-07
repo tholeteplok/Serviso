@@ -6,6 +6,7 @@ import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/neo_app_bar.dart';
@@ -14,7 +15,7 @@ import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_switch.dart';
 import '../../workorders/controllers/work_order_providers.dart';
 import '../../workorders/models/work_order.dart';
-import '../../workorders/widgets/wo_card.dart';
+import '../../workorders/widgets/continuous_ticket_card.dart';
 
 class AntrianScreen extends ConsumerStatefulWidget {
   const AntrianScreen({super.key});
@@ -214,6 +215,35 @@ class _StatusListTab extends StatelessWidget {
   final List<WorkOrder> orders;
   final Future<void> Function() onRefresh;
 
+  Map<String, List<WorkOrder>> _groupByDay(List<WorkOrder> list) {
+    final Map<String, List<WorkOrder>> map = {};
+    for (final wo in list) {
+      final d = wo.createdAt.toLocal();
+      final dateKey =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      map.putIfAbsent(dateKey, () => []).add(wo);
+    }
+    return map;
+  }
+
+  String _formatDateTitle(DateTime date, int count, double totalRevenue) {
+    final d = date.toLocal();
+    final now = DateTime.now();
+    final isToday =
+        d.year == now.year && d.month == now.month && d.day == now.day;
+    final isYesterday =
+        d.year == now.year && d.month == now.month && d.day == now.day - 1;
+
+    final dayName = isToday
+        ? 'HARI INI'
+        : (isYesterday
+            ? 'KEMARIN'
+            : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}');
+    final revenueStr =
+        totalRevenue > 0 ? ' · Total ${rupiah(totalRevenue)}' : '';
+    return '$dayName · $count SPK SELESAI$revenueStr';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty) {
@@ -237,19 +267,60 @@ class _StatusListTab extends StatelessWidget {
       );
     }
 
+    // Tab: Menunggu & Dikerjakan — Satu kartu tiket panjang berkesinambungan
+    if (status != WoStatus.selesai) {
+      final title = status == WoStatus.menunggu
+          ? 'ANTREAN MENUNGGU · ${orders.length} SPK'
+          : 'SEDANG DIKERJAKAN · ${orders.length} PIT AKTIF';
+
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            ContinuousTicketCard(
+              orders: orders,
+              headerTitle: title,
+              headerColor: status.bgColor,
+              onOrderTap: (wo) => context.push('/antrian/${wo.id}'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tab: Selesai — Tiket panjang dipisah per hari
+    final grouped = _groupByDay(orders);
+    final sortedDateKeys = grouped.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+
     return RefreshIndicator(
       onRefresh: onRefresh,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: orders.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) => WoCard(
-          order: orders[index],
-          onTap: () => context.push(
-            '/antrian/${orders[index].id}',
-          ),
-        ),
+        children: [
+          for (final dateKey in sortedDateKeys) ...[
+            Builder(
+              builder: (context) {
+                final dayOrders = grouped[dateKey]!;
+                final firstDate = dayOrders.first.createdAt;
+                final dayTotal = dayOrders.fold<double>(
+                  0.0,
+                  (sum, o) => sum + o.total,
+                );
+                return ContinuousTicketCard(
+                  orders: dayOrders,
+                  headerTitle:
+                      _formatDateTitle(firstDate, dayOrders.length, dayTotal),
+                  headerColor: AppColors.statusDone,
+                  onOrderTap: (wo) => context.push('/antrian/${wo.id}'),
+                );
+              },
+            ),
+          ],
+        ],
       ),
     );
   }

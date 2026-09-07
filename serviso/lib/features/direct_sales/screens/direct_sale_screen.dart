@@ -40,6 +40,7 @@ import '../../workorders/models/work_order.dart';
 import '../../workorders/pdf/receipt_builder.dart';
 import '../data/direct_sale_repository.dart';
 import '../models/direct_sale.dart';
+import '../widgets/cart_ticket_slip.dart';
 
 final directSaleRepositoryProvider = Provider<DirectSaleRepository>((ref) {
   final client = Supabase.instance.client;
@@ -394,7 +395,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
             const SizedBox(height: 12),
             Text(
               rupiah(input.total),
-              style: AppTypography.chakra(
+              style: AppTypography.mono(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
                 color: AppColors.ink900,
@@ -689,116 +690,27 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // List Items
-                if (_items.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text(
-                        'Keranjang masih kosong',
-                        style: AppTypography.inter(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.35,
-                    ),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: _items.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final item = _items[i];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: item.kind == WoItemKind.jasa
-                                      ? AppColors.pastelAmber
-                                      : AppColors.pastelMint,
-                                  borderRadius: AppRadius.sm,
-                                  border: Border.all(
-                                    color: AppColors.borderInk,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  item.kind == WoItemKind.jasa
-                                      ? AppIcons.wrench
-                                      : AppIcons.inventory,
-                                  size: 18,
-                                  color: AppColors.ink900,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.description ?? 'Item',
-                                      style: AppTypography.inter(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      '${rupiah(item.unitPrice)} x ${item.qty.toInt()} = ${rupiah(item.lineTotal)}',
-                                      style: AppTypography.mono(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  NeoStepper(
-                                    value: item.qty,
-                                    min: 1,
-                                    size: NeoStepperSize.compact,
-                                    fixedWidth: 96,
-                                    onChanged: (newQty) {
-                                      setModalState(() {
-                                        _updateItemQty(i, newQty.toDouble());
-                                      });
-                                      setState(() {});
-                                    },
-                                  ),
-                                  const SizedBox(width: 4),
-                                  IconButton(
-                                    icon: Icon(
-                                      AppIcons.trash,
-                                      size: 16,
-                                      color: AppColors.statusDanger,
-                                    ),
-                                    onPressed: () {
-                                      setModalState(() => _removeItem(i));
-                                      setState(() {});
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
+                // Slip Karcis Draf Struk
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.38,
+                  ),
+                  child: SingleChildScrollView(
+                    child: CartTicketSlip(
+                      items: _items,
+                      onQtyChanged: (i, newQty) {
+                        setModalState(() {
+                          _updateItemQty(i, newQty);
+                        });
+                        setState(() {});
+                      },
+                      onRemoveItem: (i) {
+                        setModalState(() => _removeItem(i));
+                        setState(() {});
                       },
                     ),
                   ),
+                ),
 
                 const SizedBox(height: 12),
 
@@ -851,7 +763,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                     ),
                     Text(
                       rupiah(_total),
-                      style: AppTypography.chakra(
+                      style: AppTypography.mono(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: AppColors.ink900,
@@ -1101,7 +1013,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                           ),
                           Text(
                             rupiah(_total),
-                            style: AppTypography.chakra(
+                            style: AppTypography.mono(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                               color: AppColors.ink900,
@@ -1230,7 +1142,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
           // Price
           Text(
             rupiah(part.sellPrice),
-            style: AppTypography.chakra(
+            style: AppTypography.mono(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.ink900,
@@ -1378,7 +1290,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                 // Price
                 Text(
                   rupiah(part.sellPrice),
-                  style: AppTypography.chakra(
+                  style: AppTypography.mono(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.ink900,
@@ -1544,9 +1456,10 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                         ),
                         Text(
                           rupiah(j.lineTotal),
-                          style: AppTypography.chakra(
+                          style: AppTypography.mono(
                             fontSize: 15,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink900,
                           ),
                         ),
                       ],

@@ -5,6 +5,7 @@ class AppSettings {
     this.phone,
     this.receiptNotes,
     this.businessType = 'keduanya',
+    this.serviceMode = 'otomotif',
   });
 
   final String shopName;
@@ -12,6 +13,7 @@ class AppSettings {
   final String? phone;
   final String? receiptNotes;
   final String businessType;
+  final String serviceMode;
 
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
@@ -20,6 +22,7 @@ class AppSettings {
       phone: map['phone'] as String?,
       receiptNotes: (map['receipt_notes'] as String?) ?? (map['notes'] as String?),
       businessType: (map['business_type'] as String?) ?? 'keduanya',
+      serviceMode: (map['service_mode'] as String?) ?? 'otomotif',
     );
   }
 
@@ -29,6 +32,7 @@ class AppSettings {
     String? phone,
     String? receiptNotes,
     String? businessType,
+    String? serviceMode,
   }) =>
       AppSettings(
         shopName: shopName ?? this.shopName,
@@ -36,6 +40,7 @@ class AppSettings {
         phone: phone ?? this.phone,
         receiptNotes: receiptNotes ?? this.receiptNotes,
         businessType: businessType ?? this.businessType,
+        serviceMode: serviceMode ?? this.serviceMode,
       );
 
   Map<String, dynamic> toUpdateMap() => {
@@ -45,6 +50,7 @@ class AppSettings {
         'receipt_notes':
             receiptNotes?.trim().isEmpty == true ? null : receiptNotes?.trim(),
         'business_type': businessType,
+        'service_mode': serviceMode,
       };
 }
 
@@ -55,6 +61,7 @@ class SettingsInput {
     this.phone,
     this.receiptNotes,
     this.businessType = 'keduanya',
+    this.serviceMode = 'otomotif',
   });
 
   final String shopName;
@@ -62,6 +69,7 @@ class SettingsInput {
   final String? phone;
   final String? receiptNotes;
   final String businessType;
+  final String serviceMode;
 
   AppSettings toSettings() => AppSettings(
         shopName: shopName,
@@ -69,5 +77,6 @@ class SettingsInput {
         phone: phone,
         receiptNotes: receiptNotes,
         businessType: businessType,
+        serviceMode: serviceMode,
       );
 }

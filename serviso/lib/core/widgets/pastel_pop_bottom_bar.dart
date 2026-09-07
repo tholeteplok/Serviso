@@ -147,13 +147,6 @@ class PastelPopBottomBar extends StatelessWidget {
               color: AppColors.accentPrimary,
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.borderInk, width: 2.0),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.ink900,
-                  offset: Offset(0, 3),
-                  blurRadius: 0,
-                ),
-              ],
             ),
             alignment: Alignment.center,
             child: Icon(

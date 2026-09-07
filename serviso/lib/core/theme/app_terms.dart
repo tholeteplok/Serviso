@@ -2,23 +2,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/controllers/session_controller.dart';
 
-/// Centralized dynamic terms resolver based on shop business_type:
-/// - 'barang' (Retail)
-/// - 'jasa' (General Services: Laundry, AC, Salon, Electronics, etc.)
-/// - 'keduanya' (Automotive Workshop / Multi-service)
+/// Dua sumbu independen — jangan digabung jadi satu keputusan:
+/// - [businessType] ('barang' | 'jasa' | 'keduanya'): apakah toko jual barang,
+///   sediakan jasa, atau dua-duanya. Mempengaruhi istilah NAV/INVENTORI —
+///   bukan sifat pekerjaan servisnya.
+/// - [serviceMode] ('otomotif' | 'umum'): apakah pekerjaan jasa toko itu
+///   berbasis kendaraan atau tidak. Mempengaruhi field TARGET SERVIS.
+///   Contoh: bengkel servis murni tanpa jual sparepart = businessType 'jasa'
+///   + serviceMode 'otomotif' — BUKAN otomatis non-kendaraan hanya karena
+///   tidak jual barang.
 class AppTerms {
   const AppTerms._({
     required this.businessType,
+    required this.serviceMode,
     required this.targetLabel,
     required this.targetHint,
     required this.complaintLabel,
     required this.complaintHint,
-    required this.woListLabel,
     required this.hasOdometer,
     required this.manualTargetLabel,
     required this.manualTargetHint,
     required this.registeredTargetTab,
     required this.manualTargetTab,
+    required this.woListLabel,
     required this.partNoun,
     required this.addPartLabel,
     required this.editPartLabel,
@@ -30,20 +36,21 @@ class AppTerms {
   });
 
   final String businessType;
+  final String serviceMode;
+
+  // Ditentukan oleh serviceMode
   final String targetLabel;
   final String targetHint;
   final String complaintLabel;
   final String complaintHint;
-  final String woListLabel;
   final bool hasOdometer;
-
-  // Work Order Target Dinamis
   final String manualTargetLabel;
   final String manualTargetHint;
   final String registeredTargetTab;
   final String manualTargetTab;
 
-  // Inventori Universal (Barang / Produk)
+  // Ditentukan oleh businessType
+  final String woListLabel;
   final String partNoun;
   final String addPartLabel;
   final String editPartLabel;
@@ -53,80 +60,91 @@ class AppTerms {
   final String deletePartTitle;
   final String deletePartConfirm;
 
-  factory AppTerms.forBusinessType(String? businessType) {
-    switch (businessType) {
+  /// Jalur mana yang jadi tampilan DEFAULT di Wizard WO — ditentukan murni
+  /// dari [serviceMode] (keputusan sekali di Pengaturan Toko), bukan pilihan
+  /// yang diulang tiap transaksi.
+  bool get primaryPathIsVehicle => serviceMode == 'otomotif';
+
+  /// Label link escape-hatch di bawah jalur utama — de-emphasized, bukan
+  /// pilihan setara seperti toggle. Selalu ditawarkan (kecuali toko 'barang'
+  /// murni, yang tidak pernah masuk ke Wizard WO sama sekali) karena kombinasi
+  /// apa pun tetap bisa punya kasus tepi di luar mode default toko.
+  String? get alternatePathLinkLabel {
+    if (businessType == 'barang') return null;
+    return primaryPathIsVehicle
+        ? '+ Servis tanpa kendaraan terdaftar'
+        : '+ Ada data kendaraan terdaftar?';
+  }
+
+  factory AppTerms.forShop({String? businessType, String? serviceMode}) {
+    final resolvedBusinessType =
+        (businessType == 'barang' || businessType == 'jasa') ? businessType! : 'keduanya';
+    final resolvedServiceMode = serviceMode == 'umum' ? 'umum' : 'otomotif';
+    final isOtomotif = resolvedServiceMode == 'otomotif';
+
+    // --- Sumbu 1: field target servis, ikut serviceMode ---
+    final targetLabel = isOtomotif ? 'Kendaraan' : 'Objek / Layanan';
+    final targetHint = isOtomotif
+        ? 'Cari plat nomor...'
+        : 'mis. AC Split Kamar 1, Baju 5kg, iPhone 13, dll';
+    final complaintLabel = isOtomotif ? 'Keluhan' : 'Instruksi / Catatan Layanan';
+    final complaintHint = isOtomotif
+        ? 'Tuliskan keluhan atau kendala kendaraan...'
+        : 'Tuliskan catatan pengerjaan atau permintaan pelanggan...';
+    final manualTargetLabel = isOtomotif ? 'Layanan / Objek Servis' : 'Objek / Layanan';
+    final manualTargetHint = isOtomotif
+        ? 'mis. Servis Dinamo, Las Knalpot, Genset, AC Toko, dll'
+        : 'mis. AC Split Kamar 1, Baju 5kg, iPhone 13, dll';
+    final registeredTargetTab = isOtomotif ? 'Kendaraan Terdaftar' : 'Data Terdaftar';
+
+    // --- Sumbu 2: istilah nav/inventori, ikut businessType ---
+    String woListLabel;
+    switch (resolvedBusinessType) {
       case 'jasa':
-        return const AppTerms._(
-          businessType: 'jasa',
-          targetLabel: 'Objek / Layanan',
-          targetHint: 'mis. AC Split Kamar 1, Baju 5kg, iPhone 13, dll',
-          complaintLabel: 'Instruksi / Catatan Layanan',
-          complaintHint: 'Tuliskan catatan pengerjaan atau permintaan pelanggan...',
-          woListLabel: 'Antrian Pesanan',
-          hasOdometer: false,
-          manualTargetLabel: 'Objek / Layanan',
-          manualTargetHint: 'mis. AC Split Kamar 1, Baju 5kg, iPhone 13, dll',
-          registeredTargetTab: 'Data Terdaftar',
-          manualTargetTab: 'Tulis Manual',
-          partNoun: 'Barang',
-          addPartLabel: 'Tambah Barang',
-          editPartLabel: 'Ubah Barang',
-          detailPartLabel: 'Detail Barang',
-          emptyPartTitle: 'Belum ada barang di inventori',
-          emptyPartSubtitle: 'Tambahkan barang atau perlengkapan untuk mencatat stok toko.',
-          deletePartTitle: 'Hapus Barang',
-          deletePartConfirm: 'Hapus barang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
-        );
+        woListLabel = 'Antrian Pesanan';
+        break;
       case 'barang':
-        return const AppTerms._(
-          businessType: 'barang',
-          targetLabel: 'Barang / Layanan',
-          targetHint: 'Nama barang atau rincian pesanan...',
-          complaintLabel: 'Catatan Transaksi',
-          complaintHint: 'Catatan tambahan...',
-          woListLabel: 'Pesanan',
-          hasOdometer: false,
-          manualTargetLabel: 'Barang / Layanan',
-          manualTargetHint: 'Nama barang atau rincian pesanan...',
-          registeredTargetTab: 'Data Terdaftar',
-          manualTargetTab: 'Tulis Manual',
-          partNoun: 'Barang',
-          addPartLabel: 'Tambah Barang',
-          editPartLabel: 'Ubah Barang',
-          detailPartLabel: 'Detail Barang',
-          emptyPartTitle: 'Belum ada barang di inventori',
-          emptyPartSubtitle: 'Tambahkan barang untuk mulai mencatat stok toko Anda.',
-          deletePartTitle: 'Hapus Barang',
-          deletePartConfirm: 'Hapus barang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
-        );
-      case 'keduanya':
+        woListLabel = 'Pesanan';
+        break;
       default:
-        return const AppTerms._(
-          businessType: 'keduanya',
-          targetLabel: 'Kendaraan',
-          targetHint: 'Cari plat nomor...',
-          complaintLabel: 'Keluhan',
-          complaintHint: 'Tuliskan keluhan atau kendala kendaraan...',
-          woListLabel: 'Antrian Servis',
-          hasOdometer: true,
-          manualTargetLabel: 'Layanan / Objek Servis',
-          manualTargetHint: 'mis. Servis Dinamo, Las Knalpot, Genset, AC Toko, dll',
-          registeredTargetTab: 'Kendaraan Terdaftar',
-          manualTargetTab: 'Tulis Manual',
-          partNoun: 'Barang',
-          addPartLabel: 'Tambah Barang',
-          editPartLabel: 'Ubah Barang',
-          detailPartLabel: 'Detail Barang',
-          emptyPartTitle: 'Belum ada barang di inventori',
-          emptyPartSubtitle: 'Tambahkan barang untuk mulai mencatat stok toko Anda.',
-          deletePartTitle: 'Hapus Barang',
-          deletePartConfirm: 'Hapus barang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
-        );
+        woListLabel = 'Antrian Servis';
     }
+
+    return AppTerms._(
+      businessType: resolvedBusinessType,
+      serviceMode: resolvedServiceMode,
+      targetLabel: targetLabel,
+      targetHint: targetHint,
+      complaintLabel: complaintLabel,
+      complaintHint: complaintHint,
+      hasOdometer: isOtomotif,
+      manualTargetLabel: manualTargetLabel,
+      manualTargetHint: manualTargetHint,
+      registeredTargetTab: registeredTargetTab,
+      manualTargetTab: 'Tulis Manual',
+      woListLabel: woListLabel,
+      partNoun: 'Barang',
+      addPartLabel: 'Tambah Barang',
+      editPartLabel: 'Ubah Barang',
+      detailPartLabel: 'Detail Barang',
+      emptyPartTitle: 'Belum ada barang di inventori',
+      emptyPartSubtitle: 'Tambahkan barang atau perlengkapan untuk mencatat stok toko.',
+      deletePartTitle: 'Hapus Barang',
+      deletePartConfirm:
+          'Hapus barang ini beserta seluruh kartu stoknya? Tindakan tidak dapat dibatalkan.',
+    );
+  }
+
+  /// Backward-compatible factory method for existing callers
+  factory AppTerms.forBusinessType(String? businessType, [String? serviceMode]) {
+    return AppTerms.forShop(businessType: businessType, serviceMode: serviceMode);
   }
 }
 
 final appTermsProvider = Provider<AppTerms>((ref) {
   final session = ref.watch(sessionProvider).valueOrNull;
-  return AppTerms.forBusinessType(session?.shopBusinessType);
+  return AppTerms.forShop(
+    businessType: session?.shopBusinessType,
+    serviceMode: session?.shopServiceMode,
+  );
 });

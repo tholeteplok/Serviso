@@ -72,6 +72,21 @@ class SessionController extends AsyncNotifier<Profile?> {
     );
     state = AsyncData(updated);
   }
+
+  void updateShopSettings({
+    required String businessType,
+    required String serviceMode,
+    String? shopName,
+  }) {
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+        shopBusinessType: businessType,
+        shopServiceMode: serviceMode,
+        shopName: shopName ?? current.shopName,
+      ));
+    }
+  }
 }
 
 

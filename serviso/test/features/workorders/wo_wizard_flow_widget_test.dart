@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:serviso/core/theme/app_terms.dart';
+import 'package:serviso/features/auth/controllers/session_controller.dart';
+import 'package:serviso/features/auth/data/auth_repository.dart';
+import 'package:serviso/features/auth/models/profile.dart';
 import 'package:serviso/features/customers/controllers/customer_providers.dart';
 import 'package:serviso/features/customers/data/fakes.dart';
 import 'package:serviso/features/customers/models/vehicle.dart';
@@ -171,5 +175,50 @@ void main() {
     expect(find.text('Pilih atau buat kendaraan dulu'), findsOneWidget);
     // Tetap di Step 0
     expect(find.text('Pilih kendaraan'), findsOneWidget);
+  });
+
+  testWidgets('WoWizardScreen: serviceMode umum -> otomatis jalur non-kendaraan dan escape hatch bekerja', (tester) async {
+    const sessionProfile = Profile(
+      id: 'u1',
+      username: 'admin',
+      fullName: 'Owner',
+      role: UserRole.admin,
+      isActive: true,
+      shopBusinessType: 'jasa',
+      shopServiceMode: 'umum',
+    );
+    final fakeAuth = FakeAuthRepository()..profileToReturn = sessionProfile;
+
+    final terms = AppTerms.forShop(businessType: 'jasa', serviceMode: 'umum');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vehicleRepositoryProvider.overrideWithValue(vehicleRepo),
+          customerRepositoryProvider.overrideWithValue(customerRepo),
+          workOrderRepositoryProvider.overrideWithValue(woRepo),
+          partRepositoryProvider.overrideWithValue(partRepo),
+          techniciansProvider.overrideWith((ref) => Future.value([])),
+          authRepositoryProvider.overrideWithValue(fakeAuth),
+          appTermsProvider.overrideWithValue(terms),
+        ],
+        child: const MaterialApp(
+          home: WoWizardScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verifikasi otomatis masuk ke input objek/layanan (non-kendaraan)
+    expect(find.text('Input Objek / Layanan'), findsOneWidget);
+    expect(find.text('+ Ada data kendaraan terdaftar?'), findsOneWidget);
+
+    // Ketuk escape hatch
+    await tester.tap(find.text('+ Ada data kendaraan terdaftar?'));
+    await tester.pumpAndSettle();
+
+    // Sekarang beralih ke jalur kendaraan
+    expect(find.text('Pilih objek / layanan'), findsOneWidget);
+    expect(find.text('+ Servis tanpa kendaraan terdaftar'), findsOneWidget);
   });
 }

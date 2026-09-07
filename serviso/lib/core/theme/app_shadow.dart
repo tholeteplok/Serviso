@@ -2,85 +2,90 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// DS v2 — Warm Industrial Soft Brutalism: Hybrid shadows
-/// Soft diffuse (empuk) + hard ink offset (tegas).
-/// Spec: docs/serviso-design-system-v2.html -- soft brutalsim + L0-L3
+/// Craftsman Field Ledger (v3.0): 2-Tier Elevation System
+/// Tier 1: Flat Grounded (0px shadow) for dense repeated data (100+ inventory parts).
+/// Tier 2: Warm Offset Shadow (Offset(3, 3) in #332E28 ~28%) for CTAs, active cards, and modals.
 abstract final class AppShadow {
-  /// L0 — Soft only: surface lembut (sheet/divider) — 0 6px 18px 6%
+  /// Tier 1 — Flat Grounded: 0 shadow (dense lists, 100+ inventory cards, tables)
+  static const List<BoxShadow> tier1Flat = <BoxShadow>[];
+  static const List<BoxShadow> tier1 = tier1Flat;
+
+  /// L0 — Soft diffuse ambient only
   static const soft = BoxShadow(
-    offset: Offset(0, 6),
-    blurRadius: 18,
+    offset: Offset(0, 4),
+    blurRadius: 14,
     spreadRadius: 0,
-    color: Color(0x0F111111),
+    color: AppColors.shadowSubtle,
   );
 
   static const softLg = BoxShadow(
-    offset: Offset(0, 16),
-    blurRadius: 40,
+    offset: Offset(0, 10),
+    blurRadius: 24,
     spreadRadius: 0,
-    color: Color(0x1A111111), // 10%
+    color: AppColors.shadowSubtle,
   );
 
-  /// L1 — Card hybrid: WO card / stok — soft 8/24 6% + hard 4px #111
+  /// L1 / Tier 2 — Warm Offset Card: Active WO card, active cashier bill
   static const card = BoxShadow(
-    offset: Offset(4, 4),
+    offset: Offset(3, 3),
     blurRadius: 0,
     spreadRadius: 0,
-    color: AppColors.ink900,
+    color: AppColors.shadowWarm,
   );
 
   static const cardSoft = BoxShadow(
-    offset: Offset(0, 8),
-    blurRadius: 24,
+    offset: Offset(0, 4),
+    blurRadius: 12,
     spreadRadius: 0,
-    color: Color(0x0F111111),
+    color: AppColors.shadowSubtle,
   );
 
-  /// L2 — Modal hybrid: dialog / sheet — soft 16/40 10% + hard 6px #111
+  /// L2 — Modal / Dialog
   static const modal = BoxShadow(
-    offset: Offset(6, 6),
+    offset: Offset(4, 4),
     blurRadius: 0,
     spreadRadius: 0,
-    color: AppColors.ink900,
+    color: AppColors.shadowWarm,
   );
 
   static const modalSoft = BoxShadow(
-    offset: Offset(0, 16),
-    blurRadius: 40,
+    offset: Offset(0, 10),
+    blurRadius: 24,
     spreadRadius: 0,
-    color: Color(0x1A111111),
+    color: AppColors.shadowSubtle,
   );
 
-  /// L3 — Float: nav / toast depth — soft 20/48 12% + hard 8px #111
+  /// L3 — Floating navigation bar / toast
   static const floating = BoxShadow(
-    offset: Offset(8, 8),
+    offset: Offset(4, 4),
     blurRadius: 0,
     spreadRadius: 0,
-    color: AppColors.ink900,
+    color: AppColors.shadowWarm,
   );
 
   static const floatingSoft = BoxShadow(
-    offset: Offset(0, 20),
-    blurRadius: 48,
+    offset: Offset(0, 12),
+    blurRadius: 28,
     spreadRadius: 0,
-    color: Color(0x1F111111), // 12%
+    color: AppColors.shadowSubtle,
   );
 
-  // Convenience lists matching CSS vars
+  // Convenience lists
   static const List<BoxShadow> l0 = [soft];
-  static const List<BoxShadow> l1 = [cardSoft, card];
-  static const List<BoxShadow> l2 = [modalSoft, modal];
-  static const List<BoxShadow> l3 = [floatingSoft, floating];
+  static const List<BoxShadow> l1 = [card];
+  static const List<BoxShadow> l2 = [modal];
+  static const List<BoxShadow> l3 = [floating];
+  static const List<BoxShadow> tier2 = [card];
 
-  // Button specific — primary/amber: soft + 2px hard
+  // Button specific — primary/amber: warm offset 3px normal, 1px pressed
   static const buttonHard = BoxShadow(
-    offset: Offset(2, 2),
+    offset: Offset(3, 3),
     blurRadius: 0,
-    color: AppColors.ink900,
+    color: AppColors.shadowWarm,
   );
   static const buttonHardPressed = BoxShadow(
     offset: Offset(1, 1),
     blurRadius: 0,
-    color: AppColors.ink900,
+    color: AppColors.shadowWarm,
   );
 }

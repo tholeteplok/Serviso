@@ -38,6 +38,8 @@ class NeoLineChart extends StatelessWidget {
     this.valueFormatter,
     this.emptyTitle = 'Belum ada data transaksi',
     this.emptyMessage = 'Transaksi akan muncul di grafik setelah dicatat.',
+    this.lineColor,
+    this.areaColor,
   });
 
   final List<NeoLineChartPoint> points;
@@ -45,6 +47,8 @@ class NeoLineChart extends StatelessWidget {
   final String Function(double value)? valueFormatter;
   final String emptyTitle;
   final String emptyMessage;
+  final Color? lineColor;
+  final Color? areaColor;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +69,9 @@ class NeoLineChart extends StatelessWidget {
         peakIndex = i;
       }
     }
+
+    final effectiveLineColor = lineColor ?? AppChartTheme.seriesTrend;
+    final effectiveAreaColor = areaColor ?? effectiveLineColor.withValues(alpha: 0.15);
 
     return SizedBox(
       height: height,
@@ -163,7 +170,7 @@ class NeoLineChart extends StatelessWidget {
               spots: points.map((p) => FlSpot(p.x, p.y)).toList(),
               isCurved: true,
               curveSmoothness: 0.25,
-              color: AppChartTheme.seriesPrimary,
+              color: effectiveLineColor,
               barWidth: 2.4,
               isStrokeCapRound: true,
               dotData: FlDotData(
@@ -182,13 +189,13 @@ class NeoLineChart extends StatelessWidget {
                     radius: 3.5,
                     color: Colors.white,
                     strokeWidth: 1.5,
-                    strokeColor: AppChartTheme.seriesPrimary,
+                    strokeColor: effectiveLineColor,
                   );
                 },
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: AppChartTheme.seriesPrimary.withValues(alpha: 0.12),
+                color: effectiveAreaColor,
               ),
             ),
           ],

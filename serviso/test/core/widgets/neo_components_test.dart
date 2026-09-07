@@ -4,6 +4,7 @@ import 'package:serviso/core/theme/app_icons.dart';
 import 'package:serviso/core/widgets/dashed_divider.dart';
 import 'package:serviso/core/widgets/neo_card.dart';
 import 'package:serviso/core/widgets/neo_progress_bar.dart';
+import 'package:serviso/core/widgets/neo_radio_card_group.dart';
 import 'package:serviso/core/widgets/neo_search_bar.dart';
 import 'package:serviso/core/widgets/neo_segment_control.dart';
 import 'package:serviso/core/widgets/neo_stepper.dart';
@@ -208,6 +209,47 @@ void main() {
       );
 
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('NeoRadioCardGroup', () {
+    testWidgets('renders options and switches selection when tapped', (tester) async {
+      String selected = 'barang';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => NeoRadioCardGroup<String>(
+                selectedValue: selected,
+                onValueChanged: (val) => setState(() => selected = val),
+                options: const [
+                  NeoRadioOption(
+                    value: 'barang',
+                    title: 'Jual Barang',
+                    subtitle: 'Mode retail & stok barang.',
+                  ),
+                  NeoRadioOption(
+                    value: 'jasa',
+                    title: 'Jasa',
+                    subtitle: 'Mode pengerjaan pesanan/servis.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Jual Barang'), findsOneWidget);
+      expect(find.text('Mode retail & stok barang.'), findsOneWidget);
+      expect(find.text('Jasa'), findsOneWidget);
+      expect(find.text('Mode pengerjaan pesanan/servis.'), findsOneWidget);
+
+      await tester.tap(find.text('Jasa'));
+      await tester.pumpAndSettle();
+
+      expect(selected, 'jasa');
     });
   });
 }

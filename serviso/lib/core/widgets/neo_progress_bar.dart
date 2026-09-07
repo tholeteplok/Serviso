@@ -12,7 +12,7 @@ class NeoProgressBar extends StatelessWidget {
     this.height = 12.0,
     this.dotSize = 16.0,
     this.backgroundColor = AppColors.bgSurface,
-    this.progressColor = AppColors.accentPrimary,
+    this.progressColor = AppColors.pastelMint,
     this.borderColor = AppColors.borderInk,
     this.dotColor,
     this.showDot = true,
@@ -78,27 +78,25 @@ class NeoProgressBar extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 clipBehavior: Clip.none,
                 children: [
-                  // Track background & border
+                  // Track background, inner fill & border
                   Container(
                     width: totalWidth,
                     height: height,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: backgroundColor,
                       borderRadius: AppRadius.pill,
                       border: Border.all(color: borderColor, width: 1.5),
                     ),
+                    alignment: Alignment.centerLeft,
+                    child: fillWidth > 0
+                        ? Container(
+                            width: fillWidth,
+                            height: height,
+                            color: progressColor,
+                          )
+                        : null,
                   ),
-
-                  // Progress Fill
-                  if (fillWidth > 0)
-                    Container(
-                      width: fillWidth,
-                      height: height,
-                      decoration: BoxDecoration(
-                        color: progressColor,
-                        borderRadius: AppRadius.pill,
-                      ),
-                    ),
 
                   // Leading Thumb Dot
                   if (showDot && animatedValue > 0)
@@ -147,11 +145,11 @@ class NeoProgressBar extends StatelessWidget {
         borderRadius: AppRadius.pill,
         border: Border.all(color: borderColor, width: 1.5),
       ),
-      child: const ClipRRect(
+      child: ClipRRect(
         borderRadius: AppRadius.pill,
         child: LinearProgressIndicator(
           backgroundColor: Colors.transparent,
-          color: AppColors.accentPrimary,
+          color: progressColor,
         ),
       ),
     );

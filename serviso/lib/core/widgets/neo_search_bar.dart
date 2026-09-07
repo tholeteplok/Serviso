@@ -4,7 +4,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_radius.dart';
-import '../theme/app_shadow.dart';
 import '../theme/app_typography.dart';
 
 /// Tactile Pop-Brutalist SearchBar with 1.5px black border,
@@ -41,14 +40,6 @@ class NeoSearchBar extends StatelessWidget {
           color: AppColors.borderStrong,
           width: 1.5,
         ),
-        boxShadow: const [
-          AppShadow.cardSoft,
-          BoxShadow(
-            color: AppColors.borderStrong,
-            offset: Offset(3, 3),
-            blurRadius: 0,
-          ),
-        ],
       ),
       child: Row(
         children: [

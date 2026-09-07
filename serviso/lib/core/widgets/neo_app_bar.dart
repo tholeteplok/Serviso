@@ -77,7 +77,7 @@ class NeoAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: AppColors.borderInk,
+                        color: AppColors.shadowWarm,
                         offset: Offset(1.5, 1.5),
                         blurRadius: 0,
                       ),
@@ -101,8 +101,8 @@ class NeoAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (effectiveTitle == null && title != null) {
       effectiveTitle = Text(
         title!,
-        style: AppTypography.chakra(
-          fontSize: 20,
+        style: AppTypography.kalam(
+          fontSize: 22,
           fontWeight: FontWeight.w700,
           color: AppColors.ink900,
         ),

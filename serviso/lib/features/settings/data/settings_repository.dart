@@ -13,6 +13,7 @@ abstract class SettingsRepository {
     String? phone,
     String? receiptNotes,
     String? businessType,
+    String? serviceMode,
   });
 }
 
@@ -35,7 +36,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
         if (shopId != null) {
           final shop = await _client
               .from('shops')
-              .select('name, address, phone, receipt_notes, business_type')
+              .select('name, address, phone, receipt_notes, business_type, service_mode')
               .eq('id', shopId)
               .maybeSingle();
           if (shop != null) {
@@ -45,6 +46,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
               phone: shop['phone'] as String?,
               receiptNotes: shop['receipt_notes'] as String?,
               businessType: (shop['business_type'] as String?) ?? 'keduanya',
+              serviceMode: (shop['service_mode'] as String?) ?? 'otomotif',
             );
           }
         }
@@ -72,6 +74,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
     String? phone,
     String? receiptNotes,
     String? businessType,
+    String? serviceMode,
   }) async {
     final cleanAddress =
         address?.trim().isEmpty == true ? null : address?.trim();
@@ -94,17 +97,24 @@ class SupabaseSettingsRepository implements SettingsRepository {
 
     if (shopId != null) {
       try {
+        final updatePayload = <String, dynamic>{
+          'name': shopName,
+          'address': cleanAddress,
+          'phone': cleanPhone,
+          'receipt_notes': cleanReceiptNotes,
+        };
+        if (businessType != null) {
+          updatePayload['business_type'] = businessType;
+        }
+        if (serviceMode != null) {
+          updatePayload['service_mode'] = serviceMode;
+        }
+
         final updated = await _client
             .from('shops')
-            .update({
-              'name': shopName,
-              'address': cleanAddress,
-              'phone': cleanPhone,
-              'receipt_notes': cleanReceiptNotes,
-              'business_type': ?businessType,
-            })
+            .update(updatePayload)
             .eq('id', shopId)
-            .select('name, address, phone, receipt_notes, business_type')
+            .select('name, address, phone, receipt_notes, business_type, service_mode')
             .maybeSingle();
         if (updated != null) {
           return AppSettings(
@@ -113,9 +123,12 @@ class SupabaseSettingsRepository implements SettingsRepository {
             phone: updated['phone'] as String?,
             receiptNotes: updated['receipt_notes'] as String?,
             businessType: (updated['business_type'] as String?) ?? (businessType ?? 'keduanya'),
+            serviceMode: (updated['service_mode'] as String?) ?? (serviceMode ?? 'otomotif'),
           );
         }
+        throw const SettingsException('Data toko tidak ditemukan atau gagal diperbarui');
       } catch (e) {
+        if (e is SettingsException) rethrow;
         throw SettingsException(
           e is PostgrestException ? e.message : 'Pengaturan gagal diperbarui',
         );
@@ -150,6 +163,8 @@ class SupabaseSettingsRepository implements SettingsRepository {
       address: cleanAddress,
       phone: cleanPhone,
       receiptNotes: cleanReceiptNotes,
+      businessType: businessType ?? 'keduanya',
+      serviceMode: serviceMode ?? 'otomotif',
     );
   }
 }
@@ -199,6 +214,7 @@ class FakeSettingsRepository implements SettingsRepository {
     String? phone,
     String? receiptNotes,
     String? businessType,
+    String? serviceMode,
   }) async {
     if (!allowAdmin) {
       throw const SettingsException(
@@ -214,6 +230,7 @@ class FakeSettingsRepository implements SettingsRepository {
       phone: phone,
       receiptNotes: receiptNotes,
       businessType: businessType ?? _settings.businessType,
+      serviceMode: serviceMode ?? _settings.serviceMode,
     );
     return _settings;
   }

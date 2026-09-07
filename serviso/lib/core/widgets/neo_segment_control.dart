@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
-import '../theme/app_shadow.dart';
 import '../theme/app_typography.dart';
 
 class NeoSegmentItem<T> {
@@ -31,7 +30,7 @@ class NeoSegmentControl<T> extends StatelessWidget {
     required this.selectedValue,
     required this.onValueChanged,
     required this.items,
-    this.activeColor = AppColors.accentPrimary,
+    this.activeColor = AppColors.pastelMint,
     this.height = 46.0,
     this.containerColor = AppColors.bgSurface,
   });
@@ -56,13 +55,6 @@ class NeoSegmentControl<T> extends StatelessWidget {
           color: AppColors.borderInk,
           width: 1.5,
         ),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.borderInk,
-            offset: Offset(2.5, 2.5),
-            blurRadius: 0,
-          ),
-        ],
       ),
       child: Row(
         children: items.map((item) {
@@ -82,12 +74,6 @@ class NeoSegmentControl<T> extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected ? currentActiveColor : Colors.transparent,
                   borderRadius: AppRadius.pill,
-                  border: isSelected
-                      ? Border.all(color: AppColors.borderInk, width: 1.5)
-                      : null,
-                  boxShadow: isSelected
-                      ? const [AppShadow.buttonHard]
-                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

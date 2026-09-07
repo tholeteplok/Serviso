@@ -14,6 +14,7 @@ class Profile {
     this.shopSlug,
     this.shopIsActive = true,
     this.shopBusinessType = 'keduanya',
+    this.shopServiceMode = 'otomotif',
     this.isPlatformAdmin = false,
   });
 
@@ -29,12 +30,16 @@ class Profile {
   final String? shopSlug;
   final bool shopIsActive;
   final String shopBusinessType;
+  final String shopServiceMode;
   final bool isPlatformAdmin;
 
   bool get isAdmin => role == UserRole.admin;
 
   factory Profile.fromMap(Map<String, dynamic> map) {
-    final shopsMap = map['shops'] as Map?;
+    final rawShops = map['shops'];
+    final shopsMap = rawShops is List && rawShops.isNotEmpty
+        ? (rawShops.first is Map ? rawShops.first as Map : null)
+        : (rawShops is Map ? rawShops : null);
     return Profile(
       id: map['id'] as String,
       username: map['username'] as String,
@@ -51,6 +56,10 @@ class Profile {
           (map['shop_business_type'] as String?) ??
           (map['business_type'] as String?) ??
           'keduanya',
+      shopServiceMode: (shopsMap?['service_mode'] as String?) ??
+          (map['shop_service_mode'] as String?) ??
+          (map['service_mode'] as String?) ??
+          'otomotif',
       isPlatformAdmin: (map['is_platform_admin'] as bool?) ?? false,
     );
   }
@@ -67,6 +76,7 @@ class Profile {
         'shop_slug': shopSlug,
         'shop_is_active': shopIsActive,
         'shop_business_type': shopBusinessType,
+        'shop_service_mode': shopServiceMode,
         'is_platform_admin': isPlatformAdmin,
       };
 
@@ -83,6 +93,7 @@ class Profile {
     String? shopSlug,
     bool? shopIsActive,
     String? shopBusinessType,
+    String? shopServiceMode,
     bool? isPlatformAdmin,
   }) =>
       Profile(
@@ -98,6 +109,7 @@ class Profile {
         shopSlug: shopSlug ?? this.shopSlug,
         shopIsActive: shopIsActive ?? this.shopIsActive,
         shopBusinessType: shopBusinessType ?? this.shopBusinessType,
+        shopServiceMode: shopServiceMode ?? this.shopServiceMode,
         isPlatformAdmin: isPlatformAdmin ?? this.isPlatformAdmin,
       );
 }

@@ -4,6 +4,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 abstract final class AppTypography {
+  static TextStyle kalam({
+    double? fontSize,
+    FontWeight fontWeight = FontWeight.w700,
+    Color color = AppColors.ink,
+    double letterSpacing = 0,
+  }) =>
+      GoogleFonts.kalam(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+      );
+
   static TextStyle chakra({
     double? fontSize,
     FontWeight fontWeight = FontWeight.w700,
@@ -43,7 +56,7 @@ abstract final class AppTypography {
         letterSpacing: letterSpacing,
       );
 
-  /// DS v2 tablet kasir: displayLarge 48 desktop, 40 di width <920
+  /// DS v3 tablet kasir: displayLarge 48 desktop, 40 di width <920
   static double displayLargeSize(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     return w < 920 ? 40 : 48;
@@ -59,16 +72,20 @@ abstract final class AppTypography {
       displayColor: ink,
     );
     return base.copyWith(
-      displayLarge: chakra(fontSize: 48, fontWeight: FontWeight.w700),
-      displayMedium: chakra(fontSize: 40, fontWeight: FontWeight.w700),
-      displaySmall: chakra(fontSize: 34, fontWeight: FontWeight.w700),
-      headlineLarge: chakra(fontSize: 30, fontWeight: FontWeight.w700),
-      headlineMedium: chakra(fontSize: 26, fontWeight: FontWeight.w700),
-      headlineSmall: chakra(fontSize: 22, fontWeight: FontWeight.w700),
+      displayLarge: kalam(fontSize: 42, fontWeight: FontWeight.w700),
+      displayMedium: kalam(fontSize: 34, fontWeight: FontWeight.w700),
+      displaySmall: kalam(fontSize: 28, fontWeight: FontWeight.w700),
+      headlineLarge: kalam(fontSize: 26, fontWeight: FontWeight.w700),
+      headlineMedium: kalam(fontSize: 22, fontWeight: FontWeight.w700),
+      headlineSmall: kalam(fontSize: 20, fontWeight: FontWeight.w700),
       titleLarge:
-          base.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: ink),
+          kalam(fontSize: 18, fontWeight: FontWeight.w700, color: ink),
       titleMedium:
-          base.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: ink),
+          base.titleMedium?.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
       titleSmall:
           base.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: ink),
       bodyLarge: base.bodyLarge?.copyWith(color: ink),

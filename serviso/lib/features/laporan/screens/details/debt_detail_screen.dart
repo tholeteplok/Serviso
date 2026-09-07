@@ -518,13 +518,24 @@ class _DebtItemCard extends StatelessWidget {
           ),
           if (isPartiallyPaid) ...[
             const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: debt.paymentProgress,
-                backgroundColor: AppColors.pastelPink.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentPrimary),
-                minHeight: 6,
+            Container(
+              height: 7,
+              decoration: BoxDecoration(
+                color: AppColors.pastelPink.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: AppColors.borderHairline,
+                  width: 1.0,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: debt.paymentProgress,
+                  backgroundColor: Colors.transparent,
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.pastelMint),
+                  minHeight: 7,
+                ),
               ),
             ),
             const SizedBox(height: 4),

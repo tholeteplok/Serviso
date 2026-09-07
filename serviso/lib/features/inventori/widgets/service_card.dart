@@ -23,25 +23,11 @@ class ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.borderStrong, width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F111111),
-            offset: Offset(0, 2),
-            blurRadius: 4,
-          ),
-          BoxShadow(
-            color: Color(0xFF111111),
-            offset: Offset(0, 3.5),
-            blurRadius: 0,
-          ),
-        ],
+        border: Border.all(color: AppColors.borderStrong, width: 1.2),
       ),
       child: Material(
         color: Colors.transparent,
@@ -82,8 +68,9 @@ class ServiceCard extends StatelessWidget {
                     children: [
                       Text(
                         service.name,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.ink900,
                         ),
                         maxLines: 1,

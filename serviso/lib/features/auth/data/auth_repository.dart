@@ -146,23 +146,41 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final data = await _client
           .from('profiles')
-          .select('*, shops(name, slug, is_active, business_type)')
+          .select('*, shops(name, slug, is_active, business_type, service_mode)')
           .eq('id', userId)
           .maybeSingle();
       if (data != null) {
         return Profile.fromMap(data);
       }
-    } catch (_) {
-      // Fallback jika relasi schema belum termuat di cache
-      final data = await _client
+    } catch (_) {}
+
+    try {
+      // Fallback: ambil profiles dan shops secara terpisah jika relasi schema belum termuat di cache PostgREST
+      final profileData = await _client
           .from('profiles')
           .select()
           .eq('id', userId)
           .maybeSingle();
-      if (data != null) {
-        return Profile.fromMap(data);
+      if (profileData != null) {
+        final shopId = profileData['shop_id'] as String?;
+        Map<String, dynamic>? shopData;
+        if (shopId != null) {
+          try {
+            shopData = await _client
+                .from('shops')
+                .select('name, slug, is_active, business_type, service_mode')
+                .eq('id', shopId)
+                .maybeSingle();
+          } catch (_) {}
+        }
+        final merged = Map<String, dynamic>.from(profileData);
+        if (shopData != null) {
+          merged['shops'] = shopData;
+        }
+        return Profile.fromMap(merged);
       }
-    }
+    } catch (_) {}
+
     throw const AuthException(
       'Profil tidak ditemukan. Hubungi pemilik bengkel.',
     );

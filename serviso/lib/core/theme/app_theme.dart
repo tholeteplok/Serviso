@@ -46,7 +46,11 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTypography.chakra(fontSize: 20),
+        titleTextStyle: AppTypography.kalam(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink900,
+        ),
       ),
       cardTheme: const CardThemeData(
         color: AppColors.bgSurface,
@@ -54,7 +58,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(color: AppColors.borderStrong, width: 1.5),
+          side: BorderSide(color: AppColors.borderStrong, width: 1.2),
         ),
       ),
       dividerTheme: const DividerThemeData(

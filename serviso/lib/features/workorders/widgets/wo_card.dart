@@ -2,142 +2,154 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/wo_status.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/neo_card.dart';
-import '../../../core/widgets/plate_chip.dart';
-import '../../../core/widgets/service_label_chip.dart';
+import '../../../core/widgets/status_stamp.dart';
 import '../models/payment.dart';
 import '../models/work_order.dart';
 
+/// Authentic Work Order card aligned with serviso-ops-dashboard.html (.wo-card):
+/// - Pastel status header strip with WO number and tilted -5° StatusStamp.
+/// - Clean white body with Kalam bold vehicle/service title.
+/// - Plate number, mechanic, and cost in sharp IBM Plex Mono tabular format.
 class WoCard extends StatelessWidget {
-  const WoCard({super.key, required this.order, required this.onTap});
+  const WoCard({
+    super.key,
+    required this.order,
+    required this.onTap,
+  });
 
   final WorkOrder order;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = AppTypography.textTheme();
-    final initial = (order.assignedName?.trim().isNotEmpty == true)
-        ? order.assignedName!.trim()[0].toUpperCase()
-        : null;
+    final title = (order.vehicleDesc?.trim().isNotEmpty == true)
+        ? '${order.vehicleDesc} — ${order.serviceLabel ?? order.complaint ?? 'Servis'}'
+        : (order.customerName?.trim().isNotEmpty == true)
+            ? '${order.customerName} — ${order.serviceLabel ?? order.complaint ?? 'Servis'}'
+            : (order.serviceLabel ?? order.complaint ?? 'Servis');
 
-    return NeoCard(
+    final cost = order.total;
+
+    return NeoCard.pressable(
       margin: const EdgeInsets.only(bottom: 12),
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      borderWidth: 2.0,
-      borderColor: AppColors.borderInk,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      headerColor: order.status.bgColor,
+      header: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '${order.woNumber} · ${timeId(order.createdAt)}',
+            style: AppTypography.mono(
+              fontSize: 12,
+              color: AppColors.ink900,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          StatusStamp(
+            label: order.status.label,
+            bgColor: order.status.bgColor,
+            textColor: order.status.textColor,
+            fontSize: 11,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          ),
+        ],
+      ),
       child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Vehicle title in Kalam font
+          Text(
+            title,
+            style: AppTypography.kalam(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink900,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+
+          // Plate, Mechanic, Pit, and Cost in IBM Plex Mono & Inter
+          Row(
             children: [
-              Row(
-                children: [
-                  if (order.plateNo != null && order.plateNo!.isNotEmpty)
-                    PlateChip(plateText: order.plateNo!)
-                  else if (order.serviceLabel != null && order.serviceLabel!.isNotEmpty)
-                    ServiceLabelChip(label: order.serviceLabel!)
-                  else
-                    const ServiceLabelChip(label: 'Jasa / Servis'),
-                  const Spacer(),
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: initial == null
-                          ? AppColors.pastelCream
-                          : AppColors.pastelMint,
-                      border: Border.all(
-                        color: AppColors.borderInk,
-                        width: 1.5,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initial ?? '—',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: AppColors.ink900,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+              if (order.plateNo != null && order.plateNo!.isNotEmpty) ...[
+                Text(
+                  order.plateNo!,
+                  style: AppTypography.mono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink900,
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                order.customerName ?? 'Pelanggan',
-                style: textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                order.complaint ?? '—',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (order.status == WoStatus.selesai) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: order.isPaid
-                            ? AppColors.statusDone
-                            : AppColors.pastelPink,
-                        borderRadius: AppRadius.pill,
-                        border: Border.all(
-                          color: AppColors.borderInk,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Text(
-                        order.paymentStatusLabel,
-                        style: textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink900,
-                        ),
-                      ),
-                    ),
-                    if (order.isPaid && order.payMethod != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSurface,
-                          borderRadius: AppRadius.pill,
-                          border: Border.all(
-                            color: AppColors.borderInk,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(
-                          order.payMethod!.label,
-                          style: textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink900,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                ),
+                Text(
+                  ' · ',
+                  style: AppTypography.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
-              const SizedBox(height: 8),
+              if (order.assignedName != null && order.assignedName!.isNotEmpty) ...[
+                Text(
+                  order.assignedName!,
+                  style: AppTypography.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  ' · ',
+                  style: AppTypography.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
               Text(
-                timeId(order.createdAt),
+                cost > 0 ? rupiah(cost) : 'Rp 0',
                 style: AppTypography.mono(
                   fontSize: 12,
-                  color: AppColors.inkMuted,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink900,
                 ),
               ),
             ],
           ),
+
+          // Selesai status: payment label
+          if (order.status == WoStatus.selesai) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                StatusStamp(
+                  label: order.paymentStatusLabel,
+                  bgColor: order.isPaid
+                      ? AppColors.statusDone
+                      : AppColors.pastelPink,
+                  fontSize: 11,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                ),
+                if (order.isPaid && order.payMethod != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    order.payMethod!.label,
+                    style: AppTypography.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

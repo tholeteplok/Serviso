@@ -189,7 +189,7 @@ class _ThickBottomBorderButtonState extends State<ThickBottomBorderButton> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.borderInk,
+            color: AppColors.shadowWarm,
             offset: Offset(shadowDistance, shadowDistance),
             blurRadius: 0,
             spreadRadius: 0,

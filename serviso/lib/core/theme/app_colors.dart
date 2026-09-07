@@ -2,63 +2,71 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
-  // 2.1 Base Tokens — aligned with DS v2 "Warm Industrial Soft Brutalism"
+  // 2.1 Base Tokens — Craftsman Field Ledger (v3.0)
   // ---------------------------------------------------------------------------
-  /// Canvas background for main screens (#F9F5EF - warm grey-cream) — DS v2: --bg
-  static const bgBase = Color(0xFFF9F5EF);
+  /// Canvas background for main screens (#FAF6F0 - warm paper linen)
+  static const bgBase = Color(0xFFFAF6F0);
 
-  /// Card, sheet, modal background (#FFFFFF) — DS v2: --surface
+  /// Card, sheet, modal background (#FFFFFF - clean paper)
   static const bgSurface = Color(0xFFFFFFFF);
 
-  /// Primary dark ink (#111111 - studio brand contrast) — DS v2: --fg, --border-strong
-  static const ink900 = Color(0xFF111111);
+  /// Subtle card, secondary module background (#FFFDF9 - soft parchment)
+  static const bgSurfaceSubtle = Color(0xFFFFFDF9);
 
-  /// Secondary text color, subtitles, captions (#5E5E62) — DS v2: --muted, WCAG AA 4.5:1
-  static const textSecondary = Color(0xFF5E5E62);
+  /// Primary dark ink (#332E28 - warm deep charcoal, eliminates visual fatigue)
+  static const inkPrimary = Color(0xFF332E28);
+  static const ink900 = inkPrimary;
 
-  /// Subtle hairline divider & passive card outline — DS v2: #E8E0D6 (was ECE6DF)
-  static const borderHairline = Color(0xFFE8E0D6);
+  /// Secondary text color, subtitles, captions (#6C665F - WCAG AA 4.5:1)
+  static const textSecondary = Color(0xFF6C665F);
+
+  /// Subtle hairline divider & passive card outline (#E8E2D8)
+  static const borderHairline = Color(0xFFE8E2D8);
+
+  /// Warm shadow tokens (Tier 2 elevated actions)
+  static const shadowWarm = Color(0x47332E28); // ~28% warm charcoal
+  static const shadowSubtle = Color(0x1F332E28); // ~12% warm charcoal
 
   // ---------------------------------------------------------------------------
-  // 2.2 Pastel Palette
+  // 2.2 Pastel Palette (Soft Highlighter Wash)
   // ---------------------------------------------------------------------------
   static const pastelCream = Color(0xFFFFF3EF);
-  static const pastelYellow = Color(0xFFFFE59A);
+  static const pastelYellow = Color(0xFFFEF3C7);
   static const pastelAmber = pastelYellow;
-  static const pastelPink = Color(0xFFFFB5C1);
-  static const pastelMint = Color(0xFFB7E1D0);
-  static const pastelBlue = Color(0xFFA9D3FF);
-  static const pastelPurple = Color(0xFFD6C7FF);
+  static const pastelPink = Color(0xFFFFE4E6);
+  static const pastelMint = Color(0xFF9ADBB3);
+  static const pastelBlue = Color(0xFFE0F2FE);
+  static const pastelPurple = Color(0xFFEDE9FE);
 
   // ---------------------------------------------------------------------------
-  // 2.3 Functional Status Tokens (Fill Pastel, Border selalu ink900)
+  // 2.3 Functional Status Tokens (Fill Pastel, Border selalu inkPrimary #332E28)
   // ---------------------------------------------------------------------------
   /// Waiting / Menunggu (Yellow Pastel)
-  static const statusWaiting = Color(0xFFFFE59A);
-  static const statusWaitingBorder = ink900;
+  static const statusWaiting = Color(0xFFFEF3C7);
+  static const statusWaitingBorder = inkPrimary;
 
   /// In progress / Dikerjakan (Blue Pastel)
-  static const statusProgress = Color(0xFFA9D3FF);
-  static const statusProgressBorder = ink900;
+  static const statusProgress = Color(0xFFE0F2FE);
+  static const statusProgressBorder = inkPrimary;
 
   /// Done / Selesai / Lunas (Mint Pastel)
-  static const statusDone = Color(0xFFB7E1D0);
-  static const statusDoneBorder = ink900;
+  static const statusDone = Color(0xFF9ADBB3);
+  static const statusDoneBorder = inkPrimary;
 
   /// Cancelled / Dibatalkan / Critical Alert (Pink Pastel)
-  static const statusCancelled = Color(0xFFFFB5C1);
-  static const statusCancelledBorder = ink900;
+  static const statusCancelled = Color(0xFFFFE4E6);
+  static const statusCancelledBorder = inkPrimary;
 
   /// Danger / Error / Critical text or icon (#E8748A)
   static const statusDanger = Color(0xFFE8748A);
 
   // ---------------------------------------------------------------------------
-  // 2.4 Accents (Solid Mint Primary + Pastel Yellow Secondary)
+  // 2.4 Accents (Solid Charcoal Primary + Warm Cream Text)
   // ---------------------------------------------------------------------------
-  /// Primary CTA button, active navigation (#705774 - Neutral Lilac)
-  static const accentPrimary = Color(0xFF705774);
-  static const accentPrimaryBorder = ink900;
-  static const onPrimary = Colors.white;
+  /// Primary CTA button, active navigation (#332E28 - solid warm charcoal)
+  static const accentPrimary = Color(0xFF332E28);
+  static const accentPrimaryBorder = inkPrimary;
+  static const onPrimary = Color(0xFFFAF6F0);
 
   /// Highlights, secondary buttons, badges (#FFE59A)
   static const accentSecondary = Color(0xFFFFE59A);

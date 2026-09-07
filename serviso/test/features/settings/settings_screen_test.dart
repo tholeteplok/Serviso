@@ -13,6 +13,11 @@ import 'package:serviso/features/settings/screens/shop_settings_screen.dart';
 void main() {
   group('ShopSettingsScreen', () {
     testWidgets('loads existing settings and saves updated receipt notes and business type', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeSettingsRepo = FakeSettingsRepository();
       await fakeSettingsRepo.updateSettings(
         shopName: 'Bengkel Maju',
@@ -56,13 +61,10 @@ void main() {
       // Edit receipt notes
       final notesField = find.byKey(const Key('receipt_notes_field'));
       expect(notesField, findsOneWidget);
-
       await tester.enterText(notesField, 'Garansi servis 14 hari. Simpan nota ini.');
       await tester.pumpAndSettle();
 
-      // Scroll down to save button and tap
-      await tester.drag(find.byType(ListView), const Offset(0, -300));
-      await tester.pumpAndSettle();
+      // Tap save button
       final saveButton = find.byKey(const Key('save_settings_button'));
       expect(saveButton, findsOneWidget);
       await tester.tap(saveButton);
@@ -103,6 +105,128 @@ void main() {
 
       expect(find.text('Hanya pemilik yang dapat mengubah pengaturan toko.'), findsOneWidget);
       expect(find.byKey(const Key('receipt_notes_field')), findsNothing);
+    });
+
+    testWidgets('changes business type to Jual Barang with save confirmation dialog and hides Mode Jasa', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fakeSettingsRepo = FakeSettingsRepository();
+      await fakeSettingsRepo.updateSettings(
+        shopName: 'Toko Serba Ada',
+        businessType: 'keduanya',
+        serviceMode: 'otomotif',
+      );
+
+      const adminProfile = Profile(
+        id: 'admin1',
+        username: 'admin',
+        fullName: 'Owner',
+        role: UserRole.admin,
+        isActive: true,
+        shopBusinessType: 'keduanya',
+        shopServiceMode: 'otomotif',
+      );
+      final fakeAuthRepo = FakeAuthRepository()..profileToReturn = adminProfile;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const ShopSettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Mode Jasa is visible initially because businessType is 'keduanya'
+      expect(find.text('Mode Jasa'), findsOneWidget);
+
+      // Tap "Jual Barang"
+      await tester.tap(find.text('Jual Barang'));
+      await tester.pumpAndSettle();
+
+      // Verify no modal dialog pops up immediately on segment tap
+      expect(find.text('Ubah Jenis Usaha?'), findsNothing);
+
+      // Mode Jasa is now hidden because retail does not have services
+      expect(find.text('Mode Jasa'), findsNothing);
+
+      // Tap Save
+      final saveButton = find.byKey(const Key('save_settings_button'));
+      expect(saveButton, findsOneWidget);
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      // Confirmation dialog must appear on save
+      expect(find.text('Ubah Jenis Usaha?'), findsOneWidget);
+      await tester.tap(find.text('Ubah & Simpan'));
+      await tester.pumpAndSettle();
+
+      // Verify saved in repository
+      final saved = await fakeSettingsRepo.getSettings();
+      expect(saved.businessType, 'barang');
+    });
+
+    testWidgets('changes service mode to Umum and saves successfully', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fakeSettingsRepo = FakeSettingsRepository();
+      await fakeSettingsRepo.updateSettings(
+        shopName: 'Bengkel & Servis AC',
+        businessType: 'keduanya',
+        serviceMode: 'otomotif',
+      );
+
+      const adminProfile = Profile(
+        id: 'admin1',
+        username: 'admin',
+        fullName: 'Owner',
+        role: UserRole.admin,
+        isActive: true,
+        shopBusinessType: 'keduanya',
+        shopServiceMode: 'otomotif',
+      );
+      final fakeAuthRepo = FakeAuthRepository()..profileToReturn = adminProfile;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const ShopSettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Select Umum (Non-Kendaraan)
+      expect(find.text('Umum (Non-Kendaraan)'), findsOneWidget);
+      await tester.tap(find.text('Umum (Non-Kendaraan)'));
+      await tester.pumpAndSettle();
+
+      // Tap Save
+      final saveBtn = find.byKey(const Key('save_settings_button'));
+      expect(saveBtn, findsOneWidget);
+      await tester.tap(saveBtn);
+      await tester.pumpAndSettle();
+
+      // Verify saved
+      final saved = await fakeSettingsRepo.getSettings();
+      expect(saved.serviceMode, 'umum');
+      expect(saved.businessType, 'keduanya');
     });
   });
 

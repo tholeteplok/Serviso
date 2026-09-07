@@ -6,7 +6,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_dialog.dart';
-import '../../../core/widgets/neo_segment_control.dart';
+import '../../../core/widgets/neo_radio_card_group.dart';
 import '../../../core/widgets/neo_text_field.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../core/widgets/thick_bottom_border_button.dart';
@@ -28,18 +28,38 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
   final _notesController = TextEditingController();
   String _businessType = 'keduanya';
   String _initialBusinessType = 'keduanya';
+  String _serviceMode = 'otomotif';
+  bool _loading = false;
   bool _saving = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    final session = ref.read(sessionProvider).valueOrNull;
+    if (session != null) {
+      _businessType = session.shopBusinessType;
+      _initialBusinessType = session.shopBusinessType;
+      _serviceMode = session.shopServiceMode;
+      if (session.shopName != null && session.shopName!.isNotEmpty) {
+        _nameController.text = session.shopName!;
+      }
+    }
+
     final settings = ref.read(settingsProvider).valueOrNull;
     if (settings != null) {
       _applySettings(settings);
     } else {
+      _loading = true;
       ref.read(settingsRepositoryProvider).getSettings().then((value) {
-        if (mounted) _applySettings(value);
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _applySettings(value);
+          });
+        }
+      }).catchError((_) {
+        if (mounted) setState(() => _loading = false);
       });
     }
   }
@@ -52,6 +72,7 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
     setState(() {
       _businessType = settings.businessType;
       _initialBusinessType = settings.businessType;
+      _serviceMode = settings.serviceMode;
     });
   }
 
@@ -64,18 +85,8 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
     super.dispose();
   }
 
-  Future<void> _onBusinessTypeChanged(String newType) async {
+  void _onBusinessTypeChanged(String newType) {
     if (newType == _businessType) return;
-    if (newType == 'barang' && _initialBusinessType != 'barang') {
-      final confirmed = await showNeoConfirmDialog(
-        context: context,
-        title: 'Ubah Jenis Usaha?',
-        message:
-            'Mengubah ke Jual Barang akan menyembunyikan menu antrian order dan mengalihkan kasir langsung sebagai fokus utama. Data antrian sebelumnya tidak dihapus.',
-        confirmLabel: 'Ubah',
-      );
-      if (confirmed != true) return;
-    }
     setState(() => _businessType = newType);
   }
 
@@ -85,6 +96,18 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
       setState(() => _error = 'Nama toko wajib diisi');
       return;
     }
+
+    if (_businessType == 'barang' && _initialBusinessType != 'barang') {
+      final confirmed = await showNeoConfirmDialog(
+        context: context,
+        title: 'Ubah Jenis Usaha?',
+        message:
+            'Mengubah ke Jual Barang akan menyembunyikan menu antrian order dan mengalihkan kasir langsung sebagai fokus utama. Data antrian sebelumnya tidak dihapus.',
+        confirmLabel: 'Ubah & Simpan',
+      );
+      if (confirmed != true) return;
+    }
+
     setState(() {
       _saving = true;
       _error = null;
@@ -96,6 +119,12 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
             phone: _phoneController.text,
             receiptNotes: _notesController.text,
             businessType: _businessType,
+            serviceMode: _serviceMode,
+          );
+      ref.read(sessionProvider.notifier).updateShopSettings(
+            businessType: _businessType,
+            serviceMode: _serviceMode,
+            shopName: name,
           );
       ref.invalidate(settingsProvider);
       ref.invalidate(sessionProvider);
@@ -134,6 +163,13 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
       );
     }
 
+    if (_loading) {
+      return const Scaffold(
+        appBar: NeoAppBar(title: 'Pengaturan Toko'),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: const NeoAppBar(title: 'Pengaturan Toko'),
       body: ListView(
@@ -151,30 +187,66 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                NeoSegmentControl<String>(
+                NeoRadioCardGroup<String>(
                   selectedValue: _businessType,
                   onValueChanged: _onBusinessTypeChanged,
-                  items: const [
-                    NeoSegmentItem(value: 'barang', label: 'Jual Barang'),
-                    NeoSegmentItem(value: 'jasa', label: 'Jasa'),
-                    NeoSegmentItem(value: 'keduanya', label: 'Barang & Jasa'),
+                  options: const [
+                    NeoRadioOption(
+                      value: 'barang',
+                      title: 'Jual Barang',
+                      subtitle: 'Mode Retail: Fokus pada penjualan kasir langsung dan manajemen stok barang.',
+                    ),
+                    NeoRadioOption(
+                      value: 'jasa',
+                      title: 'Jasa',
+                      subtitle: 'Mode Jasa: Antrian pesanan/servis umum (laundry, AC, salon, dll).',
+                    ),
+                    NeoRadioOption(
+                      value: 'keduanya',
+                      title: 'Barang & Jasa',
+                      subtitle: 'Mode Campuran: Cocok untuk bengkel otomotif atau toko dengan perbaikan & retail.',
+                    ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _businessType == 'barang'
-                      ? 'Mode Retail: Fokus pada penjualan kasir langsung dan manajemen stok barang.'
-                      : _businessType == 'jasa'
-                          ? 'Mode Jasa: Antrian pesanan/servis umum (laundry, AC, salon, dll).'
-                          : 'Mode Campuran: Cocok untuk bengkel otomotif atau toko dengan perbaikan & retail.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.inkMuted,
-                    fontStyle: FontStyle.italic,
-                  ),
                 ),
               ],
             ),
           ),
+          if (_businessType != 'barang') ...[
+            const SizedBox(height: 16),
+            SectionCard(
+              title: 'Mode Jasa',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Menentukan jalur default saat membuat order jasa — dipilih sekali di sini, '
+                    'bukan tiap kali bikin order. Toko tetap bisa memasukkan pengecualian sesekali '
+                    'lewat opsi alternatif yang muncul di form order.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  NeoRadioCardGroup<String>(
+                    selectedValue: _serviceMode,
+                    onValueChanged: (v) => setState(() => _serviceMode = v),
+                    options: const [
+                      NeoRadioOption(
+                        value: 'otomotif',
+                        title: 'Otomotif (Kendaraan)',
+                        subtitle: 'Target order default berupa plat kendaraan dan jarak tempuh (odometer).',
+                      ),
+                      NeoRadioOption(
+                        value: 'umum',
+                        title: 'Umum (Non-Kendaraan)',
+                        subtitle: 'Target order default berupa barang/objek umum tanpa nomor plat (mis. AC, laundry, elektronik, dll).',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           SectionCard(
             title: 'Informasi Toko',

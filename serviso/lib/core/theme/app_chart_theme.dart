@@ -10,11 +10,14 @@ abstract final class AppChartTheme {
   // ---------------------------------------------------------------------------
   // Data Palette (DS v2 04c)
   // ---------------------------------------------------------------------------
-  /// Series 1 / Primary / Selesai / Revenue (#3FBE85)
-  static const Color seriesPrimary = AppColors.accentPrimary;
+  /// Series 1 / Primary / Selesai / Revenue (#DCFCE7 / Pastel Mint)
+  static const Color seriesPrimary = AppColors.pastelMint;
 
   /// Highlight / Peak Value / Menunggu (#FFC526)
   static const Color seriesPeak = AppColors.amber;
+
+  /// Series Trend / Line & Area Chart stroke (#FFC526 - Amber / Kuning Aksen)
+  static const Color seriesTrend = AppColors.amber;
 
   /// Series 2 / Tren / Dikerjakan (#A9D3FF)
   static const Color seriesBlue = AppColors.pastelBlue;
@@ -27,8 +30,8 @@ abstract final class AppChartTheme {
 
   /// Series Palette for Multi-item / Ranking visualizations
   static const List<Color> rankPalette = [
-    seriesPrimary, // Rank 1: Mint
-    seriesBlue,    // Rank 2: Blue
+    seriesPrimary, // Rank 1: Pastel Mint
+    seriesBlue,    // Rank 2: Pastel Blue
     seriesPeak,    // Rank 3: Amber
     seriesLilac,   // Rank 4: Lilac
     seriesPink,    // Rank 5: Pink
