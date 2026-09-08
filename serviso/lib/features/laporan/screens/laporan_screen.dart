@@ -341,9 +341,9 @@ class LaporanScreen extends ConsumerWidget {
                               Expanded(
                                 child: _buildMetricCard(
                                   context,
-                                  title: 'Part Terjual',
+                                  title: 'Barang Terjual',
                                   value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
-                                  subtitle: 'Item suku cadang',
+                                  subtitle: 'Total barang keluar',
                                   icon: AppIcons.inventory,
                                   color: AppColors.pastelBlue,
                                   onTap: () => context.push(
@@ -381,9 +381,9 @@ class LaporanScreen extends ConsumerWidget {
                             Expanded(
                               child: _buildMetricCard(
                                 context,
-                                title: 'Part Terjual',
+                                title: 'Barang Terjual',
                                 value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
-                                subtitle: 'Item suku cadang',
+                                subtitle: 'Total barang keluar',
                                 icon: AppIcons.inventory,
                                 color: AppColors.pastelBlue,
                                 onTap: () => context.push(
@@ -406,9 +406,9 @@ class LaporanScreen extends ConsumerWidget {
                             Expanded(
                               child: _buildMetricCard(
                                 context,
-                                title: 'Part Terjual',
+                                title: 'Barang Terjual',
                                 value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
-                                subtitle: 'Item suku cadang',
+                                subtitle: 'Total barang keluar',
                                 icon: AppIcons.inventory,
                                 color: AppColors.pastelBlue,
                                 onTap: () => context.push(
@@ -434,7 +434,7 @@ class LaporanScreen extends ConsumerWidget {
                             label: '${date.day}/${date.month}',
                             value: r.revenue,
                             tooltipTitle: '${date.day}/${date.month}/${date.year}',
-                            tooltipSubtitle: '${r.totalTransactions} Transaksi • ${r.partsOutQty.toInt()} Part',
+                            tooltipSubtitle: '${r.totalTransactions} Transaksi • ${r.partsOutQty.toInt()} Item',
                           );
                         }).toList(),
                         valueFormatter: (val) => rupiah(val),
@@ -485,7 +485,7 @@ class LaporanScreen extends ConsumerWidget {
                 if (parts.isEmpty) return const SizedBox.shrink();
 
                 return SectionCard(
-                  title: 'Suku Cadang Terlaris Bulan Ini',
+                  title: 'Barang Terlaris Bulan Ini',
                   child: HorizontalBarList(
                     items: parts.map((part) {
                       return HorizontalBarItem(

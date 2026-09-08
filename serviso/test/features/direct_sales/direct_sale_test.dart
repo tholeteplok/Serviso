@@ -330,7 +330,7 @@ void main() {
     });
 
     testWidgets(
-        'filter chip 1 baris menampilkan Semua, Suku Cadang, dan Jasa tanpa terpotong',
+        'filter chip 1 baris menampilkan Semua, Barang, dan Jasa tanpa terpotong',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
@@ -348,7 +348,7 @@ void main() {
 
       // Memastikan ketiga chip filter tampil utuh
       expect(find.text('Semua'), findsOneWidget);
-      expect(find.text('Suku Cadang'), findsOneWidget);
+      expect(find.text('Barang'), findsOneWidget);
       expect(find.text('Jasa'), findsOneWidget);
     });
 

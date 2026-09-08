@@ -75,6 +75,7 @@ void main() {
       expect(currentSettings.receiptNotes, 'Garansi servis 14 hari. Simpan nota ini.');
       expect(currentSettings.shopName, 'Bengkel Maju');
       expect(currentSettings.businessType, 'keduanya');
+      expect(find.text('Pengaturan toko berhasil disimpan'), findsOneWidget);
     });
 
     testWidgets('blocks non-admin users', (tester) async {

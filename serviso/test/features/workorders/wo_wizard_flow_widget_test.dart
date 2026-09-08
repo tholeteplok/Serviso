@@ -139,12 +139,12 @@ void main() {
     // Verifikasi Total langsung berubah menjadi Rp25.000 (live calculation)
     expect(find.text('Rp25.000'), findsOneWidget);
 
-    // Buka pencarian part
-    await tester.tap(find.text('Pilih part'));
+    // Buka pencarian barang
+    await tester.tap(find.text('Pilih barang'));
     await tester.pumpAndSettle();
 
     // Verifikasi PartPickerSheet muncul dan menampilkan Busi
-    expect(find.text('Pilih part'), findsWidgets);
+    expect(find.text('Pilih barang'), findsWidgets);
     expect(find.text('Busi CPR9EA'), findsOneWidget);
 
     // Pilih part Busi

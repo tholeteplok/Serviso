@@ -287,7 +287,7 @@ class DirectSaleDetailScreen extends ConsumerWidget {
                           child: _SummaryCard(
                             title: 'Item Terjual',
                             value: '$totalItems Pcs',
-                            subtitle: 'Part & jasa',
+                            subtitle: 'Barang & jasa',
                             color: AppColors.pastelYellow,
                             icon: AppIcons.inventory,
                           ),

@@ -48,12 +48,12 @@ class PartSoldDetailScreen extends ConsumerWidget {
           exportedAt: DateTime.now(),
         );
         final name =
-            'laporan_part_terjual_${DateTime.now().toIso8601String().substring(0, 10)}.pdf';
+            'laporan_barang_terjual_${DateTime.now().toIso8601String().substring(0, 10)}.pdf';
         await sharePdfBytes(bytes, name);
       } else {
         final csv = buildPartSoldCsv(rows);
         final name =
-            'laporan_part_terjual_${DateTime.now().toIso8601String().substring(0, 10)}.csv';
+            'laporan_barang_terjual_${DateTime.now().toIso8601String().substring(0, 10)}.csv';
         await shareCsv(csv, name);
       }
       if (context.mounted) {
@@ -61,8 +61,8 @@ class PartSoldDetailScreen extends ConsumerWidget {
           SnackBar(
             content: Text(
               type == 'pdf'
-                  ? 'PDF Part Terjual berhasil diekspor'
-                  : 'CSV Part Terjual berhasil diekspor',
+                  ? 'PDF Barang Terjual berhasil diekspor'
+                  : 'CSV Barang Terjual berhasil diekspor',
             ),
           ),
         );
@@ -87,7 +87,7 @@ class PartSoldDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: NeoAppBar(
-        title: 'Rincian Part Terjual',
+        title: 'Rincian Barang Terjual',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Export',
@@ -135,9 +135,9 @@ class PartSoldDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 32),
                       EmptyState(
                         icon: AppIcons.part,
-                        title: 'Belum Ada Part Terjual',
+                        title: 'Belum Ada Barang Terjual',
                         message:
-                            'Tidak ada penjualan part pada periode ini. Coba ganti periode.',
+                            'Tidak ada penjualan barang pada periode ini. Coba ganti periode.',
                       ),
                     ],
                   );
@@ -178,7 +178,7 @@ class PartSoldDetailScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${sorted.length} jenis part',
+                                  '${sorted.length} jenis barang',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall

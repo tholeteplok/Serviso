@@ -188,7 +188,7 @@ class _CreateShopScreenState extends ConsumerState<CreateShopScreen> {
                     NeoRadioOption(
                       value: 'keduanya',
                       title: 'Bengkel & Toko (Barang + Jasa)',
-                      subtitle: 'Pencatatan suku cadang fisik sekaligus pengerjaan jasa servis',
+                      subtitle: 'Pencatatan barang fisik sekaligus pengerjaan jasa servis',
                       icon: Icon(AppIcons.wrench, size: 20, color: AppColors.ink900),
                     ),
                     NeoRadioOption(
@@ -200,7 +200,7 @@ class _CreateShopScreenState extends ConsumerState<CreateShopScreen> {
                     NeoRadioOption(
                       value: 'barang',
                       title: 'Hanya Barang / Retail',
-                      subtitle: 'Toko suku cadang, oli, dan penjualan retail murni tanpa pengerjaan',
+                      subtitle: 'Toko retail, barang/produk, oli, dan penjualan langsung tanpa servis',
                       icon: Icon(AppIcons.cart, size: 20, color: AppColors.ink900),
                     ),
                   ],

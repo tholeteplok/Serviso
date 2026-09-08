@@ -67,6 +67,16 @@ void main() {
       expect(target, isNull);
     });
 
+    test('saat sesi background reloading (isLoading tapi hasValue), jangan alihkan ke splash', () {
+      final target = authGuardRedirect(
+        session: const AsyncLoading<Profile?>().copyWithPrevious(AsyncData<Profile?>(_profile(UserRole.admin))),
+        isAdmin: true,
+        isPlatformAdmin: false,
+        location: AppRoutes.pengaturanToko,
+      );
+      expect(target, isNull);
+    });
+
     test('platform admin di login/splash dialihkan ke /platform', () {
       const pAdmin = Profile(
         id: 'pa1',

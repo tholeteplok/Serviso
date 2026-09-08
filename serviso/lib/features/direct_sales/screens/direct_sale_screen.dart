@@ -87,7 +87,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
   // Search & Filter state
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategory = 'Semua'; // 'Semua', 'Suku Cadang', 'Jasa'
+  String _selectedCategory = 'Semua'; // 'Semua', 'Barang', 'Jasa'
   bool _isGridView = true;
 
   @override
@@ -964,7 +964,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                     Expanded(
                       child: NeoSearchBar(
                         controller: _searchController,
-                        hintText: 'Cari nama atau kode part...',
+                        hintText: 'Cari nama atau kode barang...',
                         onChanged: (val) {
                           setState(() => _searchQuery = val);
                         },
@@ -990,7 +990,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                     children: [
                       _buildCategoryChip('Semua'),
                       const SizedBox(width: 8),
-                      _buildCategoryChip('Suku Cadang'),
+                      _buildCategoryChip('Barang'),
                       const SizedBox(width: 8),
                       _buildCategoryChip('Jasa'),
                     ],
@@ -1007,7 +1007,7 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                         ? Center(
                             child: EmptyState(
                               icon: AppIcons.inventory,
-                              title: 'Suku cadang tidak ditemukan',
+                              title: 'Barang tidak ditemukan',
                               message:
                                   'Coba ubah kata kunci pencarian atau gunakan barcode.',
                             ),

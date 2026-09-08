@@ -419,7 +419,7 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     }
     for (final line in _partLines) {
       final qty = double.tryParse(line.qtyController.text) ?? 0;
-      if (qty <= 0) return 'Jumlah part harus lebih dari 0';
+      if (qty <= 0) return 'Jumlah barang harus lebih dari 0';
     }
     for (var i = 0; i < _jasaDesc.length; i++) {
       if (_jasaDesc[i].text.trim().isEmpty) continue;
@@ -1181,7 +1181,7 @@ class _StepItems extends ConsumerWidget {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: Text('Part', style: textTheme.titleMedium)),
+            Expanded(child: Text('Barang', style: textTheme.titleMedium)),
             ThickBottomBorderButton(
               variant: ThickButtonVariant.secondary,
               size: ThickButtonSize.compact,
@@ -1194,7 +1194,7 @@ class _StepItems extends ConsumerWidget {
                     onItemsChanged();
                   } else if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Part dengan barcode "$code" tidak ditemukan')),
+                      SnackBar(content: Text('Barang dengan barcode "$code" tidak ditemukan')),
                     );
                   }
                 }
@@ -1217,7 +1217,7 @@ class _StepItems extends ConsumerWidget {
                 );
                 onItemsChanged();
               },
-              child: const Text('Pilih part'),
+              child: const Text('Pilih barang'),
             ),
           ],
         ),
@@ -1381,7 +1381,7 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pilih part', style: textTheme.headlineSmall),
+            Text('Pilih barang', style: textTheme.headlineSmall),
             const SizedBox(height: 12),
             TextFormField(
               controller: _controller,
@@ -1423,7 +1423,7 @@ class _PartPickerSheetState extends ConsumerState<_PartPickerSheet> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
-                  child: Text('Tidak ada part ditemukan.'),
+                  child: Text('Tidak ada barang ditemukan.'),
                 ),
               )
             else

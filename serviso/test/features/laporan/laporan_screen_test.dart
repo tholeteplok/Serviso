@@ -48,7 +48,7 @@ void main() {
     expect(find.text('WO Selesai'), findsOneWidget);
     expect(find.text('Grafik Pendapatan Harian'), findsOneWidget);
     expect(
-      find.text('Suku Cadang Terlaris Bulan Ini', skipOffstage: false),
+      find.text('Barang Terlaris Bulan Ini', skipOffstage: false),
       findsOneWidget,
     );
   });
@@ -122,7 +122,7 @@ void main() {
     expect(find.text('Pelanggan & CRM'), findsOneWidget);
     expect(find.text('Penjualan Langsung'), findsOneWidget);
     expect(find.text('Hutang Distributor'), findsOneWidget);
-    expect(find.text('Part Terjual'), findsOneWidget);
+    expect(find.text('Barang Terjual'), findsOneWidget);
     expect(find.text('WO Selesai'), findsNothing);
   });
 

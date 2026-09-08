@@ -153,7 +153,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     final isCompleted = order.status == WoStatus.selesai;
     final isWaiting = order.status == WoStatus.menunggu;
     final warning = isCompleted
-        ? 'Work order sudah selesai. Membatalkan akan mengembalikan stok part ke inventori.'
+        ? 'Work order sudah selesai. Membatalkan akan mengembalikan stok barang ke inventori.'
         : isWaiting
             ? 'Hapus work order ini dari daftar antrian?'
             : 'Work order akan dibatalkan dan tidak dapat dikerjakan lagi.';
@@ -415,7 +415,7 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Part berhasil ditambahkan'),
+              content: Text('Barang berhasil ditambahkan'),
               duration: Duration(seconds: 2),
             ),
           );
@@ -755,7 +755,7 @@ class _DetailBody extends StatelessWidget {
                         TextButton.icon(
                           onPressed: onAddPart,
                           icon: Icon(AppIcons.add, size: 16),
-                          label: const Text('Part'),
+                          label: const Text('Barang'),
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(horizontal: 8),

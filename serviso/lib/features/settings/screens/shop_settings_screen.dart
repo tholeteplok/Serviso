@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -127,12 +128,13 @@ class _ShopSettingsScreenState extends ConsumerState<ShopSettingsScreen> {
             shopName: name,
           );
       ref.invalidate(settingsProvider);
-      ref.invalidate(sessionProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pengaturan toko berhasil disimpan')),
         );
-        Navigator.of(context).pop(updated);
+        if (context.canPop()) {
+          context.pop(updated);
+        }
       }
     } on SettingsException catch (e) {
       setState(() => _error = e.message);

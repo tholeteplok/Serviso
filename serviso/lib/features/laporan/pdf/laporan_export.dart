@@ -479,7 +479,7 @@ Future<Uint8List> buildPartSoldPdf({
       ),
       footer: (ctx) => _footer(exportedAt, mono),
       build: (ctx) => [
-        _pdfHeader('$shopName — Part Terjual', periodLabel, exportedAt),
+        _pdfHeader('$shopName — Barang Terjual', periodLabel, exportedAt),
         pw.SizedBox(height: 6),
         pw.Text(
           'Total Qty: ${_formatQty(totalQty)} pcs  •  Total Revenue: ${_rupiah(totalRev)}',
@@ -492,7 +492,7 @@ Future<Uint8List> buildPartSoldPdf({
           _buildTable(
             headers: const [
               'No',
-              'Nama Part',
+              'Nama Barang',
               'Qty Terjual',
               'Revenue',
               'Avg Price',
@@ -521,7 +521,7 @@ Future<Uint8List> buildPartSoldPdf({
 
 String buildPartSoldCsv(List<PartSoldDetailRow> rows) {
   final sb = StringBuffer();
-  sb.writeln('No,Nama Part,Qty Terjual,Revenue,Avg Price');
+  sb.writeln('No,Nama Barang,Qty Terjual,Revenue,Avg Price');
   for (var i = 0; i < rows.length; i++) {
     final r = rows[i];
     final avg = r.qtyOut == 0 ? 0 : r.revenue / r.qtyOut;
@@ -809,7 +809,7 @@ Future<Uint8List> buildDebtPdf({
           _buildTable(
             headers: const [
               'Distributor',
-              'Part',
+              'Barang',
               'Qty',
               'Hutang',
               'Jatuh Tempo',
@@ -839,7 +839,7 @@ Future<Uint8List> buildDebtPdf({
 
 String buildDebtCsv(List<DistributorDebtItem> rows) {
   final sb = StringBuffer();
-  sb.writeln('Distributor,Part,Qty,Hutang,Jatuh Tempo,Status');
+  sb.writeln('Distributor,Barang,Qty,Hutang,Jatuh Tempo,Status');
   for (final r in rows) {
     sb.writeln(
       '${_csvEscape(r.distributor)},${_csvEscape(r.partName)},'

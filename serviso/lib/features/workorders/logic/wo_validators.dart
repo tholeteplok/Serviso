@@ -21,7 +21,7 @@ abstract final class WoValidators {
   }
 
   static String? validatePartQty(double value) {
-    if (value <= 0) return 'Jumlah part harus lebih dari 0';
+    if (value <= 0) return 'Jumlah barang harus lebih dari 0';
     return null;
   }
 

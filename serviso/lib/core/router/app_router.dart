@@ -80,7 +80,7 @@ String? authGuardRedirect({
   required bool isPlatformAdmin,
   required String location,
 }) {
-  if (session.isLoading) {
+  if (session.isLoading && !session.hasValue) {
     if (location == AppRoutes.login) return null;
     return location == AppRoutes.splash ? null : AppRoutes.splash;
   }

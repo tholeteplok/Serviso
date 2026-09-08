@@ -230,7 +230,7 @@ class OmsetDetailScreen extends ConsumerWidget {
                             value: r.revenue,
                             tooltipTitle: '${d.day}/${d.month}/${d.year}',
                             tooltipSubtitle: isBarang
-                                ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toInt()} Part'
+                                ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toInt()} Item'
                                 : '${r.woDoneCount} WO • ${r.directSaleCount} PL',
                           );
                         }).toList(),
@@ -282,8 +282,8 @@ class OmsetDetailScreen extends ConsumerWidget {
                                     const SizedBox(height: 2),
                                     Text(
                                       isBarang
-                                          ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toStringAsFixed(0)} pcs part'
-                                          : '${r.woDoneCount} WO + ${r.directSaleCount} PL • ${r.partsOutQty.toStringAsFixed(0)} pcs part',
+                                          ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toStringAsFixed(0)} pcs barang'
+                                          : '${r.woDoneCount} WO + ${r.directSaleCount} PL • ${r.partsOutQty.toStringAsFixed(0)} pcs barang',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
