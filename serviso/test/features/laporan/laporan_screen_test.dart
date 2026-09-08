@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
 import 'package:serviso/features/auth/controllers/session_controller.dart';
+import 'package:serviso/features/auth/data/auth_repository.dart';
+import 'package:serviso/features/auth/models/profile.dart';
 import 'package:serviso/features/laporan/controllers/report_controllers.dart';
 import 'package:serviso/features/laporan/data/report_repository.dart';
 import 'package:serviso/features/laporan/screens/details/customer_report_screen.dart';
@@ -77,6 +79,51 @@ void main() {
     expect(find.text('Pelanggan & CRM'), findsOneWidget);
     expect(find.text('Penjualan Langsung'), findsOneWidget);
     expect(find.text('Hutang Distributor'), findsOneWidget);
+  });
+
+  testWidgets('LaporanScreen hides WO Selesai metric when shopBusinessType is barang',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fakeReportRepo = FakeReportRepository();
+    const mockRetailProfile = Profile(
+      id: 'u-retail',
+      username: 'retail_owner',
+      fullName: 'Toko Retail Sukses',
+      role: UserRole.admin,
+      shopBusinessType: 'barang',
+      isActive: true,
+    );
+    final fakeAuthRepo = FakeAuthRepository()..profileToReturn = mockRetailProfile;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          reportRepositoryProvider.overrideWithValue(fakeReportRepo),
+          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          isAdminProvider.overrideWith((ref) => true),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const LaporanScreen(),
+        ),
+      ),
+    );
+
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('Laba & Omset'), findsOneWidget);
+    expect(find.text('Pelanggan & CRM'), findsOneWidget);
+    expect(find.text('Penjualan Langsung'), findsOneWidget);
+    expect(find.text('Hutang Distributor'), findsOneWidget);
+    expect(find.text('Part Terjual'), findsOneWidget);
+    expect(find.text('WO Selesai'), findsNothing);
   });
 
   testWidgets('CustomerReportScreen renders metrics summary and customer cards',

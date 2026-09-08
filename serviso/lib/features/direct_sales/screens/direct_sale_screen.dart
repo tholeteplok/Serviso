@@ -39,6 +39,7 @@ import '../../workorders/models/payment.dart';
 import '../../workorders/models/work_order.dart';
 import '../../workorders/pdf/receipt_builder.dart';
 import '../data/direct_sale_repository.dart';
+import '../data/hold_transaction_service.dart';
 import '../models/direct_sale.dart';
 import '../widgets/cart_ticket_slip.dart';
 
@@ -48,7 +49,12 @@ final directSaleRepositoryProvider = Provider<DirectSaleRepository>((ref) {
 });
 
 class DirectSaleScreen extends ConsumerStatefulWidget {
-  const DirectSaleScreen({super.key});
+  const DirectSaleScreen({
+    super.key,
+    this.initialDraft,
+  });
+
+  final HoldSaleDraft? initialDraft;
 
   @override
   ConsumerState<DirectSaleScreen> createState() => _DirectSaleScreenState();
@@ -60,6 +66,23 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
   PaymentMethod _method = PaymentMethod.cash;
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDraft != null) {
+      _items.addAll(widget.initialDraft!.items);
+      _method = widget.initialDraft!.payMethod;
+      if (widget.initialDraft!.customerId != null) {
+        _isWalkIn = false;
+        _selectedCustomer = Customer(
+          id: widget.initialDraft!.customerId!,
+          name: widget.initialDraft!.customerName ?? 'Pelanggan',
+          createdAt: DateTime.now(),
+        );
+      }
+    }
+  }
 
   // Search & Filter state
   final _searchController = TextEditingController();
@@ -567,6 +590,9 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
       Navigator.of(context).pop();
 
       // 2. RESET STATE KERANJANG SEKETIKA JADI 0 (ANTI MULTIPLE-CHARGE)
+      if (widget.initialDraft != null) {
+        await ref.read(holdDraftsProvider.notifier).deleteDraft(widget.initialDraft!.id);
+      }
       _clearCart();
       setState(() => _saving = false);
 
@@ -586,6 +612,43 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
         _saving = false;
         _error = e.toString();
       });
+    }
+  }
+
+  Future<void> _holdTransaction() async {
+    if (_items.isEmpty) return;
+
+    final draft = HoldSaleDraft(
+      id: widget.initialDraft?.id ??
+          'draft-${DateTime.now().millisecondsSinceEpoch}',
+      note: _selectedCustomer != null
+          ? _selectedCustomer!.name
+          : 'Pelanggan Umum',
+      customerId: _selectedCustomer?.id,
+      customerName: _selectedCustomer?.name,
+      createdAt: DateTime.now(),
+      items: List.from(_items),
+      payMethod: _method,
+      paidAmount: 0.0,
+    );
+
+    await ref.read(holdDraftsProvider.notifier).saveDraft(draft);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Transaksi berhasil diparkir ke daftar tertunda'),
+      ),
+    );
+
+    setState(() {
+      _items.clear();
+      _selectedCustomer = null;
+      _isWalkIn = true;
+    });
+
+    if (widget.initialDraft != null && context.canPop()) {
+      context.pop();
     }
   }
 
@@ -798,6 +861,17 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
                   onPressed: _items.isEmpty ? null : _checkout,
                   child: Text('Selesaikan & Bayar (${rupiah(_total)})'),
                 ),
+                const SizedBox(height: 8),
+                ThickBottomBorderButton(
+                  isFullWidth: true,
+                  variant: ThickButtonVariant.secondary,
+                  onPressed: () {
+                    Navigator.of(modalCtx).pop();
+                    _holdTransaction();
+                  },
+                  icon: Icon(AppIcons.clock, size: 16),
+                  child: const Text('Parkir / Tunda Transaksi'),
+                ),
                 const SizedBox(height: 12),
               ],
             ),
@@ -828,6 +902,12 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
             tooltip: _isGridView ? 'Tampilan List' : 'Tampilan Grid',
             onPressed: () => setState(() => _isGridView = !_isGridView),
           ),
+          if (_items.isNotEmpty)
+            IconButton(
+              icon: Icon(AppIcons.clock, color: AppColors.ink900),
+              tooltip: 'Parkir Transaksi',
+              onPressed: _holdTransaction,
+            ),
           if (_items.isNotEmpty)
             Stack(
               alignment: Alignment.center,

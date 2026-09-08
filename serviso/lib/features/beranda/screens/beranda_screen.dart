@@ -82,45 +82,54 @@ class BerandaScreen extends ConsumerWidget {
                 message: err.toString(),
                 onRetry: () => ref.invalidate(dashboardSummaryProvider),
               ),
-              data: (summary) => Column(
-                children: [
-                  _UnifiedRevenueCard(revenue: summary.todayRevenue),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatTile(
-                          context,
-                          title: 'WO Aktif',
-                          value: '${summary.activeWoCount}',
-                          unit: 'antrian',
-                          icon: AppIcons.queue,
-                          color: AppColors.teal,
-                          onTap: () => context.go('/antrian'),
+              data: (summary) {
+                final isBarang = profile?.shopBusinessType == 'barang';
+                final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+                final todayRow = summary.last7Days
+                    .where((r) => r.date.toIso8601String().substring(0, 10) == todayStr)
+                    .firstOrNull;
+                final todaySalesCount = todayRow?.directSaleCount ?? 0;
+
+                return Column(
+                  children: [
+                    _UnifiedRevenueCard(revenue: summary.todayRevenue),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatTile(
+                            context,
+                            title: isBarang ? 'Penjualan Hari Ini' : 'WO Aktif',
+                            value: isBarang ? '$todaySalesCount' : '${summary.activeWoCount}',
+                            unit: isBarang ? 'transaksi' : 'antrian',
+                            icon: isBarang ? AppIcons.receipt : AppIcons.queue,
+                            color: AppColors.teal,
+                            onTap: () => context.go(AppRoutes.antrian),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatTile(
-                          context,
-                          title: 'Stok Menipis',
-                          value: '${summary.lowStockCount}',
-                          unit: 'barang',
-                          icon: AppIcons.warning,
-                          color: summary.lowStockCount > 0
-                              ? AppColors.action
-                              : AppColors.inkMuted,
-                          onTap: () => context.go('/inventori'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatTile(
+                            context,
+                            title: 'Stok Menipis',
+                            value: '${summary.lowStockCount}',
+                            unit: 'barang',
+                            icon: AppIcons.warning,
+                            color: summary.lowStockCount > 0
+                                ? AppColors.action
+                                : AppColors.inkMuted,
+                            onTap: () => context.go(AppRoutes.inventori),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  _buildChartCard(context, summary.last7Days),
-                  const SizedBox(height: 14),
-                  _buildQuickActions(context),
-                ],
-              ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _buildChartCard(context, summary.last7Days),
+                    const SizedBox(height: 14),
+                    _buildQuickActions(context, isBarang),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -204,7 +213,7 @@ class BerandaScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, bool isBarang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -222,26 +231,35 @@ class BerandaScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildActionButton(
-              context,
-              icon: AppIcons.add,
-              label: 'WO Baru',
-              color: AppColors.pastelMint,
-              onTap: () => context.push(AppRoutes.woBaru),
-            ),
+            if (!isBarang)
+              _buildActionButton(
+                context,
+                icon: AppIcons.add,
+                label: 'WO Baru',
+                color: AppColors.pastelMint,
+                onTap: () => context.push(AppRoutes.woBaru),
+              ),
             _buildActionButton(
               context,
               icon: AppIcons.cart,
-              label: 'Jual Langsung',
+              label: isBarang ? 'Kasir' : 'Jual Langsung',
               color: AppColors.pastelYellow,
               onTap: () => context.push(AppRoutes.jualLangsung),
             ),
+            if (isBarang)
+              _buildActionButton(
+                context,
+                icon: AppIcons.add,
+                label: 'Tambah Stok',
+                color: AppColors.pastelMint,
+                onTap: () => context.push(AppRoutes.inventoriTambah),
+              ),
             _buildActionButton(
               context,
               icon: AppIcons.inventory,
               label: 'Inventori',
               color: AppColors.pastelBlue,
-              onTap: () => context.go('/inventori'),
+              onTap: () => context.go(AppRoutes.inventori),
             ),
           ],
         ),

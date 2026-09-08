@@ -28,6 +28,8 @@ class LaporanScreen extends ConsumerWidget {
     final dailySummariesAsync = ref.watch(laporanDailySummariesProvider);
     final topPartsAsync = ref.watch(topPartsProvider);
     final isAdmin = ref.watch(isAdminProvider);
+    final profile = ref.watch(sessionProvider).valueOrNull;
+    final isBarang = profile?.shopBusinessType == 'barang';
     final ownerFinancialAsync =
         isAdmin ? ref.watch(ownerFinancialSummaryProvider) : null;
     final customerStatsAsync = ref.watch(customerSummaryStatsProvider);
@@ -321,19 +323,34 @@ class LaporanScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildMetricCard(
-                                context,
-                                title: 'WO Selesai',
-                                value: '$totalWo WO',
-                                subtitle: 'Pekerjaan tuntas',
-                                icon: AppIcons.checkCircle,
-                                color: AppColors.pastelMint,
-                                onTap: () => context.push(
-                                  AppRoutes.laporanWoSelesai,
+                            if (!isBarang)
+                              Expanded(
+                                child: _buildMetricCard(
+                                  context,
+                                  title: 'WO Selesai',
+                                  value: '$totalWo WO',
+                                  subtitle: 'Pekerjaan tuntas',
+                                  icon: AppIcons.checkCircle,
+                                  color: AppColors.pastelMint,
+                                  onTap: () => context.push(
+                                    AppRoutes.laporanWoSelesai,
+                                  ),
+                                ),
+                              )
+                            else
+                              Expanded(
+                                child: _buildMetricCard(
+                                  context,
+                                  title: 'Part Terjual',
+                                  value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
+                                  subtitle: 'Item suku cadang',
+                                  icon: AppIcons.inventory,
+                                  color: AppColors.pastelBlue,
+                                  onTap: () => context.push(
+                                    AppRoutes.laporanPartTerjual,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -345,20 +362,22 @@ class LaporanScreen extends ConsumerWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: _buildMetricCard(
-                                context,
-                                title: 'WO Selesai',
-                                value: '$totalWo WO',
-                                subtitle: 'Pekerjaan tuntas',
-                                icon: AppIcons.checkCircle,
-                                color: AppColors.pastelMint,
-                                onTap: () => context.push(
-                                  AppRoutes.laporanWoSelesai,
+                            if (!isBarang) ...[
+                              Expanded(
+                                child: _buildMetricCard(
+                                  context,
+                                  title: 'WO Selesai',
+                                  value: '$totalWo WO',
+                                  subtitle: 'Pekerjaan tuntas',
+                                  icon: AppIcons.checkCircle,
+                                  color: AppColors.pastelMint,
+                                  onTap: () => context.push(
+                                    AppRoutes.laporanWoSelesai,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
+                              const SizedBox(width: 12),
+                            ],
                             Expanded(
                               child: _buildMetricCard(
                                 context,
@@ -372,10 +391,14 @@ class LaporanScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            if (isBarang) ...[
+                              const SizedBox(width: 12),
+                              const Spacer(),
+                            ],
                           ],
                         ),
                       ),
-                    ] else ...[
+                    ] else if (!isBarang) ...[
                       IntrinsicHeight(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,

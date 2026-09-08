@@ -14,6 +14,7 @@ import '../../../../core/widgets/neo_card.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/section_card.dart';
 import '../../../../core/widgets/transaction_card.dart';
+import '../../../auth/controllers/session_controller.dart';
 import '../../controllers/report_controllers.dart';
 import '../../models/report_models.dart';
 import '../../pdf/laporan_export.dart';
@@ -90,6 +91,8 @@ class OmsetDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(omsetDetailPeriodProvider);
+    final profile = ref.watch(sessionProvider).valueOrNull;
+    final isBarang = profile?.shopBusinessType == 'barang';
     final range = _omsetRange(period);
     final periodLabel = period.label;
     final asyncRows =
@@ -226,7 +229,9 @@ class OmsetDetailScreen extends ConsumerWidget {
                             label: '${d.day}/${d.month}',
                             value: r.revenue,
                             tooltipTitle: '${d.day}/${d.month}/${d.year}',
-                            tooltipSubtitle: '${r.woDoneCount} WO • ${r.directSaleCount} PL',
+                            tooltipSubtitle: isBarang
+                                ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toInt()} Part'
+                                : '${r.woDoneCount} WO • ${r.directSaleCount} PL',
                           );
                         }).toList(),
                         valueFormatter: (val) => rupiah(val),
@@ -276,7 +281,9 @@ class OmsetDetailScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${r.woDoneCount} WO + ${r.directSaleCount} PL • ${r.partsOutQty.toStringAsFixed(0)} pcs part',
+                                      isBarang
+                                          ? '${r.directSaleCount} Penjualan • ${r.partsOutQty.toStringAsFixed(0)} pcs part'
+                                          : '${r.woDoneCount} WO + ${r.directSaleCount} PL • ${r.partsOutQty.toStringAsFixed(0)} pcs part',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -365,6 +372,8 @@ class OmsetDetailScreen extends ConsumerWidget {
   }
 
   void _showDayTransactions(BuildContext context, WidgetRef ref, DateTime date) {
+    final profile = ref.read(sessionProvider).valueOrNull;
+    final isBarang = profile?.shopBusinessType == 'barang';
     final start = DateTime(date.year, date.month, date.day);
     final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
     showNeoBottomSheet(
@@ -385,7 +394,9 @@ class OmsetDetailScreen extends ConsumerWidget {
                   return EmptyState(
                       icon: AppIcons.receipt,
                       title: 'Tidak ada transaksi',
-                      message: 'Tidak ada WO maupun Penjualan Langsung pada tanggal ini.');
+                      message: isBarang
+                          ? 'Tidak ada penjualan langsung pada tanggal ini.'
+                          : 'Tidak ada WO maupun Penjualan Langsung pada tanggal ini.');
                 }
                 return ListView.separated(
                   itemCount: rows.length,

@@ -32,7 +32,9 @@ import '../../features/laporan/screens/details/part_sold_detail_screen.dart';
 import '../../features/laporan/screens/details/profit_detail_screen.dart';
 import '../../features/laporan/screens/details/wo_done_detail_screen.dart';
 import '../../features/laporan/screens/laporan_screen.dart';
+import '../../features/direct_sales/data/hold_transaction_service.dart';
 import '../../features/direct_sales/screens/direct_sale_screen.dart';
+import '../../features/direct_sales/screens/retail_sales_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/shop_settings_screen.dart';
 
@@ -227,7 +229,9 @@ final List<RouteBase> _appRoutes = [
     ),
     GoRoute(
       path: AppRoutes.jualLangsung,
-      builder: (context, state) => const DirectSaleScreen(),
+      builder: (context, state) => DirectSaleScreen(
+        initialDraft: state.extra is HoldSaleDraft ? state.extra as HoldSaleDraft : null,
+      ),
     ),
     GoRoute(
       path: '${AppRoutes.antrian}/:id',
@@ -299,7 +303,7 @@ final List<RouteBase> _appRoutes = [
           routes: [
             GoRoute(
               path: AppRoutes.antrian,
-              builder: (context, state) => const AntrianScreen(),
+              builder: (context, state) => const AntrianOrRetailScreen(),
             ),
           ],
         ),
@@ -352,12 +356,11 @@ class HomeShell extends ConsumerWidget {
           onCenterActionTap: () =>
               context.push(isBarang ? AppRoutes.jualLangsung : AppRoutes.woBaru),
           onTap: (index) {
-            if (isBarang && index == 1) {
-              context.push(AppRoutes.jualLangsung);
-              return;
-            }
             if (index == 0) {
               ref.invalidate(dashboardSummaryProvider);
+            } else if (index == 1 && isBarang) {
+              ref.invalidate(holdDraftsProvider);
+              ref.invalidate(directSalesDetailProvider);
             } else if (index == 3) {
               ref.invalidate(laporanDailySummariesProvider);
               ref.invalidate(topPartsProvider);
@@ -375,9 +378,9 @@ class HomeShell extends ConsumerWidget {
               label: 'Beranda',
             ),
             PastelPopBottomBarItem(
-              icon: isBarang ? AppIcons.cart : AppIcons.queue,
-              selectedIcon: isBarang ? AppIcons.cart : AppIcons.queueFill,
-              label: isBarang ? 'Kasir' : 'Antrian',
+              icon: isBarang ? AppIcons.receipt : AppIcons.queue,
+              selectedIcon: isBarang ? AppIcons.receipt : AppIcons.queueFill,
+              label: isBarang ? 'Penjualan' : 'Antrian',
             ),
             PastelPopBottomBarItem(
               icon: AppIcons.inventory,
@@ -395,4 +398,19 @@ class HomeShell extends ConsumerWidget {
     );
   }
 }
+
+class AntrianOrRetailScreen extends ConsumerWidget {
+  const AntrianOrRetailScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(sessionProvider).valueOrNull;
+    final isBarang = profile?.shopBusinessType == 'barang';
+    if (isBarang) {
+      return const RetailSalesScreen();
+    }
+    return const AntrianScreen();
+  }
+}
+
 
