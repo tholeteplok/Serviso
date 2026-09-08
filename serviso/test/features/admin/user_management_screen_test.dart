@@ -263,4 +263,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Akun Pengguna Berhasil Dibuat'), findsNothing);
   });
+
+  testWidgets('UserManagementScreen renders presence indicators (Online & Idle)', (tester) async {
+    final fakeAdminRepo = FakeAdminRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adminRepositoryProvider.overrideWithValue(fakeAdminRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const UserManagementScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify Online indicator for admin
+    expect(find.text('Online'), findsOneWidget);
+    expect(find.byKey(const ValueKey('presence_dot_online')), findsOneWidget);
+
+    // Verify Idle indicator for kasir1
+    expect(find.textContaining('Idle'), findsOneWidget);
+    expect(find.byKey(const ValueKey('presence_dot_idle')), findsOneWidget);
+  });
 }

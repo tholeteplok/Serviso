@@ -33,6 +33,8 @@ abstract class AuthRepository {
   Future<Profile?> currentProfile();
 
   Future<Profile> updateProfile({String? fullName, String? phone});
+
+  Future<void> updateLastSeen();
 }
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -140,6 +142,20 @@ class SupabaseAuthRepository implements AuthRepository {
       throw const AuthException('Profil gagal diperbarui. Coba lagi.');
     }
     return Profile.fromMap(data);
+  }
+
+  @override
+  Future<void> updateLastSeen() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await _client
+          .from('profiles')
+          .update({'last_seen_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('id', user.id);
+    } catch (_) {
+      // Best-effort presence ping: fail-safe jika kolom belum dibuat di DB atau offline
+    }
   }
 
   Future<Profile> _fetchProfile(String userId) async {
@@ -286,6 +302,17 @@ class FakeAuthRepository implements AuthRepository {
     _current = updated;
     _sessionController.add(updated);
     return updated;
+  }
+
+  @override
+  Future<void> updateLastSeen() async {
+    final current = _current ?? profileToReturn;
+    if (current != null) {
+      final updated = current.copyWith(lastSeenAt: DateTime.now());
+      _current = updated;
+      profileToReturn = updated;
+      _sessionController.add(updated);
+    }
   }
 }
 

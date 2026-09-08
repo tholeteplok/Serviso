@@ -276,21 +276,23 @@ class SupabaseAdminRepository implements AdminRepository {
 
 class FakeAdminRepository implements AdminRepository {
   List<Profile> mockProfiles = [
-    const Profile(
+    Profile(
       id: 'u1',
       username: 'admin',
       fullName: 'Pemilik Bengkel',
       role: UserRole.admin,
       isActive: true,
       email: 'owner@serviso.app',
+      lastSeenAt: DateTime.now(),
     ),
-    const Profile(
+    Profile(
       id: 'u2',
       username: 'kasir1',
       fullName: 'Budi Kasir',
       role: UserRole.kasir,
       isActive: true,
       email: 'budi@serviso.app',
+      lastSeenAt: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
   ];
 

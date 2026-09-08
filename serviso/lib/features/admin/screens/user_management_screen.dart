@@ -20,6 +20,7 @@ import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../../features/auth/models/profile.dart';
 import '../controllers/admin_controllers.dart';
 import '../models/admin_models.dart';
+import '../widgets/user_presence_badge.dart';
 
 class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
@@ -74,6 +75,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
   Widget _buildUserTile(BuildContext context, WidgetRef ref, Profile user) {
     final isAdmin = user.role == UserRole.admin;
+    final presence = UserPresenceHelper.getPresence(
+      lastSeenAt: user.lastSeenAt,
+      isActive: user.isActive,
+    );
 
     return NeoCard(
       padding: const EdgeInsets.all(16),
@@ -82,21 +87,34 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: user.isActive ? AppColors.pastelMint : AppColors.canvas,
-                  borderRadius: AppRadius.button,
-                  border: Border.all(color: AppColors.borderInk, width: 1.5),
-                  boxShadow: AppShadow.l1,
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  isAdmin ? AppIcons.shieldCheck : AppIcons.user,
-                  color: user.isActive ? AppColors.ink900 : AppColors.textSecondary,
-                  size: 20,
-                ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: user.isActive ? AppColors.pastelMint : AppColors.canvas,
+                      borderRadius: AppRadius.button,
+                      border: Border.all(color: AppColors.borderInk, width: 1.5),
+                      boxShadow: AppShadow.l1,
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      isAdmin ? AppIcons.shieldCheck : AppIcons.user,
+                      color: user.isActive ? AppColors.ink900 : AppColors.textSecondary,
+                      size: 20,
+                    ),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: UserPresenceDot(
+                      status: presence.status,
+                      color: presence.color,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -111,12 +129,21 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '@${user.username}',
-                      style: AppTypography.mono(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '@${user.username}',
+                          style: AppTypography.mono(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        UserPresenceLabel(
+                          lastSeenAt: user.lastSeenAt,
+                          isActive: user.isActive,
+                        ),
+                      ],
                     ),
                   ],
                 ),

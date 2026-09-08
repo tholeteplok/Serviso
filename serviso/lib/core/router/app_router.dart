@@ -17,6 +17,7 @@ import '../../features/auth/screens/admin_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/profile_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/services/presence_service.dart';
 import '../../features/beranda/screens/beranda_screen.dart';
 import '../../features/inventori/models/part.dart';
 import '../../features/inventori/screens/inventori_screen.dart';
@@ -334,6 +335,7 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(presenceServiceProvider);
     final canPop = GoRouter.of(context).canPop();
     final isHome = navigationShell.currentIndex == 0;
 

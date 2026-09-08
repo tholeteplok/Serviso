@@ -16,6 +16,7 @@ class Profile {
     this.shopBusinessType = 'keduanya',
     this.shopServiceMode = 'otomotif',
     this.isPlatformAdmin = false,
+    this.lastSeenAt,
   });
 
   final String id;
@@ -32,6 +33,7 @@ class Profile {
   final String shopBusinessType;
   final String shopServiceMode;
   final bool isPlatformAdmin;
+  final DateTime? lastSeenAt;
 
   bool get isAdmin => role == UserRole.admin;
 
@@ -61,6 +63,9 @@ class Profile {
           (map['service_mode'] as String?) ??
           'otomotif',
       isPlatformAdmin: (map['is_platform_admin'] as bool?) ?? false,
+      lastSeenAt: map['last_seen_at'] != null
+          ? DateTime.tryParse(map['last_seen_at'] as String)?.toLocal()
+          : null,
     );
   }
 
@@ -78,6 +83,7 @@ class Profile {
         'shop_business_type': shopBusinessType,
         'shop_service_mode': shopServiceMode,
         'is_platform_admin': isPlatformAdmin,
+        'last_seen_at': lastSeenAt?.toIso8601String(),
       };
 
   Profile copyWith({
@@ -95,6 +101,7 @@ class Profile {
     String? shopBusinessType,
     String? shopServiceMode,
     bool? isPlatformAdmin,
+    DateTime? lastSeenAt,
   }) =>
       Profile(
         id: id ?? this.id,
@@ -111,6 +118,7 @@ class Profile {
         shopBusinessType: shopBusinessType ?? this.shopBusinessType,
         shopServiceMode: shopServiceMode ?? this.shopServiceMode,
         isPlatformAdmin: isPlatformAdmin ?? this.isPlatformAdmin,
+        lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       );
 }
 
