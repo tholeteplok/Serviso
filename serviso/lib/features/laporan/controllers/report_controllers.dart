@@ -151,3 +151,174 @@ final directSalesDetailProvider = FutureProvider.family<
   return repo.fetchDirectSalesDetail(start: range.start, end: range.end);
 });
 
+final customerAnalyticsProvider =
+    FutureProvider<List<CustomerAnalyticsRow>>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchCustomerAnalytics();
+});
+
+final customerSummaryStatsProvider =
+    FutureProvider<CustomerSummaryStats>((ref) async {
+  final repo = ref.watch(reportRepositoryProvider);
+  return repo.fetchCustomerSummaryStats();
+});
+
+final customerAnalyticsSortProvider =
+    StateProvider<CustomerSortOption>((ref) => CustomerSortOption.latestVisit);
+
+final customerAnalyticsFilterProvider =
+    StateProvider<CustomerFilterOption>((ref) => CustomerFilterOption.all);
+
+final customerAnalyticsSearchProvider =
+    StateProvider<String>((ref) => '');
+
+final filteredCustomerAnalyticsProvider =
+    Provider<AsyncValue<List<CustomerAnalyticsRow>>>((ref) {
+  final asyncList = ref.watch(customerAnalyticsProvider);
+  final sort = ref.watch(customerAnalyticsSortProvider);
+  final filter = ref.watch(customerAnalyticsFilterProvider);
+  final query = ref.watch(customerAnalyticsSearchProvider).trim().toLowerCase();
+
+  return asyncList.whenData((list) {
+    var filtered = list;
+
+    if (query.isNotEmpty) {
+      filtered = filtered.where((c) {
+        final matchName = c.name.toLowerCase().contains(query);
+        final matchPhone = c.phone?.toLowerCase().contains(query) ?? false;
+        final matchAddress = c.address?.toLowerCase().contains(query) ?? false;
+        final matchPlate =
+            c.plateNumbers.any((p) => p.toLowerCase().contains(query));
+        return matchName || matchPhone || matchAddress || matchPlate;
+      }).toList();
+    }
+
+    switch (filter) {
+      case CustomerFilterOption.all:
+        break;
+      case CustomerFilterOption.vip:
+        filtered =
+            filtered.where((c) => c.tier == CustomerLoyaltyTier.vip).toList();
+        break;
+      case CustomerFilterOption.active30:
+        filtered = filtered.where((c) => c.isActiveRecently).toList();
+        break;
+      case CustomerFilterOption.needsReminder:
+        filtered = filtered.where((c) => c.needsReminder).toList();
+        break;
+    }
+
+    final sorted = List<CustomerAnalyticsRow>.from(filtered);
+    switch (sort) {
+      case CustomerSortOption.latestVisit:
+        sorted.sort((a, b) {
+          if (a.lastVisitAt == null && b.lastVisitAt == null) return 0;
+          if (a.lastVisitAt == null) return 1;
+          if (b.lastVisitAt == null) return -1;
+          return b.lastVisitAt!.compareTo(a.lastVisitAt!);
+        });
+        break;
+      case CustomerSortOption.oldestVisit:
+        sorted.sort((a, b) {
+          if (a.lastVisitAt == null && b.lastVisitAt == null) return 0;
+          if (a.lastVisitAt == null) return 1;
+          if (b.lastVisitAt == null) return -1;
+          return a.lastVisitAt!.compareTo(b.lastVisitAt!);
+        });
+        break;
+      case CustomerSortOption.nameAsc:
+        sorted.sort((a, b) =>
+            a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+      case CustomerSortOption.nameDesc:
+        sorted.sort((a, b) =>
+            b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+        break;
+      case CustomerSortOption.highestSpend:
+        sorted.sort((a, b) => b.totalSpent.compareTo(a.totalSpent));
+        break;
+      case CustomerSortOption.mostVisits:
+        sorted.sort((a, b) => b.totalVisits.compareTo(a.totalVisits));
+        break;
+    }
+
+    return sorted;
+  });
+});
+
+// -----------------------------------------------------------------------------
+// WO Selesai Search, Filter & Sort
+// -----------------------------------------------------------------------------
+
+enum WoPayMethodFilter { all, cash, qris, transfer }
+
+extension WoPayMethodFilterX on WoPayMethodFilter {
+  String get label => switch (this) {
+        WoPayMethodFilter.all => 'Semua',
+        WoPayMethodFilter.cash => 'Tunai',
+        WoPayMethodFilter.qris => 'QRIS',
+        WoPayMethodFilter.transfer => 'Transfer',
+      };
+}
+
+enum WoDoneSortOption { latestDate, oldestDate, highestAmount, lowestAmount }
+
+extension WoDoneSortOptionX on WoDoneSortOption {
+  String get label => switch (this) {
+        WoDoneSortOption.latestDate => 'Tanggal Terbaru',
+        WoDoneSortOption.oldestDate => 'Tanggal Terlama',
+        WoDoneSortOption.highestAmount => 'Nominal Tertinggi',
+        WoDoneSortOption.lowestAmount => 'Nominal Terendah',
+      };
+}
+
+final woDoneSearchProvider = StateProvider<String>((ref) => '');
+final woDoneMethodFilterProvider =
+    StateProvider<WoPayMethodFilter>((ref) => WoPayMethodFilter.all);
+final woDoneSortProvider =
+    StateProvider<WoDoneSortOption>((ref) => WoDoneSortOption.latestDate);
+
+final filteredWoDoneDetailProvider = Provider.family<
+    AsyncValue<List<WoDoneRow>>, ({DateTime start, DateTime end})>((ref, range) {
+  final baseAsync = ref.watch(woDoneDetailProvider(range));
+  final query = ref.watch(woDoneSearchProvider).trim().toLowerCase();
+  final methodFilter = ref.watch(woDoneMethodFilterProvider);
+  final sortOption = ref.watch(woDoneSortProvider);
+
+  return baseAsync.whenData((list) {
+    var result = list;
+    if (query.isNotEmpty) {
+      result = result.where((r) {
+        final matchWo = r.woNumber.toLowerCase().contains(query);
+        final matchPlate = (r.plateNo ?? '').toLowerCase().contains(query);
+        final matchCustomer = (r.customerName ?? '').toLowerCase().contains(query);
+        final matchVehicle = (r.vehicleDesc ?? '').toLowerCase().contains(query);
+        return matchWo || matchPlate || matchCustomer || matchVehicle;
+      }).toList();
+    }
+
+    if (methodFilter != WoPayMethodFilter.all) {
+      final targetMethod = methodFilter.name;
+      result = result.where((r) => r.payMethod?.toLowerCase() == targetMethod).toList();
+    }
+
+    final sorted = List<WoDoneRow>.from(result);
+    switch (sortOption) {
+      case WoDoneSortOption.latestDate:
+        sorted.sort((a, b) => b.completedAt.compareTo(a.completedAt));
+        break;
+      case WoDoneSortOption.oldestDate:
+        sorted.sort((a, b) => a.completedAt.compareTo(b.completedAt));
+        break;
+      case WoDoneSortOption.highestAmount:
+        sorted.sort((a, b) => b.paidAmount.compareTo(a.paidAmount));
+        break;
+      case WoDoneSortOption.lowestAmount:
+        sorted.sort((a, b) => a.paidAmount.compareTo(b.paidAmount));
+        break;
+    }
+    return sorted;
+  });
+});
+
+

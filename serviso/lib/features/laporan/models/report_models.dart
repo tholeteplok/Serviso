@@ -279,6 +279,7 @@ class WoDoneRow {
   final String woNumber;
   final String? plateNo;
   final String? customerName;
+  final String? vehicleDesc;
   final DateTime completedAt;
   final double paidAmount;
   final int itemCount;
@@ -290,6 +291,7 @@ class WoDoneRow {
     required this.woNumber,
     this.plateNo,
     this.customerName,
+    this.vehicleDesc,
     required this.completedAt,
     required this.paidAmount,
     this.itemCount = 0,
@@ -300,11 +302,21 @@ class WoDoneRow {
   factory WoDoneRow.fromMap(Map<String, dynamic> map) {
     final vehicles = map['vehicles'] as Map?;
     final plate = vehicles?['plate_no'] as String?;
+    final brand = vehicles?['brand'] as String?;
+    final model = vehicles?['model'] as String?;
+    final descParts = [brand, model].where((e) => e != null && e.isNotEmpty).join(' ');
+    final vehicleDesc = descParts.isNotEmpty ? descParts : map['vehicle_desc'] as String?;
+
     String? custName;
     if (vehicles != null) {
       final cust = vehicles['customers'];
       if (cust is Map) custName = cust['name'] as String?;
     }
+    final directCust = map['customers'];
+    if (directCust is Map && (custName == null || custName.isEmpty)) {
+      custName = directCust['name'] as String?;
+    }
+
     final woItems = map['wo_items'];
     int count = 0;
     if (woItems is List) count = woItems.length;
@@ -316,9 +328,12 @@ class WoDoneRow {
       woNumber: map['wo_number'] as String? ?? '',
       plateNo: plate ?? map['plate_no'] as String?,
       customerName: custName ?? map['customer_name'] as String?,
+      vehicleDesc: vehicleDesc,
       completedAt: map['completed_at'] != null
           ? DateTime.parse(map['completed_at'].toString())
-          : DateTime.parse(map['created_at'].toString()),
+          : (map['created_at'] != null
+              ? DateTime.parse(map['created_at'].toString())
+              : DateTime.now()),
       paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
       itemCount: count,
       status: map['status'] as String?,
@@ -332,6 +347,7 @@ class WoDoneRow {
       'wo_number': woNumber,
       'plate_no': plateNo,
       'customer_name': customerName,
+      'vehicle_desc': vehicleDesc,
       'completed_at': completedAt.toIso8601String(),
       'paid_amount': paidAmount,
       'item_count': itemCount,
@@ -556,3 +572,145 @@ class DirectSaleReportRow {
   }
 }
 
+enum CustomerLoyaltyTier {
+  vip('VIP / Top Spender'),
+  loyal('Pelanggan Loyal'),
+  newCustomer('Pelanggan Baru'),
+  prospect('Belum Transaksi');
+
+  final String label;
+  const CustomerLoyaltyTier(this.label);
+}
+
+enum CustomerSortOption {
+  latestVisit('Kunjungan Terbaru'),
+  oldestVisit('Kunjungan Terlama'),
+  nameAsc('Nama (A - Z)'),
+  nameDesc('Nama (Z - A)'),
+  highestSpend('Total Belanja Terbanyak'),
+  mostVisits('Frekuensi Kunjungan Terbanyak');
+
+  final String label;
+  const CustomerSortOption(this.label);
+}
+
+enum CustomerFilterOption {
+  all('Semua'),
+  vip('VIP'),
+  active30('Aktif (<30 hr)'),
+  needsReminder('Perlu Servis (>60 hr)');
+
+  final String label;
+  const CustomerFilterOption(this.label);
+}
+
+class CustomerAnalyticsRow {
+  final String id;
+  final String name;
+  final String? phone;
+  final String? address;
+  final DateTime createdAt;
+  final int vehicleCount;
+  final List<String> plateNumbers;
+  final int woCount;
+  final int directSaleCount;
+  final double totalSpent;
+  final DateTime? lastVisitAt;
+  final List<String> topPurchases;
+
+  const CustomerAnalyticsRow({
+    required this.id,
+    required this.name,
+    this.phone,
+    this.address,
+    required this.createdAt,
+    this.vehicleCount = 0,
+    this.plateNumbers = const [],
+    this.woCount = 0,
+    this.directSaleCount = 0,
+    this.totalSpent = 0.0,
+    this.lastVisitAt,
+    this.topPurchases = const [],
+  });
+
+  int get totalVisits => woCount + directSaleCount;
+
+  CustomerLoyaltyTier get tier {
+    if (totalSpent >= 2000000 || totalVisits >= 5) return CustomerLoyaltyTier.vip;
+    if (totalVisits >= 2) return CustomerLoyaltyTier.loyal;
+    if (totalVisits == 1) return CustomerLoyaltyTier.newCustomer;
+    return CustomerLoyaltyTier.prospect;
+  }
+
+  bool get needsReminder {
+    if (lastVisitAt == null) return false;
+    final daysSince = DateTime.now().difference(lastVisitAt!).inDays;
+    return daysSince >= 60;
+  }
+
+  bool get isActiveRecently {
+    if (lastVisitAt == null) return false;
+    final daysSince = DateTime.now().difference(lastVisitAt!).inDays;
+    return daysSince <= 30;
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'phone': phone,
+      'address': address,
+      'created_at': createdAt.toIso8601String(),
+      'vehicle_count': vehicleCount,
+      'plate_numbers': plateNumbers,
+      'wo_count': woCount,
+      'direct_sale_count': directSaleCount,
+      'total_spent': totalSpent,
+      'last_visit_at': lastVisitAt?.toIso8601String(),
+      'top_purchases': topPurchases,
+    };
+  }
+}
+
+class CustomerSummaryStats {
+  final int totalCustomers;
+  final int activeCustomersThisMonth;
+  final double totalAccumulatedRevenue;
+  final double averageLtv;
+
+  const CustomerSummaryStats({
+    required this.totalCustomers,
+    required this.activeCustomersThisMonth,
+    required this.totalAccumulatedRevenue,
+    required this.averageLtv,
+  });
+
+  factory CustomerSummaryStats.fromList(List<CustomerAnalyticsRow> list) {
+    if (list.isEmpty) {
+      return const CustomerSummaryStats(
+        totalCustomers: 0,
+        activeCustomersThisMonth: 0,
+        totalAccumulatedRevenue: 0.0,
+        averageLtv: 0.0,
+      );
+    }
+    final now = DateTime.now();
+    int activeCount = 0;
+    double totalRev = 0.0;
+    for (final c in list) {
+      totalRev += c.totalSpent;
+      if (c.lastVisitAt != null) {
+        final days = now.difference(c.lastVisitAt!).inDays;
+        if (days <= 30) {
+          activeCount++;
+        }
+      }
+    }
+    return CustomerSummaryStats(
+      totalCustomers: list.length,
+      activeCustomersThisMonth: activeCount,
+      totalAccumulatedRevenue: totalRev,
+      averageLtv: list.isNotEmpty ? totalRev / list.length : 0.0,
+    );
+  }
+}

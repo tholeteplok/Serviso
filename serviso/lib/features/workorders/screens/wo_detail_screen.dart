@@ -197,82 +197,85 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     final priceCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    final added = await showNeoDialog<bool>(
+    final added = await showNeoBottomSheet<bool>(
       context: context,
-      builder: (dialogCtx) => Form(
-        key: formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      titleWidget: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Tambah Jasa',
+            style: AppTypography.chakra(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink900,
+            ),
+          ),
+          TextButton.icon(
+            icon: Icon(AppIcons.search, size: 16),
+            label: const Text('Pilih dari Katalog'),
+            onPressed: () async {
+              final s = await showServicePicker(context, ref);
+              if (s != null) {
+                descCtrl.text = s.name;
+                priceCtrl.text =
+                    s.price > 0 ? s.price.toStringAsFixed(0) : '';
+              }
+            },
+          ),
+        ],
+      ),
+      child: StatefulBuilder(
+        builder: (sheetCtx, _) {
+          return Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Tambah Jasa',
-                  style: AppTypography.chakra(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
+                NeoTextField(
+                  controller: descCtrl,
+                  labelText: 'Deskripsi Jasa',
+                  autofocus: true,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
                 ),
-                TextButton.icon(
-                  icon: Icon(AppIcons.search, size: 16),
-                  label: const Text('Pilih dari Katalog'),
-                  onPressed: () async {
-                    final s = await showServicePicker(dialogCtx, ref);
-                    if (s != null) {
-                      descCtrl.text = s.name;
-                      priceCtrl.text =
-                          s.price > 0 ? s.price.toStringAsFixed(0) : '';
-                    }
+                const SizedBox(height: 12),
+                NeoTextField(
+                  controller: priceCtrl,
+                  labelText: 'Harga Jasa',
+                  prefixText: 'Rp ',
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final p = double.tryParse(v?.trim() ?? '');
+                    if (p == null || p <= 0) return 'Harga harus > 0';
+                    return null;
                   },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ThickBottomBorderButton(
+                      variant: ThickButtonVariant.secondary,
+                      onPressed: () => Navigator.of(sheetCtx).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 10),
+                    ThickBottomBorderButton(
+                      variant: ThickButtonVariant.primary,
+                      onPressed: () {
+                        if (formKey.currentState?.validate() == true) {
+                          Navigator.of(sheetCtx).pop(true);
+                        }
+                      },
+                      child: const Text('Tambah'),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            NeoTextField(
-              controller: descCtrl,
-              labelText: 'Deskripsi Jasa',
-              autofocus: true,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
-            ),
-            const SizedBox(height: 12),
-            NeoTextField(
-              controller: priceCtrl,
-              labelText: 'Harga Jasa',
-              prefixText: 'Rp ',
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final p = double.tryParse(v?.trim() ?? '');
-                if (p == null || p <= 0) return 'Harga harus > 0';
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ThickBottomBorderButton(
-                  variant: ThickButtonVariant.secondary,
-                  onPressed: () => Navigator.of(dialogCtx).pop(false),
-                  child: const Text('Batal'),
-                ),
-                const SizedBox(width: 10),
-                ThickBottomBorderButton(
-                  variant: ThickButtonVariant.primary,
-                  onPressed: () {
-                    if (formKey.currentState?.validate() == true) {
-                      Navigator.of(dialogCtx).pop(true);
-                    }
-                  },
-                  child: const Text('Tambah'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
@@ -324,74 +327,70 @@ class _WoDetailScreenState extends ConsumerState<WoDetailScreen> {
     );
     final formKey = GlobalKey<FormState>();
 
-    final confirmed = await showNeoDialog<bool>(
+    final confirmed = await showNeoBottomSheet<bool>(
       context: context,
-      builder: (dialogCtx) => Form(
-        key: formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tambah ${selectedPart.name}',
-              style: AppTypography.chakra(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Stok tersedia: ${selectedPart.stockQty.toStringAsFixed(0)} ${selectedPart.unit ?? 'pcs'}',
-              style: AppTypography.inter(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            NeoTextField(
-              controller: qtyCtrl,
-              labelText: 'Jumlah (Qty)',
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              validator: (v) {
-                final q = double.tryParse(v?.trim() ?? '');
-                if (q == null || q <= 0) return 'Jumlah harus > 0';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            NeoTextField(
-              controller: priceCtrl,
-              labelText: 'Harga Satuan',
-              prefixText: 'Rp ',
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final p = double.tryParse(v?.trim() ?? '');
-                if (p == null || p <= 0) return 'Harga harus > 0';
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+      title: 'Tambah ${selectedPart.name}',
+      child: StatefulBuilder(
+        builder: (sheetCtx, _) {
+          return Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ThickBottomBorderButton(
-                  variant: ThickButtonVariant.secondary,
-                  onPressed: () => Navigator.of(dialogCtx).pop(false),
-                  child: const Text('Batal'),
+                Text(
+                  'Stok tersedia: ${selectedPart.stockQty.toStringAsFixed(0)} ${selectedPart.unit ?? 'pcs'}',
+                  style: AppTypography.inter(color: AppColors.textSecondary, fontSize: 13),
                 ),
-                const SizedBox(width: 10),
-                ThickBottomBorderButton(
-                  variant: ThickButtonVariant.primary,
-                  onPressed: () {
-                    if (formKey.currentState?.validate() == true) {
-                      Navigator.of(dialogCtx).pop(true);
-                    }
+                const SizedBox(height: 16),
+                NeoTextField(
+                  controller: qtyCtrl,
+                  labelText: 'Jumlah (Qty)',
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  validator: (v) {
+                    final q = double.tryParse(v?.trim() ?? '');
+                    if (q == null || q <= 0) return 'Jumlah harus > 0';
+                    return null;
                   },
-                  child: const Text('Tambah'),
+                ),
+                const SizedBox(height: 12),
+                NeoTextField(
+                  controller: priceCtrl,
+                  labelText: 'Harga Satuan',
+                  prefixText: 'Rp ',
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final p = double.tryParse(v?.trim() ?? '');
+                    if (p == null || p <= 0) return 'Harga harus > 0';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ThickBottomBorderButton(
+                      variant: ThickButtonVariant.secondary,
+                      onPressed: () => Navigator.of(sheetCtx).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 10),
+                    ThickBottomBorderButton(
+                      variant: ThickButtonVariant.primary,
+                      onPressed: () {
+                        if (formKey.currentState?.validate() == true) {
+                          Navigator.of(sheetCtx).pop(true);
+                        }
+                      },
+                      child: const Text('Tambah'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
 

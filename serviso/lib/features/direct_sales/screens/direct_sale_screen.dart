@@ -180,53 +180,73 @@ class _DirectSaleScreenState extends ConsumerState<DirectSaleScreen> {
   Future<void> _addJasaDialog() async {
     final descCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
-    final res = await showNeoDialog<DirectSaleItemInput>(
+    final formKey = GlobalKey<FormState>();
+
+    final res = await showNeoBottomSheet<DirectSaleItemInput>(
       context: context,
-      child: NeoDialog.alert(
-        title: 'Tambah Jasa Custom',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            NeoTextField(
-              controller: descCtrl,
-              labelText: 'Deskripsi Jasa',
-              hintText: 'Misal: Jasa Pasang Ban / Cuci Karbu',
-              prefixIcon: AppIcons.wrench,
-            ),
-            const SizedBox(height: 12),
-            NeoTextField(
-              controller: priceCtrl,
-              labelText: 'Tarif Jasa',
-              prefixText: 'Rp ',
-              prefixIcon: AppIcons.money,
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          const SizedBox(width: 8),
-          ThickBottomBorderButton(
-            onPressed: () {
-              final d = descCtrl.text.trim();
-              final p = double.tryParse(priceCtrl.text.trim()) ?? 0;
-              if (d.isEmpty || p <= 0) return;
-              Navigator.pop(
-                context,
-                DirectSaleItemInput(
-                  kind: WoItemKind.jasa,
-                  qty: 1,
-                  unitPrice: p,
-                  description: d,
+      title: 'Tambah Jasa Custom',
+      child: StatefulBuilder(
+        builder: (sheetCtx, _) {
+          return Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                NeoTextField(
+                  controller: descCtrl,
+                  labelText: 'Deskripsi Jasa *',
+                  hintText: 'Misal: Jasa Pasang Ban / Cuci Karbu',
+                  prefixIcon: AppIcons.wrench,
+                  autofocus: true,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Deskripsi jasa wajib diisi' : null,
                 ),
-              );
-            },
-            child: const Text('Tambah'),
-          ),
-        ],
+                const SizedBox(height: 12),
+                NeoTextField(
+                  controller: priceCtrl,
+                  labelText: 'Tarif Jasa *',
+                  prefixText: 'Rp ',
+                  prefixIcon: AppIcons.money,
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final p = double.tryParse(v?.trim() ?? '');
+                    if (p == null || p <= 0) return 'Tarif harus > 0';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(sheetCtx),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 8),
+                    ThickBottomBorderButton(
+                      onPressed: () {
+                        if (!formKey.currentState!.validate()) return;
+                        final d = descCtrl.text.trim();
+                        final p = double.tryParse(priceCtrl.text.trim()) ?? 0;
+                        Navigator.pop(
+                          sheetCtx,
+                          DirectSaleItemInput(
+                            kind: WoItemKind.jasa,
+                            qty: 1,
+                            unitPrice: p,
+                            description: d,
+                          ),
+                        );
+                      },
+                      child: const Text('Tambah'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
     if (res != null) {

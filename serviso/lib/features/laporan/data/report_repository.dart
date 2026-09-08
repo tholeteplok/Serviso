@@ -68,6 +68,10 @@ abstract class ReportRepository {
     required DateTime start,
     required DateTime end,
   });
+
+  Future<List<CustomerAnalyticsRow>> fetchCustomerAnalytics();
+
+  Future<CustomerSummaryStats> fetchCustomerSummaryStats();
 }
 
 class SupabaseReportRepository implements ReportRepository {
@@ -529,33 +533,16 @@ class SupabaseReportRepository implements ReportRepository {
       final res = await _client
           .from('work_orders')
           .select(
-              'id, wo_number, paid_amount, pay_method, completed_at, status, vehicles(plate_no, customers(name)), wo_items(id)')
+              'id, wo_number, customer_name, paid_amount, pay_method, completed_at, status, vehicles(plate_no, brand, model, customers(name)), wo_items(id)')
           .eq('status', 'selesai')
           .gte('completed_at', '${startStr}T00:00:00')
           .lte('completed_at', '${endStr}T23:59:59')
           .order('completed_at', ascending: false);
       final list = <WoDoneRow>[];
       for (final m in res as List) {
-        final vehicles = m['vehicles'] as Map?;
-        String? plateNo;
-        String? custName;
-        if (vehicles != null) {
-          plateNo = vehicles['plate_no'] as String?;
-          final cust = vehicles['customers'];
-          if (cust is Map) custName = cust['name'] as String?;
+        if (m is Map) {
+          list.add(WoDoneRow.fromMap(m.cast<String, dynamic>()));
         }
-        final items = m['wo_items'] as List?;
-        list.add(WoDoneRow(
-          id: m['id'] as String,
-          woNumber: (m['wo_number'] as String?) ?? '',
-          plateNo: plateNo,
-          customerName: custName,
-          completedAt: DateTime.parse(m['completed_at'].toString()),
-          paidAmount: (m['paid_amount'] as num?)?.toDouble() ?? 0.0,
-          itemCount: items?.length ?? 0,
-          status: m['status'] as String?,
-          payMethod: m['pay_method'] as String?,
-        ));
       }
       return list;
     } catch (e) {
@@ -1011,6 +998,167 @@ class SupabaseReportRepository implements ReportRepository {
       throw RepositoryException(mapRepositoryError(e));
     }
   }
+
+  @override
+  Future<List<CustomerAnalyticsRow>> fetchCustomerAnalytics() async {
+    try {
+      final custRes = await _client
+          .from('customers')
+          .select('id, name, phone, address, created_at, vehicles(id, plate_no)')
+          .order('name');
+      final custRows = custRes as List;
+
+      List<Map<String, dynamic>> woList = [];
+      try {
+        final woRes = await _client
+            .from('work_orders')
+            .select('id, vehicle_id, paid_amount, completed_at, created_at, status, vehicles(customer_id), wo_items(name, qty)')
+            .inFilter('status', ['done', 'closed', 'paid']);
+        woList = List<Map<String, dynamic>>.from(woRes as List);
+      } catch (_) {
+        try {
+          final woRes = await _client
+              .from('work_orders')
+              .select('id, vehicle_id, paid_amount, completed_at, created_at, vehicles(customer_id)');
+          woList = List<Map<String, dynamic>>.from(woRes as List);
+        } catch (_) {}
+      }
+
+      List<Map<String, dynamic>> dsList = [];
+      try {
+        final dsRes = await _client
+            .from('direct_sales')
+            .select('id, customer_id, paid_amount, paid_at, created_at, direct_sale_items(description, qty)');
+        dsList = List<Map<String, dynamic>>.from(dsRes as List);
+      } catch (_) {
+        try {
+          final dsRes = await _client
+              .from('direct_sales')
+              .select('id, customer_id, paid_amount, paid_at, created_at');
+          dsList = List<Map<String, dynamic>>.from(dsRes as List);
+        } catch (_) {}
+      }
+
+      final Map<String, List<Map<String, dynamic>>> wosByCustomer = {};
+      for (final wo in woList) {
+        final v = wo['vehicles'] as Map?;
+        final custId = v?['customer_id'] as String? ?? wo['customer_id'] as String?;
+        if (custId != null) {
+          wosByCustomer.putIfAbsent(custId, () => []).add(wo);
+        }
+      }
+
+      final Map<String, List<Map<String, dynamic>>> dsByCustomer = {};
+      for (final ds in dsList) {
+        final custId = ds['customer_id'] as String?;
+        if (custId != null) {
+          dsByCustomer.putIfAbsent(custId, () => []).add(ds);
+        }
+      }
+
+      final List<CustomerAnalyticsRow> result = [];
+      for (final c in custRows) {
+        final custId = c['id'] as String;
+        final name = (c['name'] as String? ?? '').trim();
+        final phone = c['phone'] as String?;
+        final address = c['address'] as String?;
+        final createdAt = c['created_at'] != null
+            ? DateTime.parse(c['created_at'].toString())
+            : DateTime.now();
+
+        final vList = (c['vehicles'] as List?) ?? [];
+        final vehicleCount = vList.length;
+        final plateNumbers = vList
+            .map((v) => (v as Map)['plate_no'] as String?)
+            .whereType<String>()
+            .where((p) => p.trim().isNotEmpty)
+            .toList();
+
+        final custWos = wosByCustomer[custId] ?? [];
+        final custDs = dsByCustomer[custId] ?? [];
+
+        final int woCount = custWos.length;
+        final int dsCount = custDs.length;
+        double totalSpent = 0.0;
+        DateTime? lastVisit;
+
+        final Map<String, int> itemFrequency = {};
+
+        for (final wo in custWos) {
+          final amt = (wo['paid_amount'] as num?)?.toDouble() ?? 0.0;
+          totalSpent += amt;
+          final dateStr = wo['completed_at'] ?? wo['created_at'];
+          if (dateStr != null) {
+            final d = DateTime.parse(dateStr.toString());
+            if (lastVisit == null || d.isAfter(lastVisit)) {
+              lastVisit = d;
+            }
+          }
+          final items = wo['wo_items'] as List?;
+          if (items != null) {
+            for (final item in items) {
+              final iName = (item as Map)['name'] as String?;
+              if (iName != null && iName.trim().isNotEmpty) {
+                final qty = ((item['qty'] as num?)?.toInt() ?? 1).clamp(1, 100);
+                itemFrequency[iName.trim()] = (itemFrequency[iName.trim()] ?? 0) + qty;
+              }
+            }
+          }
+        }
+
+        for (final ds in custDs) {
+          final amt = (ds['paid_amount'] as num?)?.toDouble() ?? 0.0;
+          totalSpent += amt;
+          final dateStr = ds['paid_at'] ?? ds['created_at'];
+          if (dateStr != null) {
+            final d = DateTime.parse(dateStr.toString());
+            if (lastVisit == null || d.isAfter(lastVisit)) {
+              lastVisit = d;
+            }
+          }
+          final items = ds['direct_sale_items'] as List?;
+          if (items != null) {
+            for (final item in items) {
+              final iName = (item as Map)['description'] as String?;
+              if (iName != null && iName.trim().isNotEmpty) {
+                final qty = ((item['qty'] as num?)?.toInt() ?? 1).clamp(1, 100);
+                itemFrequency[iName.trim()] = (itemFrequency[iName.trim()] ?? 0) + qty;
+              }
+            }
+          }
+        }
+
+        final sortedItems = itemFrequency.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        final topPurchases = sortedItems.take(3).map((e) => e.key).toList();
+
+        result.add(CustomerAnalyticsRow(
+          id: custId,
+          name: name.isNotEmpty ? name : 'Pelanggan Tanpa Nama',
+          phone: phone,
+          address: address,
+          createdAt: createdAt,
+          vehicleCount: vehicleCount,
+          plateNumbers: plateNumbers,
+          woCount: woCount,
+          directSaleCount: dsCount,
+          totalSpent: totalSpent,
+          lastVisitAt: lastVisit,
+          topPurchases: topPurchases,
+        ));
+      }
+
+      return result;
+    } catch (e) {
+      throw RepositoryException(mapRepositoryError(e));
+    }
+  }
+
+  @override
+  Future<CustomerSummaryStats> fetchCustomerSummaryStats() async {
+    final list = await fetchCustomerAnalytics();
+    return CustomerSummaryStats.fromList(list);
+  }
 }
 
 class FakeReportRepository implements ReportRepository {
@@ -1258,6 +1406,7 @@ class FakeReportRepository implements ReportRepository {
     final days = end.difference(start).inDays + 1;
     final count = days.clamp(1, 5);
     const methods = ['cash', 'transfer', 'qris'];
+    const vehicles = ['Honda Vario 150', 'Yamaha NMAX 155', 'Honda Beat', 'Suzuki Satria', 'Yamaha Aerox'];
     return List.generate(count, (i) {
       final d = end.subtract(Duration(days: i));
       return WoDoneRow(
@@ -1265,6 +1414,7 @@ class FakeReportRepository implements ReportRepository {
         woNumber: 'WO-2026-${100 + i}',
         plateNo: 'B ${1000 + i} XYZ',
         customerName: 'Pelanggan ${i + 1}',
+        vehicleDesc: vehicles[i % vehicles.length],
         completedAt: d,
         paidAmount: (i + 1) * 500000,
         itemCount: (i % 3) + 1,
@@ -1430,5 +1580,133 @@ class FakeReportRepository implements ReportRepository {
     }
     list.sort((a, b) => b.paidAt.compareTo(a.paidAt));
     return list;
+  }
+
+  List<CustomerAnalyticsRow>? mockCustomerAnalytics;
+
+  @override
+  Future<List<CustomerAnalyticsRow>> fetchCustomerAnalytics() async {
+    if (mockCustomerAnalytics != null) return List.from(mockCustomerAnalytics!);
+    final now = DateTime.now();
+    return [
+      CustomerAnalyticsRow(
+        id: 'cust-1',
+        name: 'Budi Santoso',
+        phone: '081234567890',
+        address: 'Jl. Merdeka No. 45, Jakarta',
+        createdAt: now.subtract(const Duration(days: 120)),
+        vehicleCount: 2,
+        plateNumbers: const ['B 1234 ABC', 'B 5678 XYZ'],
+        woCount: 4,
+        directSaleCount: 2,
+        totalSpent: 2850000,
+        lastVisitAt: now.subtract(const Duration(days: 3)),
+        topPurchases: const ['Oli Mesin 1L', 'Filter Oli', 'Tune Up'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-2',
+        name: 'Agus Pratama',
+        phone: '081398765432',
+        address: 'Jl. Sudirman Kav. 12, Jakarta',
+        createdAt: now.subtract(const Duration(days: 90)),
+        vehicleCount: 1,
+        plateNumbers: const ['B 9988 DEF'],
+        woCount: 3,
+        directSaleCount: 1,
+        totalSpent: 1650000,
+        lastVisitAt: now.subtract(const Duration(days: 14)),
+        topPurchases: const ['Kampas Rem Depan', 'Ganti Oli'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-3',
+        name: 'Siti Rahmawati',
+        phone: '085712345678',
+        address: 'Komplek Permata Hijau Blok C3',
+        createdAt: now.subtract(const Duration(days: 180)),
+        vehicleCount: 1,
+        plateNumbers: const ['B 3456 GHI'],
+        woCount: 2,
+        directSaleCount: 0,
+        totalSpent: 920000,
+        lastVisitAt: now.subtract(const Duration(days: 75)),
+        topPurchases: const ['Servis Ringan', 'Busi Denso'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-4',
+        name: 'Hendra Gunawan',
+        phone: '081987654321',
+        address: 'Jl. Melati Indah No. 8',
+        createdAt: now.subtract(const Duration(days: 45)),
+        vehicleCount: 3,
+        plateNumbers: const ['B 7777 HG', 'B 8888 HG', 'D 1234 AA'],
+        woCount: 5,
+        directSaleCount: 3,
+        totalSpent: 4200000,
+        lastVisitAt: now.subtract(const Duration(days: 5)),
+        topPurchases: const ['Oli Transmisi', 'Oli Mesin Fastron 1L', 'General Checkup'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-5',
+        name: 'Dewi Lestari',
+        phone: '082133445566',
+        address: 'Jl. Mawar No. 17',
+        createdAt: now.subtract(const Duration(days: 20)),
+        vehicleCount: 1,
+        plateNumbers: const ['B 4567 JKL'],
+        woCount: 1,
+        directSaleCount: 1,
+        totalSpent: 350000,
+        lastVisitAt: now.subtract(const Duration(days: 10)),
+        topPurchases: const ['Oli Mesin 1L', 'Jasa Ganti Oli'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-6',
+        name: 'Rudi Hartono',
+        phone: '087811223344',
+        address: 'Jl. Anggrek No. 2',
+        createdAt: now.subtract(const Duration(days: 200)),
+        vehicleCount: 1,
+        plateNumbers: const ['B 6789 MNO'],
+        woCount: 1,
+        directSaleCount: 0,
+        totalSpent: 450000,
+        lastVisitAt: now.subtract(const Duration(days: 110)),
+        topPurchases: const ['Kampas Rem Belakang'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-7',
+        name: 'Yanto Wijaya',
+        phone: '081599887766',
+        address: 'Jl. Kebon Jeruk No. 9',
+        createdAt: now.subtract(const Duration(days: 15)),
+        vehicleCount: 1,
+        plateNumbers: const ['B 2345 PQR'],
+        woCount: 0,
+        directSaleCount: 2,
+        totalSpent: 280000,
+        lastVisitAt: now.subtract(const Duration(days: 2)),
+        topPurchases: const ['Air Radiator Coolant', 'Minyak Rem'],
+      ),
+      CustomerAnalyticsRow(
+        id: 'cust-8',
+        name: 'Doni Firmansyah',
+        phone: '081288776655',
+        address: 'Jl. Kemang Timur No. 33',
+        createdAt: now.subtract(const Duration(days: 60)),
+        vehicleCount: 2,
+        plateNumbers: const ['B 8901 STU', 'B 9012 VWX'],
+        woCount: 3,
+        directSaleCount: 1,
+        totalSpent: 2150000,
+        lastVisitAt: now.subtract(const Duration(days: 25)),
+        topPurchases: const ['Oli Mesin 1L', 'Filter Udara', 'Tune Up'],
+      ),
+    ];
+  }
+
+  @override
+  Future<CustomerSummaryStats> fetchCustomerSummaryStats() async {
+    final list = await fetchCustomerAnalytics();
+    return CustomerSummaryStats.fromList(list);
   }
 }

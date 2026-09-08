@@ -13,8 +13,8 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/theme/app_terms.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/widgets/neo_app_bar.dart';
+import '../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../core/widgets/neo_card.dart';
-import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_progress_bar.dart';
 import '../../../core/widgets/neo_search_bar.dart';
 import '../../../core/widgets/neo_text_field.dart';
@@ -154,21 +154,23 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     final phoneController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    final result = await showNeoDialog<Customer>(
+    final result = await showNeoBottomSheet<Customer>(
       context: context,
-      child: NeoDialog.alert(
-        title: 'Pelanggan Baru',
-        content: SingleChildScrollView(
-          child: Form(
+      title: 'Pelanggan Baru',
+      child: StatefulBuilder(
+        builder: (sheetCtx, _) {
+          return Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 NeoTextField(
                   controller: nameController,
                   labelText: 'Nama pelanggan *',
                   prefixIcon: AppIcons.user,
                   validator: validateCustomerName,
+                  autofocus: true,
                 ),
                 const SizedBox(height: 12),
                 NeoTextField(
@@ -178,41 +180,45 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
                   keyboardType: TextInputType.phone,
                   validator: validateCustomerPhone,
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetCtx).pop(),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 8),
+                    ThickBottomBorderButton(
+                      onPressed: () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final customerRepo = ref.read(customerRepositoryProvider);
+                        final messenger = ScaffoldMessenger.of(context);
+                        final nav = Navigator.of(sheetCtx);
+                        try {
+                          final customer = await customerRepo.create(
+                            CustomerInput(
+                              name: nameController.text,
+                              phone: phoneController.text.trim().isEmpty
+                                  ? null
+                                  : phoneController.text.trim(),
+                            ),
+                          );
+                          nav.pop(customer);
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Gagal membuat pelanggan: $e')),
+                          );
+                        }
+                      },
+                      child: const Text('Simpan'),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
-          ),
-          const SizedBox(width: 8),
-          ThickBottomBorderButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              final customerRepo = ref.read(customerRepositoryProvider);
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-              try {
-                final customer = await customerRepo.create(
-                  CustomerInput(
-                    name: nameController.text,
-                    phone: phoneController.text.trim().isEmpty
-                        ? null
-                        : phoneController.text.trim(),
-                  ),
-                );
-                nav.pop(customer);
-              } catch (e) {
-                messenger.showSnackBar(
-                  SnackBar(content: Text('Gagal membuat pelanggan: $e')),
-                );
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
+          );
+        },
       ),
     );
 
@@ -233,103 +239,111 @@ class _WoWizardScreenState extends ConsumerState<WoWizardScreen> {
     final modelController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    final result = await showNeoDialog<Vehicle>(
+    final result = await showNeoBottomSheet<Vehicle>(
       context: context,
-      child: NeoDialog.alert(
-        title: 'Pelanggan & Kendaraan Baru',
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                NeoTextField(
-                  controller: nameController,
-                  labelText: 'Nama pelanggan',
-                  prefixIcon: AppIcons.user,
-                  validator: validateCustomerName,
-                ),
-                const SizedBox(height: 12),
-                NeoTextField(
-                  controller: phoneController,
-                  labelText: 'Telepon (opsional)',
-                  prefixIcon: AppIcons.phone,
-                  keyboardType: TextInputType.phone,
-                  validator: validateCustomerPhone,
-                ),
-                const SizedBox(height: 12),
-                NeoTextField(
-                  controller: plateController,
-                  labelText: 'Plat nomor',
-                  prefixIcon: AppIcons.car,
-                  textCapitalization: TextCapitalization.characters,
-                  validator: validatePlate,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: NeoTextField(
-                        controller: brandController,
-                        labelText: 'Merek',
-                        prefixIcon: AppIcons.tag,
+      title: 'Pelanggan & Kendaraan Baru',
+      child: StatefulBuilder(
+        builder: (sheetCtx, _) {
+          return SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  NeoTextField(
+                    controller: nameController,
+                    labelText: 'Nama pelanggan',
+                    prefixIcon: AppIcons.user,
+                    validator: validateCustomerName,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: phoneController,
+                    labelText: 'Telepon (opsional)',
+                    prefixIcon: AppIcons.phone,
+                    keyboardType: TextInputType.phone,
+                    validator: validateCustomerPhone,
+                  ),
+                  const SizedBox(height: 12),
+                  NeoTextField(
+                    controller: plateController,
+                    labelText: 'Plat nomor',
+                    prefixIcon: AppIcons.car,
+                    textCapitalization: TextCapitalization.characters,
+                    validator: validatePlate,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: NeoTextField(
+                          controller: brandController,
+                          labelText: 'Merek',
+                          prefixIcon: AppIcons.tag,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: NeoTextField(
-                        controller: modelController,
-                        labelText: 'Model',
-                        prefixIcon: AppIcons.wrench,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: NeoTextField(
+                          controller: modelController,
+                          labelText: 'Model',
+                          prefixIcon: AppIcons.wrench,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(sheetCtx).pop(),
+                        child: const Text('Batal'),
+                      ),
+                      const SizedBox(width: 8),
+                      ThickBottomBorderButton(
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) return;
+                          final customerRepo = ref.read(customerRepositoryProvider);
+                          final vehicleRepo = ref.read(vehicleRepositoryProvider);
+                          final messenger = ScaffoldMessenger.of(context);
+                          final nav = Navigator.of(sheetCtx);
+                          try {
+                            final customer = await customerRepo.create(
+                              CustomerInput(
+                                name: nameController.text,
+                                phone: phoneController.text.trim().isEmpty
+                                    ? null
+                                    : phoneController.text.trim(),
+                              ),
+                            );
+                            final vehicle = await vehicleRepo.create(
+                              VehicleInput(
+                                customerId: customer.id,
+                                plateNo: plateController.text,
+                                brand: brandController.text,
+                                model: modelController.text,
+                              ),
+                            );
+                            if (!mounted) return;
+                            nav.pop(vehicle);
+                          } catch (e) {
+                            if (!mounted) return;
+                            messenger
+                                .showSnackBar(SnackBar(content: Text(e.toString())));
+                          }
+                        },
+                        child: const Text('Simpan'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
-          ),
-          const SizedBox(width: 8),
-          ThickBottomBorderButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              final customerRepo = ref.read(customerRepositoryProvider);
-              final vehicleRepo = ref.read(vehicleRepositoryProvider);
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-              try {
-                final customer = await customerRepo.create(
-                  CustomerInput(
-                    name: nameController.text,
-                    phone: phoneController.text.trim().isEmpty
-                        ? null
-                        : phoneController.text.trim(),
-                  ),
-                );
-                final vehicle = await vehicleRepo.create(
-                  VehicleInput(
-                    customerId: customer.id,
-                    plateNo: plateController.text,
-                    brand: brandController.text,
-                    model: modelController.text,
-                  ),
-                );
-                if (!mounted) return;
-                nav.pop(vehicle);
-              } catch (e) {
-                if (!mounted) return;
-                messenger
-                    .showSnackBar(SnackBar(content: Text(e.toString())));
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
+          );
+        },
       ),
     );
 

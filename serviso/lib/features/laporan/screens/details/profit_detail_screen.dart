@@ -191,6 +191,7 @@ class ProfitDetailScreen extends ConsumerWidget {
                             subtitle: '${rows.length} hari',
                             color: AppColors.primary,
                             icon: Icons.account_balance_wallet_rounded,
+                            onTap: () => context.push(AppRoutes.laporanOmset),
                           ),
                         ),
                         const SizedBox(width: 10),

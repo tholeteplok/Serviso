@@ -123,7 +123,7 @@ class _TicketItemRow extends StatelessWidget {
             ? '${order.customerName} — ${order.serviceLabel ?? order.complaint ?? 'Servis'}'
             : (order.serviceLabel ?? order.complaint ?? 'Servis');
 
-    final cost = order.total;
+    final cost = order.displayCost;
 
     return Material(
       color: Colors.transparent,

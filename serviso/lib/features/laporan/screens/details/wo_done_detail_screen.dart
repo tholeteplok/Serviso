@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/neo_app_bar.dart';
+import '../../../../core/widgets/neo_bottom_sheet.dart';
 import '../../../../core/widgets/neo_card.dart';
+import '../../../../core/widgets/neo_search_bar.dart';
 import '../../../../core/widgets/neo_segment_control.dart';
 import '../../../../core/widgets/plate_chip.dart';
 import '../../controllers/report_controllers.dart';
@@ -32,8 +35,33 @@ final woDoneDetailPeriodProvider =
   }
 }
 
-class WoDoneDetailScreen extends ConsumerWidget {
+class WoDoneDetailScreen extends ConsumerStatefulWidget {
   const WoDoneDetailScreen({super.key});
+
+  @override
+  ConsumerState<WoDoneDetailScreen> createState() => _WoDoneDetailScreenState();
+}
+
+class _WoDoneDetailScreenState extends ConsumerState<WoDoneDetailScreen> {
+  bool _searching = false;
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searching = true);
+    _searchController.text = ref.read(woDoneSearchProvider);
+  }
+
+  void _closeSearch() {
+    _searchController.clear();
+    ref.read(woDoneSearchProvider.notifier).state = '';
+    setState(() => _searching = false);
+  }
 
   Future<void> _handleExport(
     BuildContext context,
@@ -77,21 +105,85 @@ class WoDoneDetailScreen extends ConsumerWidget {
     }
   }
 
+  void _showSortSheet(BuildContext context, WoDoneSortOption currentSort) {
+    showNeoBottomSheet(
+      context: context,
+      title: 'Urutkan WO Selesai',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final opt in WoDoneSortOption.values)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                opt.label,
+                style: AppTypography.textTheme().bodyMedium?.copyWith(
+                      fontWeight: opt == currentSort
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: opt == currentSort
+                          ? AppColors.ink900
+                          : AppColors.textSecondary,
+                    ),
+              ),
+              leading: Icon(
+                opt == currentSort
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: opt == currentSort
+                    ? AppColors.ink900
+                    : AppColors.borderHairline,
+                size: 20,
+              ),
+              onTap: () {
+                ref.read(woDoneSortProvider.notifier).state = opt;
+                Navigator.of(context).pop();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final period = ref.watch(woDoneDetailPeriodProvider);
     final range = _woDoneRange(period);
     final periodLabel = period.label;
-    final asyncRows = ref
-        .watch(woDoneDetailProvider((start: range.start, end: range.end)));
-    final rowsForExport = asyncRows.valueOrNull ?? const <WoDoneRow>[];
+    final asyncFiltered = ref.watch(filteredWoDoneDetailProvider(range));
+    final currentMethodFilter = ref.watch(woDoneMethodFilterProvider);
+    final currentSort = ref.watch(woDoneSortProvider);
+    final rowsForExport = asyncFiltered.valueOrNull ?? const <WoDoneRow>[];
 
     return Scaffold(
       appBar: NeoAppBar(
-        title: 'Rincian WO Selesai',
+        title: _searching ? '' : 'Rincian WO Selesai',
+        bottom: _searching
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(64),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: NeoSearchBar(
+                    controller: _searchController,
+                    hintText: 'Cari plat, nomor WO, pelanggan...',
+                    autofocus: true,
+                    onChanged: (val) =>
+                        ref.read(woDoneSearchProvider.notifier).state = val,
+                    onClear: _closeSearch,
+                  ),
+                ),
+              )
+            : null,
         actions: [
+          if (!_searching)
+            IconButton(
+              icon: Icon(AppIcons.search, color: AppColors.ink900),
+              tooltip: 'Cari WO Selesai',
+              onPressed: _openSearch,
+            ),
           PopupMenuButton<String>(
             tooltip: 'Export',
+            icon: Icon(AppIcons.share, color: AppColors.ink900),
             onSelected: (value) =>
                 _handleExport(context, rowsForExport, periodLabel, value),
             itemBuilder: (ctx) => const [
@@ -117,9 +209,108 @@ class WoDoneDetailScreen extends ConsumerWidget {
                   .toList(),
             ),
           ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: WoPayMethodFilter.values.map((method) {
+                        final isSelected = currentMethodFilter == method;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: InkWell(
+                            onTap: () => ref
+                                .read(woDoneMethodFilterProvider.notifier)
+                                .state = method,
+                            borderRadius: AppRadius.badge,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.ink900
+                                    : AppColors.bgSurface,
+                                borderRadius: AppRadius.badge,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.ink900
+                                      : AppColors.borderHairline,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Text(
+                                method.label,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppColors.bgSurface
+                                          : AppColors.textSecondary,
+                                    ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _showSortSheet(context, currentSort),
+                  borderRadius: AppRadius.badge,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: AppRadius.badge,
+                      border: Border.all(
+                        color: AppColors.borderHairline,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          AppIcons.filter,
+                          size: 14,
+                          color: AppColors.ink900,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Urutkan',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.ink900,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 12),
           Expanded(
-            child: asyncRows.when(
+            child: asyncFiltered.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => ErrorView(
                 message: err.toString(),
@@ -128,16 +319,22 @@ class WoDoneDetailScreen extends ConsumerWidget {
                 ),
               ),
               data: (rows) {
+                final rawAsync = ref.watch(woDoneDetailProvider(range));
+                final isRawEmpty = rawAsync.valueOrNull?.isEmpty ?? false;
+
                 if (rows.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       const SizedBox(height: 32),
                       EmptyState(
-                        icon: AppIcons.checkCircle,
-                        title: 'Belum Ada WO Selesai',
-                        message:
-                            'Tidak ada work order selesai pada periode ini. Coba ganti periode.',
+                        icon: isRawEmpty ? AppIcons.checkCircle : AppIcons.search,
+                        title: isRawEmpty
+                            ? 'Belum Ada WO Selesai'
+                            : 'Tidak Ditemukan',
+                        message: isRawEmpty
+                            ? 'Tidak ada work order selesai pada periode ini. Coba ganti periode.'
+                            : 'Tidak ada WO selesai yang cocok dengan pencarian atau filter.',
                       ),
                     ],
                   );
@@ -149,7 +346,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   children: [
-                    // Summary
+                    // Summary Card
                     NeoCard(
                       padding: const EdgeInsets.all(14),
                       child: Row(
@@ -163,7 +360,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelMedium
-                                      ?.copyWith(color: AppColors.inkMuted),
+                                      ?.copyWith(color: AppColors.textSecondary),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -171,15 +368,18 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   style: AppTypography.mono(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
+                                    color: AppColors.ink900,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  periodLabel,
+                                  currentMethodFilter != WoPayMethodFilter.all
+                                      ? '$periodLabel • ${currentMethodFilter.label}'
+                                      : periodLabel,
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
-                                      ?.copyWith(color: AppColors.inkMuted),
+                                      ?.copyWith(color: AppColors.textSecondary),
                                 ),
                               ],
                             ),
@@ -199,7 +399,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelMedium
-                                      ?.copyWith(color: AppColors.inkMuted),
+                                      ?.copyWith(color: AppColors.textSecondary),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -209,16 +409,18 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   style: AppTypography.mono(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.ink,
+                                    color: AppColors.ink900,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'dari WO selesai',
+                                  currentMethodFilter != WoPayMethodFilter.all
+                                      ? 'dari ${currentMethodFilter.label}'
+                                      : 'dari WO selesai',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
-                                      ?.copyWith(color: AppColors.inkMuted),
+                                      ?.copyWith(color: AppColors.textSecondary),
                                 ),
                               ],
                             ),
@@ -251,11 +453,10 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                             vertical: 5,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.canvas,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            color: AppColors.bgSurface,
+                                            borderRadius: AppRadius.chipSmall,
                                             border: Border.all(
-                                              color: AppColors.inkMuted,
+                                              color: AppColors.borderHairline,
                                               width: 1.2,
                                             ),
                                           ),
@@ -264,6 +465,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                             style: AppTypography.mono(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
+                                              color: AppColors.ink900,
                                             ),
                                           ),
                                         ),
@@ -276,6 +478,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                           style: AppTypography.mono(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w700,
+                                            color: AppColors.ink900,
                                           ),
                                         ),
                                       ),
@@ -290,15 +493,26 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                         .textTheme
                                         .bodyMedium
                                         ?.copyWith(
-                                            fontWeight: FontWeight.w600),
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.ink900,
+                                        ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${dateShortId(r.completedAt)} • ${r.itemCount} item • ${_payMethodLabel(r.payMethod)}',
+                                    [
+                                      if (r.vehicleDesc != null &&
+                                          r.vehicleDesc!.isNotEmpty)
+                                        r.vehicleDesc!,
+                                      dateShortId(r.completedAt),
+                                      '${r.itemCount} item',
+                                      _payMethodLabel(r.payMethod),
+                                    ].join(' • '),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall
-                                        ?.copyWith(color: AppColors.inkMuted),
+                                        ?.copyWith(color: AppColors.textSecondary),
                                   ),
                                 ],
                               ),
@@ -312,22 +526,28 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                   style: AppTypography.mono(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
+                                    color: AppColors.ink900,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: _payMethodBg(r.payMethod),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: AppColors.borderStrong, width: 1),
+                                    borderRadius: AppRadius.badge,
+                                    border: Border.all(
+                                        color: AppColors.borderStrong, width: 1),
                                   ),
                                   child: Text(
                                     _payMethodLabel(r.payMethod),
-                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 10,
-                                          color: AppColors.ink,
+                                          color: AppColors.ink900,
                                         ),
                                   ),
                                 ),
@@ -335,7 +555,7 @@ class WoDoneDetailScreen extends ConsumerWidget {
                                 const Icon(
                                   Icons.chevron_right_rounded,
                                   size: 18,
-                                  color: AppColors.inkMuted,
+                                  color: AppColors.textSecondary,
                                 ),
                               ],
                             ),

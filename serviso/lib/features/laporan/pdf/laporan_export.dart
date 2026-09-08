@@ -959,4 +959,33 @@ String buildDirectSaleReportCsv(List<DirectSaleReportRow> rows) {
   return sb.toString();
 }
 
+String buildCustomerCsv(List<CustomerAnalyticsRow> rows) {
+  final sb = StringBuffer();
+  // UTF-8 BOM untuk kompatibilitas penuh dengan Microsoft Excel
+  sb.write('\uFEFF');
+  sb.writeln(
+    'Nama Pelanggan,No Telepon,Alamat,Status Loyalitas,Kendaraan (Plat),Total WO Selesai,Total Penjualan Kasir,Total Kunjungan,Total Belanja (Rp),Kunjungan Terakhir,Produk/Jasa Favorit',
+  );
+  for (final r in rows) {
+    final lastVisitStr =
+        r.lastVisitAt != null ? _dateOnly(r.lastVisitAt!) : 'Belum Ada';
+    final platesStr = r.plateNumbers.join('; ');
+    final favItemsStr = r.topPurchases.join('; ');
+    sb.writeln(
+      '${_csvEscape(r.name)},'
+      '${_csvEscape(r.phone ?? '-')},'
+      '${_csvEscape(r.address ?? '-')},'
+      '${_csvEscape(r.tier.label)},'
+      '${_csvEscape(platesStr.isNotEmpty ? platesStr : '-')},'
+      '${r.woCount},'
+      '${r.directSaleCount},'
+      '${r.totalVisits},'
+      '${r.totalSpent.toStringAsFixed(0)},'
+      '${_csvEscape(lastVisitStr)},'
+      '${_csvEscape(favItemsStr.isNotEmpty ? favItemsStr : '-')}',
+    );
+  }
+  return sb.toString();
+}
+
 

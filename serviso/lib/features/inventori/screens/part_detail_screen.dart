@@ -20,7 +20,7 @@ import '../controllers/part_detail_controller.dart';
 import '../models/part.dart';
 import '../models/part_movement.dart';
 import 'adjust_stock_dialog.dart';
-import 'stock_in_dialog.dart';
+import 'stock_in_screen.dart';
 
 class PartDetailScreen extends ConsumerWidget {
   const PartDetailScreen({super.key, required this.partId});
@@ -158,8 +158,15 @@ class PartDetailScreen extends ConsumerWidget {
                       isFullWidth: true,
                       variant: ThickButtonVariant.primary,
                       icon: Icon(AppIcons.add, size: 18),
-                      onPressed: () =>
-                          showStockInDialog(context, ref, partId, initialPart: part),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StockInScreen(
+                            partId: partId,
+                            initialPart: part,
+                          ),
+                        ),
+                      ),
                       child: const Text('Stok Masuk'),
                     ),
                   ),

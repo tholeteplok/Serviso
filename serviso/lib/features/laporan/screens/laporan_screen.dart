@@ -30,6 +30,7 @@ class LaporanScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     final ownerFinancialAsync =
         isAdmin ? ref.watch(ownerFinancialSummaryProvider) : null;
+    final customerStatsAsync = ref.watch(customerSummaryStatsProvider);
 
     return Scaffold(
       appBar: const NeoAppBar(
@@ -41,6 +42,7 @@ class LaporanScreen extends ConsumerWidget {
           ref.invalidate(laporanDailySummariesProvider);
           ref.invalidate(topPartsProvider);
           ref.invalidate(dailyRevenueByMethodProvider);
+          ref.invalidate(customerSummaryStatsProvider);
           if (isAdmin) {
             ref.invalidate(ownerFinancialSummaryProvider);
             ref.invalidate(distributorDebtsProvider);
@@ -109,108 +111,121 @@ class LaporanScreen extends ConsumerWidget {
                   (sum, r) => sum + r.partsOutQty,
                 );
 
+                final totalCustomers =
+                    customerStatsAsync.valueOrNull?.totalCustomers ?? 0;
+                final activeCustomers =
+                    customerStatsAsync.valueOrNull?.activeCustomersThisMonth ?? 0;
+
                 return Column(
                   children: [
                     // Summary Metric Cards
                     if (isAdmin && ownerFinancialAsync != null) ...[
                       ownerFinancialAsync.when(
-                        data: (fin) => Column(
-                          children: [
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: _buildMetricCard(
-                                      context,
-                                      title: 'Total Omset',
-                                      value: rupiah(fin.totalRevenue),
-                                      subtitle: 'Pendapatan kotor',
-                                      icon: AppIcons.wallet,
-                                      color: AppColors.pastelPurple,
-                                      onTap: () => context.push(
-                                        AppRoutes.laporanOmset,
+                        data: (fin) {
+                          final margin = fin.totalRevenue > 0
+                              ? ((fin.netProfit / fin.totalRevenue) * 100)
+                                  .toStringAsFixed(0)
+                              : '0';
+                          return Column(
+                            children: [
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: _buildMetricCard(
+                                        context,
+                                        title: 'Laba & Omset',
+                                        value: rupiah(fin.netProfit),
+                                        subtitle:
+                                            'Omset ${rupiah(fin.totalRevenue)} • Margin $margin%',
+                                        icon: AppIcons.report,
+                                        color: AppColors.pastelMint,
+                                        onTap: () {
+                                          if (!isAdmin) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Hanya pemilik dapat membuka rincian ini',
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          context.push(AppRoutes.laporanLaba);
+                                        },
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildMetricCard(
-                                      context,
-                                      title: 'Untung Bersih',
-                                      value: rupiah(fin.netProfit),
-                                      subtitle: 'Omzet - Modal Part',
-                                      icon: AppIcons.report,
-                                      color: AppColors.pastelMint,
-                                      onTap: () {
-                                        if (!isAdmin) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Hanya pemilik dapat membuka rincian ini',
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        context.push(AppRoutes.laporanLaba);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: _buildMetricCard(
-                                      context,
-                                      title: 'Penjualan Langsung',
-                                      value: '$totalDirectSales Transaksi',
-                                      subtitle: 'Penjualan kasir',
-                                      icon: AppIcons.money,
-                                      color: AppColors.pastelYellow,
-                                      onTap: () => context.push(
-                                        AppRoutes.laporanPenjualanLangsung,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildMetricCard(
+                                        context,
+                                        title: 'Pelanggan & CRM',
+                                        value: '$totalCustomers Pelanggan',
+                                        subtitle:
+                                            '$activeCustomers aktif bulan ini',
+                                        icon: AppIcons.usersThree,
+                                        color: AppColors.pastelPurple,
+                                        onTap: () => context.push(
+                                          AppRoutes.laporanPelanggan,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildMetricCard(
-                                      context,
-                                      title: 'Hutang Distributor',
-                                      value: rupiah(fin.totalUnpaidDebt),
-                                      subtitle: 'Tagihan belum lunas',
-                                      icon: AppIcons.receipt,
-                                      color: fin.totalUnpaidDebt > 0
-                                          ? AppColors.pastelPink
-                                          : AppColors.pastelMint,
-                                      onTap: () {
-                                        if (!isAdmin) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Hanya pemilik dapat membuka rincian ini',
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        context.push(AppRoutes.laporanHutang);
-                                      },
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(height: 12),
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: _buildMetricCard(
+                                        context,
+                                        title: 'Penjualan Langsung',
+                                        value: '$totalDirectSales Transaksi',
+                                        subtitle: 'Penjualan kasir',
+                                        icon: AppIcons.money,
+                                        color: AppColors.pastelYellow,
+                                        onTap: () => context.push(
+                                          AppRoutes.laporanPenjualanLangsung,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildMetricCard(
+                                        context,
+                                        title: 'Hutang Distributor',
+                                        value: rupiah(fin.totalUnpaidDebt),
+                                        subtitle: 'Tagihan belum lunas',
+                                        icon: AppIcons.receipt,
+                                        color: fin.totalUnpaidDebt > 0
+                                            ? AppColors.pastelPink
+                                            : AppColors.pastelMint,
+                                        onTap: () {
+                                          if (!isAdmin) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Hanya pemilik dapat membuka rincian ini',
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          context.push(AppRoutes.laporanHutang);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                         loading: () => const Center(
                           child: Padding(
                             padding: EdgeInsets.all(12.0),
@@ -229,6 +244,21 @@ class LaporanScreen extends ConsumerWidget {
                                 color: AppColors.pastelPurple,
                                 onTap: () => context.push(
                                   AppRoutes.laporanOmset,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Pelanggan & CRM',
+                                value: '$totalCustomers Pelanggan',
+                                subtitle:
+                                    '$activeCustomers aktif bulan ini',
+                                icon: AppIcons.usersThree,
+                                color: AppColors.pastelMint,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanPelanggan,
                                 ),
                               ),
                             ),
@@ -258,6 +288,28 @@ class LaporanScreen extends ConsumerWidget {
                             Expanded(
                               child: _buildMetricCard(
                                 context,
+                                title: 'Pelanggan & CRM',
+                                value: '$totalCustomers Pelanggan',
+                                subtitle:
+                                    '$activeCustomers aktif bulan ini',
+                                icon: AppIcons.usersThree,
+                                color: AppColors.pastelMint,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanPelanggan,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
                                 title: 'Penjualan Langsung',
                                 value: '$totalDirectSales Transaksi',
                                 subtitle: 'Penjualan kasir',
@@ -268,46 +320,85 @@ class LaporanScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'WO Selesai',
+                                value: '$totalWo WO',
+                                subtitle: 'Pekerjaan tuntas',
+                                icon: AppIcons.checkCircle,
+                                color: AppColors.pastelMint,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanWoSelesai,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
                     ],
 
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: _buildMetricCard(
-                              context,
-                              title: 'WO Selesai',
-                              value: '$totalWo WO',
-                              subtitle: 'Pekerjaan tuntas',
-                              icon: AppIcons.checkCircle,
-                              color: AppColors.pastelMint,
-                              onTap: () => context.push(
-                                AppRoutes.laporanWoSelesai,
+                    if (isAdmin) ...[
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'WO Selesai',
+                                value: '$totalWo WO',
+                                subtitle: 'Pekerjaan tuntas',
+                                icon: AppIcons.checkCircle,
+                                color: AppColors.pastelMint,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanWoSelesai,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildMetricCard(
-                              context,
-                              title: 'Part Terjual',
-                              value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
-                              subtitle: 'Item suku cadang',
-                              icon: AppIcons.inventory,
-                              color: AppColors.pastelBlue,
-                              onTap: () => context.push(
-                                AppRoutes.laporanPartTerjual,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Part Terjual',
+                                value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
+                                subtitle: 'Item suku cadang',
+                                icon: AppIcons.inventory,
+                                color: AppColors.pastelBlue,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanPartTerjual,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                context,
+                                title: 'Part Terjual',
+                                value: '${totalPartsOut.toStringAsFixed(0)} Pcs',
+                                subtitle: 'Item suku cadang',
+                                icon: AppIcons.inventory,
+                                color: AppColors.pastelBlue,
+                                onTap: () => context.push(
+                                  AppRoutes.laporanPartTerjual,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Spacer(),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
 
                     // Bar Chart Section

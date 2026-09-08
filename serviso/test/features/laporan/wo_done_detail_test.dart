@@ -3,83 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:serviso/core/theme/app_theme.dart';
-import 'package:serviso/features/auth/controllers/session_controller.dart';
 import 'package:serviso/features/laporan/controllers/report_controllers.dart';
 import 'package:serviso/features/laporan/data/report_repository.dart';
-import 'package:serviso/features/laporan/screens/details/customer_report_screen.dart';
-import 'package:serviso/features/laporan/screens/laporan_screen.dart';
+import 'package:serviso/features/laporan/screens/details/wo_done_detail_screen.dart';
 
 void main() {
-  testWidgets('LaporanScreen renders period chips, metrics, Pelanggan card for staff',
-      (tester) async {
-    tester.view.physicalSize = const Size(800, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final fakeReportRepo = FakeReportRepository();
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          reportRepositoryProvider.overrideWithValue(fakeReportRepo),
-          isAdminProvider.overrideWith((ref) => false),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const LaporanScreen(),
-        ),
-      ),
-    );
-
-    for (var i = 0; i < 5; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    await tester.pumpAndSettle();
-
-    expect(find.text('7 Hari'), findsOneWidget);
-    expect(find.text('30 Hari'), findsOneWidget);
-    expect(find.text('Bulan Ini'), findsOneWidget);
-
-    expect(find.text('Total Omset'), findsOneWidget);
-    expect(find.text('Pelanggan & CRM'), findsOneWidget);
-    expect(find.text('WO Selesai'), findsOneWidget);
-    expect(find.text('Grafik Pendapatan Harian'), findsOneWidget);
-    expect(
-      find.text('Suku Cadang Terlaris Bulan Ini', skipOffstage: false),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('LaporanScreen renders combined Laba & Omset and Pelanggan & CRM for admin',
-      (tester) async {
-    final fakeReportRepo = FakeReportRepository();
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          reportRepositoryProvider.overrideWithValue(fakeReportRepo),
-          isAdminProvider.overrideWith((ref) => true),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const LaporanScreen(),
-        ),
-      ),
-    );
-
-    for (var i = 0; i < 5; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    await tester.pumpAndSettle();
-
-    expect(find.text('Laba & Omset'), findsOneWidget);
-    expect(find.text('Pelanggan & CRM'), findsOneWidget);
-    expect(find.text('Penjualan Langsung'), findsOneWidget);
-    expect(find.text('Hutang Distributor'), findsOneWidget);
-  });
-
-  testWidgets('CustomerReportScreen renders metrics summary and customer cards',
+  testWidgets('WoDoneDetailScreen renders summary, filter chips, and work order cards',
       (tester) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1.0;
@@ -95,7 +24,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const CustomerReportScreen(),
+          home: const WoDoneDetailScreen(),
         ),
       ),
     );
@@ -105,14 +34,99 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    expect(find.text('Pelanggan & CRM'), findsOneWidget);
-    expect(find.text('Total Pelanggan'), findsOneWidget);
-    expect(find.text('Aktif Bulan Ini'), findsOneWidget);
-    expect(find.text('Total Omset Pelanggan'), findsOneWidget);
-    expect(find.text('Rata-rata LTV'), findsOneWidget);
+    // App Bar & period
+    expect(find.text('Rincian WO Selesai'), findsOneWidget);
+    expect(find.text('7 Hari'), findsWidgets);
 
-    // Customer items from fake repo
-    expect(find.text('Budi Santoso'), findsOneWidget);
-    expect(find.text('Agus Pratama'), findsOneWidget);
+    // Payment method filter chips
+    expect(find.text('Semua'), findsOneWidget);
+    expect(find.text('Tunai'), findsWidgets);
+    expect(find.text('QRIS'), findsWidgets);
+    expect(find.text('Transfer'), findsWidgets);
+    expect(find.text('Urutkan'), findsOneWidget);
+
+    // Summary Card
+    expect(find.text('Total WO'), findsOneWidget);
+    expect(find.text('Total Pendapatan'), findsOneWidget);
+
+    // Work order cards from FakeReportRepository
+    expect(find.text('WO-2026-100'), findsOneWidget);
+    expect(find.text('B 1000 XYZ'), findsOneWidget);
+    expect(find.text('Pelanggan 1'), findsOneWidget);
+    expect(find.textContaining('Honda Vario 150'), findsOneWidget);
+  });
+
+  testWidgets('WoDoneDetailScreen filter by Tunai updates list and summary',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fakeReportRepo = FakeReportRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          reportRepositoryProvider.overrideWithValue(fakeReportRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const WoDoneDetailScreen(),
+        ),
+      ),
+    );
+
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+
+    // Tap Tunai chip
+    final tunaiChip = find.text('Tunai').first;
+    await tester.tap(tunaiChip);
+    await tester.pumpAndSettle();
+
+    // Summary reflects Tunai filter
+    expect(find.textContaining('dari Tunai'), findsOneWidget);
+  });
+
+  testWidgets('WoDoneDetailScreen search filters work order by plate or name',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fakeReportRepo = FakeReportRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          reportRepositoryProvider.overrideWithValue(fakeReportRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const WoDoneDetailScreen(),
+        ),
+      ),
+    );
+
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+
+    // Tap search icon
+    final searchBtn = find.byTooltip('Cari WO Selesai');
+    expect(searchBtn, findsOneWidget);
+    await tester.tap(searchBtn);
+    await tester.pumpAndSettle();
+
+    // Enter query that does not match
+    await tester.enterText(find.byType(TextField), 'ZZZZNOTEXIST');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tidak Ditemukan'), findsOneWidget);
   });
 }

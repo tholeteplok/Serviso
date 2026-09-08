@@ -463,35 +463,15 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     bool isLoading = false;
     bool obscurePassword = true;
 
-    showNeoDialog(
+    showNeoBottomSheet(
       context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setState) {
+      title: 'Setel Password Baru',
+      child: StatefulBuilder(
+        builder: (sheetCtx, setState) {
           return Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.pastelYellow,
-                  borderRadius: AppRadius.button,
-                  border: Border.all(color: AppColors.borderInk, width: 1.5),
-                ),
-                alignment: Alignment.center,
-                child: Icon(AppIcons.lock, color: AppColors.ink900, size: 22),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Setel Password Baru',
-                style: AppTypography.chakra(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 4),
               Text(
                 'Ubah langsung password untuk @${user.username} (${user.fullName}).',
                 style: AppTypography.textTheme().bodyMedium?.copyWith(
@@ -507,6 +487,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 hintText: 'Minimal 6 karakter',
                 prefixIcon: AppIcons.lock,
                 obscureText: obscurePassword,
+                autofocus: true,
                 suffixIcon: IconButton(
                   icon: Icon(
                     obscurePassword ? AppIcons.eye : AppIcons.eyeSlash,
@@ -522,7 +503,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: isLoading ? null : () => Navigator.pop(dialogCtx),
+                    onPressed: isLoading ? null : () => Navigator.pop(sheetCtx),
                     child: const Text('Batal'),
                   ),
                   const SizedBox(width: 8),
@@ -550,7 +531,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                               ref.invalidate(userListProvider);
                               _sessionPasswords[user.username] = newPassword;
                               if (context.mounted) {
-                                Navigator.pop(dialogCtx);
+                                Navigator.pop(sheetCtx);
                                 _showUserCredentialsPreviewDialog(
                                   context,
                                   username: user.username,

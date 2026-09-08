@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_radius.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/neo_app_bar.dart';
 import '../../../core/widgets/neo_card.dart';
 import '../../../core/widgets/neo_dialog.dart';
 import '../../../core/widgets/neo_filter_chip.dart';
-import '../../../core/widgets/neo_segment_control.dart';
 import '../../../core/widgets/neo_text_field.dart';
-import '../../../core/widgets/thick_bottom_border_button.dart';
 import '../../auth/controllers/session_controller.dart';
 import '../controllers/admin_controllers.dart';
 import '../models/admin_models.dart';
+import 'create_shop_screen.dart';
 
 class PlatformAdminScreen extends ConsumerStatefulWidget {
   const PlatformAdminScreen({super.key});
@@ -28,7 +25,6 @@ class PlatformAdminScreen extends ConsumerStatefulWidget {
 
 class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
   final _searchCtrl = TextEditingController();
-  bool _isCreatingShop = false;
 
   @override
   void dispose() {
@@ -42,203 +38,12 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
   }
 
   Future<void> _createShop() async {
-    final nameCtrl = TextEditingController();
-    final slugCtrl = TextEditingController();
-    final fullNameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final usernameCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
-    String selectedBusinessType = 'keduanya';
-
-    final bool? result = await showNeoDialog<bool>(
-      context: context,
-      child: StatefulBuilder(
-        builder: (context, setDialogState) {
-          return NeoDialog.alert(
-            title: 'Buat Toko Baru',
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  NeoTextField(
-                    controller: nameCtrl,
-                    labelText: 'Nama Toko (ex: Serviso Pusat)',
-                    prefixIcon: AppIcons.storefront,
-                  ),
-                  const SizedBox(height: 12),
-                  NeoTextField(
-                    controller: slugCtrl,
-                    labelText: 'Kode Toko (ex: serviso)',
-                    prefixIcon: AppIcons.tag,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Jenis Usaha',
-                    style: AppTypography.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  NeoSegmentControl<String>(
-                    selectedValue: selectedBusinessType,
-                    items: const [
-                      NeoSegmentItem(value: 'barang', label: 'Barang'),
-                      NeoSegmentItem(value: 'jasa', label: 'Jasa'),
-                      NeoSegmentItem(value: 'keduanya', label: 'Bengkel'),
-                    ],
-                    onValueChanged: (val) {
-                      setDialogState(() => selectedBusinessType = val);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  NeoTextField(
-                    controller: fullNameCtrl,
-                    labelText: 'Nama Lengkap Pemilik',
-                    prefixIcon: AppIcons.user,
-                  ),
-                  const SizedBox(height: 12),
-                  NeoTextField(
-                    controller: emailCtrl,
-                    labelText: 'Email Aktif Pemilik * (Gmail/resmi)',
-                    hintText: 'pemilik@gmail.com',
-                    prefixIcon: AppIcons.envelope,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 12),
-                  NeoTextField(
-                    controller: usernameCtrl,
-                    labelText: 'Username Pemilik (ex: admin)',
-                    prefixIcon: AppIcons.user,
-                  ),
-                  const SizedBox(height: 12),
-                  NeoTextField(
-                    controller: passwordCtrl,
-                    labelText: 'Password Pemilik (min 6 karakter)',
-                    prefixIcon: AppIcons.lock,
-                    obscureText: true,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Batal'),
-              ),
-              const SizedBox(width: 8),
-              ThickBottomBorderButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Buat'),
-              ),
-            ],
-          );
-        },
-      ),
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateShopScreen()),
     );
-
-    if (result != true || !mounted) return;
-
-    final shopName = nameCtrl.text.trim();
-    final shopSlug = slugCtrl.text.trim().toLowerCase();
-    final ownerFullName = fullNameCtrl.text.trim();
-    final ownerEmail = emailCtrl.text.trim().toLowerCase();
-    final ownerUsername = usernameCtrl.text.trim().toLowerCase();
-    final ownerPassword = passwordCtrl.text.trim();
-
-    if (shopName.isEmpty ||
-        shopSlug.isEmpty ||
-        ownerFullName.isEmpty ||
-        ownerEmail.isEmpty ||
-        ownerUsername.isEmpty ||
-        ownerPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua field wajib diisi (termasuk email aktif).')),
-      );
-      return;
-    }
-
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    if (!emailRegex.hasMatch(ownerEmail)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format email pemilik tidak valid (contoh: user@gmail.com).')),
-      );
-      return;
-    }
-
-    if (ownerPassword.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password pemilik minimal 6 karakter.')),
-      );
-      return;
-    }
-
-    setState(() => _isCreatingShop = true);
-    try {
-      final client = Supabase.instance.client;
-      try {
-        final session = client.auth.currentSession;
-        if (session != null && session.isExpired) {
-          await client.auth.refreshSession();
-        }
-      } catch (_) {}
-      final token = client.auth.currentSession?.accessToken;
-      final res = await client.functions.invoke(
-        'create-shop',
-        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-        body: {
-          'shop_name': shopName,
-          'shop_slug': shopSlug,
-          'business_type': selectedBusinessType,
-          'owner_full_name': ownerFullName,
-          'owner_email': ownerEmail,
-          'owner_username': ownerUsername,
-          'owner_password': ownerPassword,
-        },
-      );
-      if (res.status == 200 || res.status == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Toko dan owner berhasil dibuat!')),
-          );
-        }
-        _refreshAll();
-      } else {
-        final data = res.data;
-        final errorMsg = data is Map ? data['error'] : 'Gagal membuat toko.';
-        throw Exception(errorMsg ?? 'Gagal membuat toko.');
-      }
-    } on FunctionException catch (fe) {
-      if (mounted) {
-        final details = fe.details;
-        String? msg;
-        if (details is Map) {
-          msg = details['error']?.toString() ?? details['message']?.toString();
-        } else if (details is String && details.isNotEmpty) {
-          msg = details;
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg ?? fe.reasonPhrase ?? 'Gagal membuat toko (${fe.status}).'),
-            backgroundColor: AppColors.action,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.action,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isCreatingShop = false);
-      }
+    if (created == true) {
+      _refreshAll();
     }
   }
 
@@ -285,14 +90,8 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
           borderRadius: AppRadius.button,
           side: BorderSide(color: AppColors.borderInk, width: 1.5),
         ),
-        onPressed: _isCreatingShop ? null : _createShop,
-        icon: _isCreatingShop
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : Icon(AppIcons.add, size: 20),
+        onPressed: _createShop,
+        icon: Icon(AppIcons.add, size: 20),
         label: const Text('Buat Toko Baru', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: RefreshIndicator(

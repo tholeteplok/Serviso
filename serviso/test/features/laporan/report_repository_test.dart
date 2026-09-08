@@ -60,4 +60,14 @@ void main() {
     expect(allDebts.length, 1);
     expect(allDebts.first.isSettled, true);
   });
+
+  test('fetchCompletedWorkOrders returns mock completed work orders with vehicleDesc', () async {
+    final start = DateTime(2026, 8, 20);
+    final end = DateTime(2026, 8, 22);
+    final list = await repo.fetchCompletedWorkOrders(start: start, end: end);
+    expect(list.length, 3);
+    expect(list.first.status, 'selesai');
+    expect(list.first.vehicleDesc, isNotNull);
+    expect(list.first.paidAmount, greaterThan(0));
+  });
 }

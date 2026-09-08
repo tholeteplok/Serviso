@@ -127,6 +127,9 @@ class WorkOrder {
 
   double get total => items.fold(0.0, (sum, i) => sum + i.lineTotal);
 
+  /// Returns actual paid amount if settled, or estimated total from items if unpaid/in-progress.
+  double get displayCost => paidAmount > 0 ? paidAmount : total;
+
   factory WorkOrder.fromBoardMap(Map<String, dynamic> map) {
     final vehicles = map['vehicles'];
     String? plateNo;

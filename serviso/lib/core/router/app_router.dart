@@ -23,6 +23,7 @@ import '../../features/inventori/screens/inventori_screen.dart';
 import '../../features/inventori/screens/part_detail_screen.dart';
 import '../../features/inventori/screens/part_form_screen.dart';
 import '../../features/laporan/controllers/report_controllers.dart';
+import '../../features/laporan/screens/details/customer_report_screen.dart';
 import '../../features/laporan/screens/details/debt_detail_screen.dart';
 import '../../features/laporan/screens/details/direct_sale_detail_screen.dart';
 import '../../features/laporan/screens/details/hpp_detail_screen.dart';
@@ -54,6 +55,7 @@ abstract final class AppRoutes {
   static const laporanHutang = '/laporan/hutang';
   static const laporanWoSelesai = '/laporan/wo-selesai';
   static const laporanPartTerjual = '/laporan/part-terjual';
+  static const laporanPelanggan = '/laporan/pelanggan';
   static const profil = '/profil';
   static const admin = '/admin';
   static const platformAdmin = '/platform';
@@ -276,6 +278,10 @@ final List<RouteBase> _appRoutes = [
     GoRoute(
       path: AppRoutes.laporanHutang,
       builder: (context, state) => const DebtDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanPelanggan,
+      builder: (context, state) => const CustomerReportScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>

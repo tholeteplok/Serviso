@@ -31,7 +31,7 @@ class WoCard extends StatelessWidget {
             ? '${order.customerName} — ${order.serviceLabel ?? order.complaint ?? 'Servis'}'
             : (order.serviceLabel ?? order.complaint ?? 'Servis');
 
-    final cost = order.total;
+    final cost = order.displayCost;
 
     return NeoCard.pressable(
       margin: const EdgeInsets.only(bottom: 12),

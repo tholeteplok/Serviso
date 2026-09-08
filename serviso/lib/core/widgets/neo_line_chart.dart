@@ -96,8 +96,12 @@ class NeoLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 28,
+                interval: 1.0,
                 getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
+                  if ((value - value.roundToDouble()).abs() > 0.001) {
+                    return const SizedBox.shrink();
+                  }
+                  final index = value.round();
                   if (index < 0 || index >= points.length) {
                     return const SizedBox.shrink();
                   }
